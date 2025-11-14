@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>E-Clean Icon Generator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        canvas { border: 1px solid #ddd; margin: 10px; }
+        button { padding: 10px 20px; margin: 10px; background: #6366f1; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #4f46e5; }
+    </style>
+</head>
+<body>
+    <h1>E-Clean PWA Icon Generator</h1>
+    <p>Click button to download all icon sizes</p>
+    <button onclick="generateAllIcons()">Generate All Icons</button>
+    <div id="canvases"></div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        function generateIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#6366f1'); // Indigo
+            gradient.addColorStop(1, '#4f46e5'); // Darker indigo
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Add rounded corners
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.15);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Text "EC" (E-Clean)
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${size * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('EC', size / 2, size / 2);
+            
+            // Small sparkle icon (cleaning)
+            ctx.font = `${size * 0.15}px Arial`;
+            ctx.fillText('✨', size * 0.75, size * 0.25);
+            
+            return canvas;
+        }
+        
+        function downloadCanvas(canvas, filename) {
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        function generateAllIcons() {
+            const container = document.getElementById('canvases');
+            container.innerHTML = '';
+            
+            sizes.forEach(size => {
+                const canvas = generateIcon(size);
+                canvas.title = `icon-${size}x${size}.png`;
+                container.appendChild(canvas);
+                
+                // Auto download
+                setTimeout(() => {
+                    downloadCanvas(canvas, `icon-${size}x${size}.png`);
+                }, size); // Delay to avoid browser blocking
+            });
+            
+            alert('Icons will download automatically. Save them all to /public/pwa/ folder!');
+        }
+    </script>
+</body>
+</html>

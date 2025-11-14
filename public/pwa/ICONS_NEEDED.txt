@@ -1,0 +1,35 @@
+📱 PWA ICONS NEEDED
+
+Please generate the following icon sizes for the E-Clean PWA:
+
+Required Sizes:
+- icon-72x72.png
+- icon-96x96.png  
+- icon-128x128.png
+- icon-144x144.png
+- icon-152x152.png
+- icon-192x192.png
+- icon-384x384.png
+- icon-512x512.png
+
+Quick Generate Options:
+
+1. Online Generator (RECOMMENDED):
+   https://realfavicongenerator.net/
+   https://www.pwabuilder.com/imageGenerator
+   
+2. Upload your logo (512x512px minimum)
+3. Download generated icons
+4. Extract all icons to this folder
+
+Icon Design Tips:
+- Use simple, clear design
+- High contrast colors
+- Works well at small sizes
+- Add 10% padding for safe area
+- PNG format with transparency
+
+Color Scheme (E-Clean):
+- Primary: #6366f1 (Indigo)
+- Background: #ffffff (White)
+- Accent: #10b981 (Emerald)
