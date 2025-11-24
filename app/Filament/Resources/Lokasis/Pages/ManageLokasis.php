@@ -9,6 +9,7 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
+use Illuminate\Support\Facades\Auth;
 
 class ManageLokasis extends ManageRecords
 {
@@ -20,7 +21,7 @@ class ManageLokasis extends ManageRecords
     {
         return [
             CreateAction::make()
-                ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus', 'supervisor'])),
+                ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus', 'supervisor'])),
 
             Action::make('generate_all_barcode')
                 ->label('Generate Semua Barcode')
@@ -41,7 +42,7 @@ class ManageLokasis extends ManageRecords
                         ->send();
                 })
                 ->visible(fn () => Lokasi::whereNull('qr_code')->orWhere('qr_code', '')->exists())
-                ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
 
             Action::make('print_barcode')
                 ->label('Print Barcodes')

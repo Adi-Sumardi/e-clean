@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
+use Illuminate\Support\Facades\Auth;
 
 class ManageJadwalKebersihanans extends ManageRecords
 {
@@ -17,7 +18,7 @@ class ManageJadwalKebersihanans extends ManageRecords
     protected function getHeaderActions(): array
     {
         // Petugas dan pengurus tidak bisa buat jadwal, hanya supervisor/admin/super_admin
-        if (auth()->user()->hasAnyRole(['petugas', 'pengurus'])) {
+        if (Auth::user()->hasAnyRole(['petugas', 'pengurus'])) {
             return [];
         }
 
@@ -73,7 +74,7 @@ class ManageJadwalKebersihanans extends ManageRecords
                     'prioritas' => $data['prioritas'] ?? 'normal',
                     'catatan' => $data['catatan'] ?? null,
                     'status' => $data['status'] ?? 'active',
-                    'created_by' => auth()->id(),
+                    'created_by' => Auth::id(),
                 ]);
 
                 // Simpan jadwal pertama untuk return

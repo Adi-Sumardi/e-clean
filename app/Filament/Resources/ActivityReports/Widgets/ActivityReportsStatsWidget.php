@@ -6,12 +6,13 @@ use App\Models\ActivityReport;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
 
 class ActivityReportsStatsWidget extends BaseWidget
 {
     protected function getStats(): array
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $query = ActivityReport::query();
 
         // Filter untuk petugas - hanya lihat laporan sendiri

@@ -24,6 +24,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class JadwalKebersihanResource extends Resource
 {
@@ -241,16 +242,16 @@ class JadwalKebersihanResource extends Resource
             ])
             ->recordActions([
                 EditAction::make()
-                    ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
                 DeleteAction::make()
-                    ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                        ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
                 ])
-                    ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
             ])
             ->defaultSort('tanggal', 'desc');
     }
@@ -265,7 +266,7 @@ class JadwalKebersihanResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Petugas hanya bisa lihat jadwal sendiri
         if ($user->hasRole('petugas')) {
@@ -278,7 +279,7 @@ class JadwalKebersihanResource extends Resource
 
     public static function canCreate(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya supervisor, admin, super_admin yang bisa create jadwal
         return $user->hasAnyRole(['supervisor', 'admin', 'super_admin']);
@@ -286,7 +287,7 @@ class JadwalKebersihanResource extends Resource
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Supervisor, admin, super_admin bisa edit
         return $user->hasAnyRole(['supervisor', 'admin', 'super_admin']);
@@ -294,7 +295,7 @@ class JadwalKebersihanResource extends Resource
 
     public static function canDelete($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Supervisor, admin, super_admin bisa delete
         return $user->hasAnyRole(['supervisor', 'admin', 'super_admin']);
@@ -309,6 +310,6 @@ class JadwalKebersihanResource extends Resource
     public static function shouldRegisterNavigation(): bool
     {
         // Hide dari sidebar navigation untuk petugas
-        return auth()->user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
+        return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
     }
 }

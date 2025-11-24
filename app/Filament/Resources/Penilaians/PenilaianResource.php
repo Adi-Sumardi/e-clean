@@ -22,6 +22,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class PenilaianResource extends Resource
 {
@@ -240,15 +241,15 @@ class PenilaianResource extends Resource
             ])
             ->recordActions([
                 EditAction::make()
-                    ->hidden(fn () => auth()->user()->hasRole('pengurus')),
+                    ->hidden(fn () => Auth::user()->hasRole('pengurus')),
                 DeleteAction::make()
-                    ->hidden(fn () => auth()->user()->hasRole('pengurus')),
+                    ->hidden(fn () => Auth::user()->hasRole('pengurus')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ])
-                    ->hidden(fn () => auth()->user()->hasRole('pengurus')),
+                    ->hidden(fn () => Auth::user()->hasRole('pengurus')),
             ])
             ->defaultSort('periode_tahun', 'desc')
             ->defaultSort('periode_bulan', 'desc');
@@ -264,7 +265,7 @@ class PenilaianResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Petugas hanya bisa lihat penilaian sendiri
         if ($user->hasRole('petugas')) {
@@ -284,7 +285,7 @@ class PenilaianResource extends Resource
     public static function canEdit($record): bool
     {
         // Allow edit only for catatan field
-        $user = auth()->user();
+        $user = Auth::user();
         return $user->hasAnyRole(['supervisor', 'admin', 'super_admin']);
     }
 
@@ -303,6 +304,6 @@ class PenilaianResource extends Resource
     public static function shouldRegisterNavigation(): bool
     {
         // Hide dari sidebar navigation untuk petugas
-        return auth()->user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
+        return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
     }
 }

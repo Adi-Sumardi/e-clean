@@ -8,6 +8,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Auth;
 
 class ManagePenilaians extends ManageRecords
 {
@@ -44,7 +45,7 @@ class ManagePenilaians extends ManageRecords
                         'penilaian-petugas-' . now()->format('Y-m-d-His') . '.xlsx'
                     );
                 })
-                ->visible(fn () => auth()->user()->hasAnyRole(['pengurus', 'supervisor', 'admin', 'super_admin'])),
+                ->visible(fn () => Auth::user()->hasAnyRole(['pengurus', 'supervisor', 'admin', 'super_admin'])),
         ];
     }
 }

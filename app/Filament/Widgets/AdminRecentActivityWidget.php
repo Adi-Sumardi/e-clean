@@ -7,6 +7,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\Facades\Auth;
 
 class AdminRecentActivityWidget extends BaseWidget
 {
@@ -73,6 +74,6 @@ class AdminRecentActivityWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasAnyRole(['admin', 'super_admin']);
+        return Auth::user()->hasAnyRole(['admin', 'super_admin']);
     }
 }

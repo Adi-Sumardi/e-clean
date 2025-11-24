@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Livewire\Attributes\On;
+use Illuminate\Support\Facades\Auth;
 
 class QRScanner extends Page
 {
@@ -33,13 +34,13 @@ class QRScanner extends Page
     public static function canView(): bool
     {
         // Only petugas can access QR Scanner
-        return auth()->user()->hasRole('petugas');
+        return Auth::user()->hasRole('petugas');
     }
 
     public static function shouldRegisterNavigation(): bool
     {
         // Hide from navigation for non-petugas users
-        return auth()->user()->hasRole('petugas');
+        return Auth::user()->hasRole('petugas');
     }
 
     #[On('qr-scanned')]
@@ -71,7 +72,7 @@ class QRScanner extends Page
 
         // Check if petugas has jadwal for this location today
         $today = Carbon::today();
-        $this->jadwal = JadwalKebersihan::where('petugas_id', auth()->id())
+        $this->jadwal = JadwalKebersihan::where('petugas_id', Auth::id())
             ->where('lokasi_id', $this->scannedLokasi->id)
             ->whereDate('tanggal', $today)
             ->first();

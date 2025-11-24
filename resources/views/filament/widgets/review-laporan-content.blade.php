@@ -76,25 +76,30 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {{-- Foto Sebelum --}}
             <div class="space-y-3">
+                @php
+                    $fotoSebelum = $record->foto_sebelum;
+                    $fotoSebelumArray = is_array($fotoSebelum) ? $fotoSebelum : ($fotoSebelum ? [$fotoSebelum] : []);
+                @endphp
                 <div class="flex items-center justify-between">
                     <span class="text-sm font-medium text-gray-700 dark:text-gray-300">📸 Sebelum Dibersihkan</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ is_array($record->foto_sebelum) ? count($record->foto_sebelum) : 0 }} foto
+                        {{ count($fotoSebelumArray) }} foto
                     </span>
                 </div>
-                @if($record->foto_sebelum && is_array($record->foto_sebelum) && count($record->foto_sebelum) > 0)
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        @foreach($record->foto_sebelum as $foto)
-                            <a href="{{ Storage::url($foto) }}" target="_blank" class="group relative block overflow-hidden rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary-500 transition-all duration-200">
-                                <img src="{{ Storage::url($foto) }}"
+                @if(count($fotoSebelumArray) > 0)
+                    <div class="space-y-3">
+                        @foreach($fotoSebelumArray as $foto)
+                            <div class="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <img src="{{ asset('storage/' . $foto) }}"
                                      alt="Foto Sebelum"
-                                     class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-300">
-                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                                    <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
-                                    </svg>
+                                     loading="eager"
+                                     class="w-full h-auto max-h-96 object-contain bg-gray-50 dark:bg-gray-900"
+                                     onerror="console.error('Failed to load image:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div style="display:none;" class="p-4 text-center text-red-500">
+                                    <p class="text-sm">Gagal memuat foto</p>
+                                    <a href="{{ asset('storage/' . $foto) }}" target="_blank" class="text-xs underline text-blue-500">Buka di tab baru</a>
                                 </div>
-                            </a>
+                            </div>
                         @endforeach
                     </div>
                 @else
@@ -111,25 +116,30 @@
 
             {{-- Foto Sesudah --}}
             <div class="space-y-3">
+                @php
+                    $fotoSesudah = $record->foto_sesudah;
+                    $fotoSesudahArray = is_array($fotoSesudah) ? $fotoSesudah : ($fotoSesudah ? [$fotoSesudah] : []);
+                @endphp
                 <div class="flex items-center justify-between">
                     <span class="text-sm font-medium text-gray-700 dark:text-gray-300">✨ Sesudah Dibersihkan</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ is_array($record->foto_sesudah) ? count($record->foto_sesudah) : 0 }} foto
+                        {{ count($fotoSesudahArray) }} foto
                     </span>
                 </div>
-                @if($record->foto_sesudah && is_array($record->foto_sesudah) && count($record->foto_sesudah) > 0)
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        @foreach($record->foto_sesudah as $foto)
-                            <a href="{{ Storage::url($foto) }}" target="_blank" class="group relative block overflow-hidden rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary-500 transition-all duration-200">
-                                <img src="{{ Storage::url($foto) }}"
+                @if(count($fotoSesudahArray) > 0)
+                    <div class="space-y-3">
+                        @foreach($fotoSesudahArray as $foto)
+                            <div class="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <img src="{{ asset('storage/' . $foto) }}"
                                      alt="Foto Sesudah"
-                                     class="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-300">
-                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                                    <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
-                                    </svg>
+                                     loading="eager"
+                                     class="w-full h-auto max-h-96 object-contain bg-gray-50 dark:bg-gray-900"
+                                     onerror="console.error('Failed to load image:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div style="display:none;" class="p-4 text-center text-red-500">
+                                    <p class="text-sm">Gagal memuat foto</p>
+                                    <a href="{{ asset('storage/' . $foto) }}" target="_blank" class="text-xs underline text-blue-500">Buka di tab baru</a>
                                 </div>
-                            </a>
+                            </div>
                         @endforeach
                     </div>
                 @else

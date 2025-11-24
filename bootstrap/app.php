@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Add security headers to all requests
+        // Add security headers to all requests (includes camera/geolocation permissions)
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
         // Add rate limiting to API routes

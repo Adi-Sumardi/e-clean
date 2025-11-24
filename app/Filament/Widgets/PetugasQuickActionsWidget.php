@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\ActivityReport;
 use Carbon\Carbon;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Auth;
 
 class PetugasQuickActionsWidget extends Widget
 {
@@ -14,12 +15,12 @@ class PetugasQuickActionsWidget extends Widget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasRole('petugas');
+        return Auth::user()->hasRole('petugas');
     }
 
     protected function getViewData(): array
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
         $today = Carbon::today();
 
         $todayReports = ActivityReport::where('petugas_id', $userId)

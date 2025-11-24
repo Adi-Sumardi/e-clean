@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ManageRecords;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Auth;
 
 class ManageActivityReports extends ManageRecords
 {
@@ -29,7 +30,7 @@ class ManageActivityReports extends ManageRecords
                         'laporan-kegiatan-' . now()->format('Y-m-d-His') . '.xlsx'
                     );
                 })
-                ->visible(fn () => auth()->user()->hasAnyRole(['pengurus', 'supervisor', 'admin', 'super_admin'])),
+                ->visible(fn () => Auth::user()->hasAnyRole(['pengurus', 'supervisor', 'admin', 'super_admin'])),
 
             CreateAction::make()
                 ->label('Buat Laporan Baru')
@@ -37,12 +38,12 @@ class ManageActivityReports extends ManageRecords
                 ->mutateFormDataUsing(function (array $data): array {
                     // Auto-set approved_by and approved_at when creating with approved status
                     if (isset($data['status']) && $data['status'] === 'approved' && !isset($data['approved_by'])) {
-                        $data['approved_by'] = auth()->id();
+                        $data['approved_by'] = Auth::id();
                         $data['approved_at'] = now();
                     }
                     return $data;
                 })
-                ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
         ];
     }
 

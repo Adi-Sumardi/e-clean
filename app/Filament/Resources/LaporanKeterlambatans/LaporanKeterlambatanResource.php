@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
+use Illuminate\Support\Facades\Auth;
 
 class LaporanKeterlambatanResource extends Resource
 {
@@ -52,13 +53,13 @@ class LaporanKeterlambatanResource extends Resource
     public static function canDelete($record): bool
     {
         // Hanya admin dan supervisor yang bisa delete
-        return auth()->user()->hasAnyRole(['admin', 'supervisor']);
+        return Auth::user()->hasAnyRole(['admin', 'supervisor']);
     }
 
     public static function canViewAny(): bool
     {
         // Hanya admin dan supervisor yang bisa lihat
-        return auth()->user()->hasAnyRole(['admin', 'supervisor']);
+        return Auth::user()->hasAnyRole(['admin', 'supervisor']);
     }
 
     public static function form(Schema $schema): Schema

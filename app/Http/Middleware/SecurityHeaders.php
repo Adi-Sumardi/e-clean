@@ -30,8 +30,8 @@ class SecurityHeaders
         // Control referrer information
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-        // Restrict feature permissions
-        $response->headers->set('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
+        // Restrict feature permissions - Allow camera and geolocation for this app
+        $response->headers->set('Permissions-Policy', 'geolocation=(self), camera=(self), microphone=()');
 
         // Enable HSTS for HTTPS connections
         if ($request->secure()) {

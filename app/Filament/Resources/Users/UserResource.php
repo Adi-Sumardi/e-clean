@@ -14,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
+use Illuminate\Support\Facades\Auth;
 
 class UserResource extends Resource
 {
@@ -69,7 +70,7 @@ class UserResource extends Resource
 
     public static function canViewAny(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya admin & super_admin yang bisa akses user management
         return $user->hasAnyRole(['admin', 'super_admin']);
@@ -77,7 +78,7 @@ class UserResource extends Resource
 
     public static function canCreate(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya admin & super_admin yang bisa create user
         return $user->hasAnyRole(['admin', 'super_admin']);
@@ -85,7 +86,7 @@ class UserResource extends Resource
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya admin & super_admin yang bisa edit user
         return $user->hasAnyRole(['admin', 'super_admin']);
@@ -93,7 +94,7 @@ class UserResource extends Resource
 
     public static function canDelete($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya super_admin yang bisa delete user
         return $user->hasRole('super_admin');
@@ -101,7 +102,7 @@ class UserResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Menu User Management hanya muncul untuk admin & super_admin
         return $user->hasAnyRole(['admin', 'super_admin']);

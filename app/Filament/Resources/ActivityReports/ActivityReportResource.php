@@ -2,17 +2,13 @@
 
 namespace App\Filament\Resources\ActivityReports;
 
-use App\Filament\Resources\ActivityReports\Pages\ManageActivityReports;
+use App\Filament\Forms\Components\WatermarkCameraField;
+use App\Filament\Resources\ActivityReports\Pages;
 use App\Models\ActivityReport;
 use App\Models\JadwalKebersihan;
 use App\Models\Lokasi;
 use App\Models\User;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -28,6 +24,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ActivityReportResource extends Resource
 {
@@ -54,7 +51,7 @@ class ActivityReportResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $isPetugas = $user->hasRole('petugas');
 
         return $schema
@@ -75,15 +72,25 @@ class ActivityReportResource extends Resource
                     ->label('Lokasi')
                     ->required()
                     ->searchable()
-                    ->options(function () use ($isPetugas, $user) {
+                    ->options(function ($record) use ($isPetugas, $user) {
                         if ($isPetugas) {
                             // Petugas: hanya tampilkan lokasi dari jadwal mereka hari ini
-                            return JadwalKebersihan::where('petugas_id', $user->id)
+                            $options = JadwalKebersihan::where('petugas_id', $user->id)
                                 ->whereDate('tanggal', now()->toDateString())
                                 ->with('lokasi')
                                 ->get()
                                 ->pluck('lokasi.nama_lokasi', 'lokasi.id')
                                 ->unique();
+
+                            // Saat edit, include lokasi yang sudah dipilih sebelumnya
+                            if ($record && $record->lokasi_id && !$options->has($record->lokasi_id)) {
+                                $lokasi = Lokasi::find($record->lokasi_id);
+                                if ($lokasi) {
+                                    $options->put($record->lokasi_id, $lokasi->nama_lokasi);
+                                }
+                            }
+
+                            return $options;
                         } else {
                             // Supervisor/Admin: tampilkan semua lokasi aktif
                             return Lokasi::where('is_active', true)->pluck('nama_lokasi', 'id');
@@ -97,16 +104,26 @@ class ActivityReportResource extends Resource
                 Select::make('jadwal_id')
                     ->label('Jadwal Terkait')
                     ->searchable()
-                    ->options(function () use ($isPetugas, $user) {
+                    ->options(function ($record) use ($isPetugas, $user) {
                         if ($isPetugas) {
                             // Petugas: hanya tampilkan jadwal mereka hari ini
-                            return JadwalKebersihan::where('petugas_id', $user->id)
+                            $options = JadwalKebersihan::where('petugas_id', $user->id)
                                 ->whereDate('tanggal', now()->toDateString())
                                 ->with('lokasi')
                                 ->get()
                                 ->mapWithKeys(function ($jadwal) {
                                     return [$jadwal->id => $jadwal->lokasi->nama_lokasi . ' - Shift ' . ucfirst($jadwal->shift) . ' (' . $jadwal->tanggal->format('d/m/Y') . ')'];
                                 });
+
+                            // Saat edit, include jadwal yang sudah dipilih sebelumnya
+                            if ($record && $record->jadwal_id && !$options->has($record->jadwal_id)) {
+                                $jadwal = JadwalKebersihan::with('lokasi')->find($record->jadwal_id);
+                                if ($jadwal) {
+                                    $options->put($record->jadwal_id, $jadwal->lokasi->nama_lokasi . ' - Shift ' . ucfirst($jadwal->shift) . ' (' . $jadwal->tanggal->format('d/m/Y') . ')');
+                                }
+                            }
+
+                            return $options;
                         } else {
                             // Supervisor/Admin: tampilkan semua jadwal
                             return JadwalKebersihan::with(['petugas', 'lokasi'])
@@ -161,25 +178,21 @@ class ActivityReportResource extends Resource
                     ->columnSpanFull()
                     ->placeholder('Deskripsikan kegiatan pembersihan yang dilakukan...'),
 
-                FileUpload::make('foto_sebelum')
+                WatermarkCameraField::make('foto_sebelum')
                     ->label('Foto Sebelum Dibersihkan')
-                    ->image()
-                    ->multiple()
-                    ->maxFiles(5)
-                    ->directory('activity-reports/before')
-                    ->visibility('public')
-                    ->imageEditor()
-                    ->columnSpanFull(),
+                    ->photoType('before')
+                    ->lokasiId(fn ($get): ?int => $get('lokasi_id'))
+                    ->activityReportId(fn (?ActivityReport $record): ?int => $record?->id)
+                    ->columnSpanFull()
+                    ->helperText('Gunakan kamera untuk mengambil foto dengan watermark GPS otomatis'),
 
-                FileUpload::make('foto_sesudah')
+                WatermarkCameraField::make('foto_sesudah')
                     ->label('Foto Sesudah Dibersihkan')
-                    ->image()
-                    ->multiple()
-                    ->maxFiles(5)
-                    ->directory('activity-reports/after')
-                    ->visibility('public')
-                    ->imageEditor()
-                    ->columnSpanFull(),
+                    ->photoType('after')
+                    ->lokasiId(fn ($get): ?int => $get('lokasi_id'))
+                    ->activityReportId(fn (?ActivityReport $record): ?int => $record?->id)
+                    ->columnSpanFull()
+                    ->helperText('Gunakan kamera untuk mengambil foto dengan watermark GPS otomatis'),
 
                 Textarea::make('catatan_petugas')
                     ->label('Catatan Petugas')
@@ -321,30 +334,6 @@ class ActivityReportResource extends Resource
                     ->label('Lokasi')
                     ->options(Lokasi::pluck('nama_lokasi', 'id')),
             ])
-            ->recordActions([
-                EditAction::make()
-                    ->mutateFormDataUsing(function (array $data): array {
-                        // Auto-set approved_by and approved_at when approving via edit
-                        if (isset($data['status']) && $data['status'] === 'approved') {
-                            if (!isset($data['approved_by']) || empty($data['approved_by'])) {
-                                $data['approved_by'] = auth()->id();
-                            }
-                            if (!isset($data['approved_at']) || empty($data['approved_at'])) {
-                                $data['approved_at'] = now();
-                            }
-                        }
-                        return $data;
-                    })
-                    ->hidden(fn () => auth()->user()->hasRole('pengurus')),
-                DeleteAction::make()
-                    ->hidden(fn () => auth()->user()->hasRole('pengurus')),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ])
-                    ->hidden(fn () => auth()->user()->hasRole('pengurus')),
-            ])
             ->defaultSort('tanggal', 'desc');
     }
 
@@ -389,12 +378,14 @@ class ActivityReportResource extends Resource
                     ->schema([
                         ImageEntry::make('foto_sebelum')
                             ->label('Foto Sebelum')
+                            ->disk('public')
                             ->columnSpan(1)
                             ->height(200)
                             ->visible(fn ($record) => $record->foto_sebelum),
 
                         ImageEntry::make('foto_sesudah')
                             ->label('Foto Sesudah')
+                            ->disk('public')
                             ->columnSpan(1)
                             ->height(200)
                             ->visible(fn ($record) => $record->foto_sesudah),
@@ -459,14 +450,16 @@ class ActivityReportResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageActivityReports::route('/'),
+            'index' => Pages\ListActivityReports::route('/'),
+            'create' => Pages\CreateActivityReport::route('/create'),
+            'edit' => Pages\EditActivityReport::route('/{record}/edit'),
         ];
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Petugas hanya bisa lihat laporan sendiri
         if ($user->hasRole('petugas')) {
@@ -479,7 +472,7 @@ class ActivityReportResource extends Resource
 
     public static function canCreate(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Petugas, supervisor, admin bisa create
         return $user->hasAnyRole(['petugas', 'supervisor', 'admin', 'super_admin']);
@@ -487,7 +480,7 @@ class ActivityReportResource extends Resource
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Admin & Super Admin bisa edit semua
         if ($user->hasAnyRole(['admin', 'super_admin'])) {
@@ -510,7 +503,7 @@ class ActivityReportResource extends Resource
 
     public static function canDelete($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya admin & super admin yang bisa delete
         return $user->hasAnyRole(['admin', 'super_admin']);
@@ -525,6 +518,6 @@ class ActivityReportResource extends Resource
     public static function shouldRegisterNavigation(): bool
     {
         // Hide dari sidebar navigation untuk petugas
-        return auth()->user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
+        return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
     }
 }

@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
 
 class SupervisorStatsOverviewWidget extends StatsOverviewWidget
 {
@@ -17,7 +18,7 @@ class SupervisorStatsOverviewWidget extends StatsOverviewWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasAnyRole(['supervisor', 'admin']);
+        return Auth::user()->hasAnyRole(['supervisor', 'admin']);
     }
 
     protected function getStats(): array

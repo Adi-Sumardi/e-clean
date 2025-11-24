@@ -10,6 +10,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
+use Illuminate\Support\Facades\Auth;
 
 class SupervisorTodayScheduleWidget extends TableWidget
 {
@@ -20,7 +21,7 @@ class SupervisorTodayScheduleWidget extends TableWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasAnyRole(['supervisor', 'admin']);
+        return Auth::user()->hasAnyRole(['supervisor', 'admin']);
     }
 
     public function table(Table $table): Table

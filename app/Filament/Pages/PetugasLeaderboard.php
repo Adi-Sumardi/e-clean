@@ -8,6 +8,7 @@ use App\Models\User;
 use Filament\Pages\Page;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
+use Illuminate\Support\Facades\Auth;
 
 class PetugasLeaderboard extends Page
 {
@@ -137,6 +138,6 @@ class PetugasLeaderboard extends Page
     public static function canAccess(): bool
     {
         // Hide dari petugas
-        return auth()->user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
+        return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
     }
 }

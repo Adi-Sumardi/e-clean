@@ -6,6 +6,7 @@ use App\Models\ActivityReport;
 use App\Models\User;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Auth;
 
 class PengurusMonthlySummaryWidget extends ChartWidget
 {
@@ -13,7 +14,7 @@ class PengurusMonthlySummaryWidget extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasRole('pengurus');
+        return Auth::user()->hasRole('pengurus');
     }
 
     public function getHeading(): ?string

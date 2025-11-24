@@ -21,6 +21,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class SupervisorPendingReportsWidget extends TableWidget implements HasForms, HasActions
 {
@@ -36,7 +37,7 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
 
     public static function canView(): bool
     {
-        return auth()->user()->hasAnyRole(['supervisor', 'admin']);
+        return Auth::user()->hasAnyRole(['supervisor', 'admin']);
     }
 
     public function table(Table $table): Table
@@ -169,17 +170,17 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
 
                 TextInput::make('approved_by')
                     ->label('Disetujui Oleh')
-                    ->default(auth()->user()->name)
+                    ->default(Auth::user()->name)
                     ->disabled()
                     ->dehydrated()
-                    ->formatStateUsing(fn () => auth()->user()->name)
+                    ->formatStateUsing(fn () => Auth::user()->name)
                     ->helperText('Otomatis terisi sesuai akun yang login')
                     ->visible(fn ($get) => in_array($get('status'), ['approved', 'rejected']))
                     ->columnSpanFull(),
             ])
             ->action(function (ActivityReport $record, array $data) {
                 // Set approved_by to current user ID
-                $data['approved_by'] = auth()->id();
+                $data['approved_by'] = Auth::id();
 
                 // Auto-set approved_at timestamp when approved
                 if ($data['status'] === 'approved' && !$record->approved_at) {

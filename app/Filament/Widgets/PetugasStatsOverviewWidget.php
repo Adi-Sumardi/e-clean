@@ -8,6 +8,7 @@ use App\Models\LaporanKeterlambatan;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
 
 class PetugasStatsOverviewWidget extends BaseWidget
 {
@@ -16,12 +17,12 @@ class PetugasStatsOverviewWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasRole('petugas');
+        return Auth::user()->hasRole('petugas');
     }
 
     protected function getStats(): array
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
         $today = Carbon::today();
 
         // Jadwal lokasi hari ini
@@ -114,28 +115,86 @@ class PetugasStatsOverviewWidget extends BaseWidget
             $tugasPendingDesc = 'Semua tugas sudah selesai!';
         }
 
+        // Real chart data - Jadwal trend (last 7 days)
+        $jadwalChart = $this->getJadwalChart($userId);
+
+        // Real chart data - Laporan trend (last 7 days)
+        $laporanChart = $this->getLaporanChart($userId);
+
+        // Real chart data - Tugas pending trend (last 7 days)
+        $pendingChart = $this->getPendingChart($userId);
+
         return [
             // Lokasi Hari Ini
             Stat::make('Lokasi Hari Ini', $namaLokasiValue)
                 ->description($namaLokasiDesc)
                 ->descriptionIcon('heroicon-o-map-pin')
                 ->color($jumlahLokasi > 0 ? 'info' : 'gray')
-                ->chart([0, 1, 2, $jumlahLokasi, 4]),
+                ->chart($jadwalChart),
 
             // Laporan Hari Ini
             Stat::make('Laporan Hari Ini', $todayReports . ' laporan')
                 ->description($todayReports > 0 ? 'Kerja bagus! Tetap semangat' : 'Belum ada laporan dibuat')
                 ->descriptionIcon('heroicon-o-document-text')
                 ->color($todayReports > 0 ? 'success' : 'gray')
-                ->chart([0, 2, 5, $todayReports, 8]),
+                ->chart($laporanChart),
 
             // Tugas yang Perlu Diselesaikan (dengan time-based warning)
             Stat::make('Tugas Pending', $totalPendingTasks . ' tugas')
                 ->description($tugasPendingDesc)
                 ->descriptionIcon($tugasPendingIcon)
                 ->color($tugasPendingColor)
-                ->chart([5, 3, $totalPendingTasks, 2, 0]),
+                ->chart($pendingChart),
         ];
+    }
+
+    /**
+     * Get real chart data for Jadwal (last 7 days)
+     */
+    private function getJadwalChart(int $userId): array
+    {
+        $data = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $count = JadwalKebersihan::where('petugas_id', $userId)
+                ->whereDate('tanggal', $date)
+                ->count();
+            $data[] = $count;
+        }
+        return $data;
+    }
+
+    /**
+     * Get real chart data for Laporan (last 7 days)
+     */
+    private function getLaporanChart(int $userId): array
+    {
+        $data = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $count = ActivityReport::where('petugas_id', $userId)
+                ->whereDate('tanggal', $date)
+                ->count();
+            $data[] = $count;
+        }
+        return $data;
+    }
+
+    /**
+     * Get real chart data for Pending tasks (last 7 days)
+     */
+    private function getPendingChart(int $userId): array
+    {
+        $data = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $count = ActivityReport::where('petugas_id', $userId)
+                ->whereIn('status', ['draft', 'revision'])
+                ->whereDate('created_at', $date)
+                ->count();
+            $data[] = $count;
+        }
+        return $data;
     }
 
     protected function getColumns(): int

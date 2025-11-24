@@ -7,6 +7,7 @@ use App\Models\JadwalKebersihan;
 use App\Models\Lokasi;
 use App\Models\User;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Auth;
 
 class AdminSystemOverviewWidget extends ChartWidget
 {
@@ -56,6 +57,6 @@ class AdminSystemOverviewWidget extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasAnyRole(['admin', 'super_admin']);
+        return Auth::user()->hasAnyRole(['admin', 'super_admin']);
     }
 }

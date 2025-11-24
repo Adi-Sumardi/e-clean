@@ -23,6 +23,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class PetugasResource extends Resource
 {
@@ -205,7 +206,7 @@ class PetugasResource extends Resource
 
     public static function canViewAny(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Supervisor, admin & super_admin bisa akses
         return $user->hasAnyRole(['supervisor', 'admin', 'super_admin']);
@@ -219,7 +220,7 @@ class PetugasResource extends Resource
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Supervisor, admin & super_admin bisa edit
         return $user->hasAnyRole(['supervisor', 'admin', 'super_admin']);
@@ -233,7 +234,7 @@ class PetugasResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Menu muncul untuk supervisor, admin & super_admin
         return $user->hasAnyRole(['supervisor', 'admin', 'super_admin']);

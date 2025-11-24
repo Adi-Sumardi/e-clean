@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Lokasi;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Auth;
 
 class PengurusLocationStatusWidget extends ChartWidget
 {
@@ -12,7 +13,7 @@ class PengurusLocationStatusWidget extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasRole('pengurus');
+        return Auth::user()->hasRole('pengurus');
     }
 
     public function getHeading(): ?string

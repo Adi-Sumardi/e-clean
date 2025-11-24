@@ -27,6 +27,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class LokasiResource extends Resource
 {
@@ -196,7 +197,7 @@ class LokasiResource extends Resource
                     ->icon('heroicon-o-qr-code')
                     ->color('success')
                     ->visible(fn (Lokasi $record) => !$record->qr_code)
-                    ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus']))
+                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus']))
                     ->action(function (Lokasi $record) {
                         $barcodeService = new BarcodeService();
                         $barcodeService->generateForLokasi($record);
@@ -213,7 +214,7 @@ class LokasiResource extends Resource
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
                     ->visible(fn (Lokasi $record) => $record->qr_code)
-                    ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus']))
+                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus']))
                     ->requiresConfirmation()
                     ->action(function (Lokasi $record) {
                         $barcodeService = new BarcodeService();
@@ -227,15 +228,15 @@ class LokasiResource extends Resource
                     }),
 
                 EditAction::make()
-                    ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
                 DeleteAction::make()
-                    ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ])
-                    ->hidden(fn () => auth()->user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
             ])
             ->defaultSort('kode_lokasi');
     }
@@ -250,7 +251,7 @@ class LokasiResource extends Resource
 
     public static function canCreate(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya admin & super_admin yang bisa create lokasi
         return $user->hasAnyRole(['admin', 'super_admin']);
@@ -258,7 +259,7 @@ class LokasiResource extends Resource
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya admin & super_admin yang bisa edit
         return $user->hasAnyRole(['admin', 'super_admin']);
@@ -266,7 +267,7 @@ class LokasiResource extends Resource
 
     public static function canDelete($record): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Hanya admin & super_admin yang bisa delete
         return $user->hasAnyRole(['admin', 'super_admin']);
@@ -282,6 +283,6 @@ class LokasiResource extends Resource
     public static function shouldRegisterNavigation(): bool
     {
         // Hide dari sidebar navigation untuk petugas (mereka akses via dashboard/widgets)
-        return auth()->user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
+        return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
     }
 }

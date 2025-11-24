@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\ActivityReport;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Auth;
 
 class PengurusPerformanceTrendWidget extends ChartWidget
 {
@@ -12,7 +13,7 @@ class PengurusPerformanceTrendWidget extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasRole('pengurus');
+        return Auth::user()->hasRole('pengurus');
     }
 
     public function getHeading(): ?string

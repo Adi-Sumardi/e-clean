@@ -6,6 +6,7 @@ use App\Models\ActivityReport;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\Facades\Auth;
 
 class PengurusRecentActivityWidget extends BaseWidget
 {
@@ -14,7 +15,7 @@ class PengurusRecentActivityWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasRole('pengurus');
+        return Auth::user()->hasRole('pengurus');
     }
 
     public function table(Table $table): Table

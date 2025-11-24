@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
 
 class PengurusStatsOverviewWidget extends BaseWidget
 {
@@ -17,7 +18,7 @@ class PengurusStatsOverviewWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()->hasRole('pengurus');
+        return Auth::user()->hasRole('pengurus');
     }
 
     protected function getStats(): array

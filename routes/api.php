@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\JadwalKebersihanController;
 use App\Http\Controllers\Api\ActivityReportController;
 use App\Http\Controllers\Api\PenilaianController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\CameraPhotoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -81,4 +82,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
         Route::get('/leaderboard', [DashboardController::class, 'leaderboard']);
     });
 
+});
+
+// Camera routes for Filament (web-based, not versioned API)
+Route::prefix('camera')->middleware(['auth', 'throttle:60,1'])->group(function () {
+    Route::post('/capture', [CameraPhotoController::class, 'capture'])->middleware('throttle:30,1');
+    Route::get('/lokasi/{id}', [CameraPhotoController::class, 'getLokasiInfo']);
 });
