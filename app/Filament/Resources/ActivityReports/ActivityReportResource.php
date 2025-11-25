@@ -20,6 +20,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -334,7 +335,8 @@ class ActivityReportResource extends Resource
                     ->label('Lokasi')
                     ->options(Lokasi::pluck('nama_lokasi', 'id')),
             ])
-            ->defaultSort('tanggal', 'desc');
+            ->defaultSort('tanggal', 'desc')
+            ->recordUrl(fn (ActivityReport $record): string => static::getUrl('view', ['record' => $record]));
     }
 
     public static function infolist(Schema $schema): Schema
@@ -452,6 +454,7 @@ class ActivityReportResource extends Resource
         return [
             'index' => Pages\ListActivityReports::route('/'),
             'create' => Pages\CreateActivityReport::route('/create'),
+            'view' => Pages\ViewActivityReport::route('/{record}'),
             'edit' => Pages\EditActivityReport::route('/{record}/edit'),
         ];
     }
