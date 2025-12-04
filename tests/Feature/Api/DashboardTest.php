@@ -23,8 +23,6 @@ class DashboardTest extends TestCase
     {
         parent::setUp();
 
-        $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder']);
-
         $this->petugas = User::factory()->create();
         $this->petugas->assignRole('petugas');
 

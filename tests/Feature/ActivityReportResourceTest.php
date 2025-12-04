@@ -19,9 +19,6 @@ class ActivityReportResourceTest extends TestCase
     {
         parent::setUp();
 
-        // Seed roles
-        $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder']);
-
         // Create admin user
         $this->admin = User::factory()->create();
         $this->admin->assignRole('admin');

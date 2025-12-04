@@ -1,12 +1,20 @@
-*.log
-.DS_Store
+# Environment files
 .env
 .env.backup
-.env.production
+.env.local
+.env.*.local
+
+# Logs
+*.log
+storage/logs/*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
 .phpactor.json
 .phpunit.result.cache
-_ide_helper.php
-_ide_helper_models.php
 .phpstorm.meta.php
 /.fleet
 /.idea
@@ -14,14 +22,38 @@ _ide_helper_models.php
 /.phpunit.cache
 /.vscode
 /.zed
+
+# IDE Helper (development only)
+_ide_helper.php
+_ide_helper_models.php
+
+# Dependencies
 /auth.json
 /node_modules
+/vendor
+
+# Build artifacts
 /public/build
 /public/hot
 /public/storage
+
+# Storage (sensitive)
 /storage/*.key
 /storage/pail
-/vendor
+/storage/app/public/activity-reports/*
+!/storage/app/public/activity-reports/.gitkeep
+
+# Database (development)
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# Homestead
 Homestead.json
 Homestead.yaml
-Thumbs.db
+
+# Compiled assets (regenerate on deploy)
+/bootstrap/cache/*.php
+
+# Testing
+.phpunit.result.cache
+/coverage

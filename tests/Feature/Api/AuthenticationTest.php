@@ -12,12 +12,6 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder']);
-    }
-
     public function test_user_can_register(): void
     {
         $response = $this->postJson('/api/v1/auth/register', [
