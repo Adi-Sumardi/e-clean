@@ -11,6 +11,7 @@ class WatermarkCameraField extends Field
     protected string $photoType = 'before';
     protected mixed $lokasiId = null;
     protected mixed $activityReportId = null;
+    protected int $maxPhotos = 5;
 
     public function photoType(string $type): static
     {
@@ -33,6 +34,13 @@ class WatermarkCameraField extends Field
         return $this;
     }
 
+    public function maxPhotos(int $max): static
+    {
+        $this->maxPhotos = $max;
+
+        return $this;
+    }
+
     public function getPhotoType(): string
     {
         return $this->photoType;
@@ -46,5 +54,10 @@ class WatermarkCameraField extends Field
     public function getActivityReportId(): ?int
     {
         return $this->evaluate($this->activityReportId);
+    }
+
+    public function getMaxPhotos(): int
+    {
+        return $this->maxPhotos;
     }
 }

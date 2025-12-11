@@ -184,16 +184,16 @@ class ActivityReportResource extends Resource
                     ->photoType('before')
                     ->lokasiId(fn ($get): ?int => $get('lokasi_id'))
                     ->activityReportId(fn (?ActivityReport $record): ?int => $record?->id)
-                    ->columnSpanFull()
-                    ->helperText('Gunakan kamera untuk mengambil foto dengan watermark GPS otomatis'),
+                    ->maxPhotos(5)
+                    ->columnSpanFull(),
 
                 WatermarkCameraField::make('foto_sesudah')
                     ->label('Foto Sesudah Dibersihkan')
                     ->photoType('after')
                     ->lokasiId(fn ($get): ?int => $get('lokasi_id'))
                     ->activityReportId(fn (?ActivityReport $record): ?int => $record?->id)
-                    ->columnSpanFull()
-                    ->helperText('Gunakan kamera untuk mengambil foto dengan watermark GPS otomatis'),
+                    ->maxPhotos(5)
+                    ->columnSpanFull(),
 
                 Textarea::make('catatan_petugas')
                     ->label('Catatan Petugas')

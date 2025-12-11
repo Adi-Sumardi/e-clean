@@ -3,7 +3,7 @@
     $photoType = $getPhotoType();
     $lokasiId = $getLokasiId();
     $activityReportId = $getActivityReportId();
-    $componentId = 'cameraField_' . $photoType;
+    $maxPhotos = $getMaxPhotos();
 @endphp
 
 <x-dynamic-component
@@ -16,15 +16,13 @@
             ___photoType: '{{ $photoType }}',
             ___lokasiId: {{ $lokasiId ?? 'null' }},
             ___activityReportId: {{ $activityReportId ?? 'null' }},
+            ___maxPhotos: {{ $maxPhotos }},
             showCamera: false,
             capturedPhotos: [],
             stream: null,
             cameraReady: false,
             gpsReady: false,
             capturing: false,
-            lokasiId: {{ $lokasiId ?? 'null' }},
-            activityReportId: {{ $activityReportId ?? 'null' }},
-            photoType: '{{ $photoType }}',
             petugasName: '',
             lokasiName: '',
             latitude: 0,
@@ -40,44 +38,45 @@
                 console.log('Camera field initialized for {{ $photoType }}');
                 this.updateDateTime();
                 this.timeInterval = setInterval(() => this.updateDateTime(), 1000);
-
-                // Load existing photo from Livewire state
-                this.loadExistingPhoto();
-
-                // Watch for changes in Livewire state
-                this.$watch('$wire.$get(\"' + this.___statePath + '\")', (value) => {
-                    console.log('Livewire state changed for {{ $photoType }}:', value);
-                    this.loadExistingPhoto();
-                });
+                this.loadExistingPhotos();
             },
 
-            loadExistingPhoto() {
-                const existingPath = $wire.get(this.___statePath);
-                console.log('Loading photo for {{ $photoType }}:', existingPath);
-                if (existingPath && typeof existingPath === 'string' && existingPath.length > 0) {
-                    // Only update if different from current
-                    if (this.capturedPhotos.length === 0 || this.capturedPhotos[0].path !== existingPath) {
-                        this.capturedPhotos = [{
-                            path: existingPath,
-                            url: '/storage/' + existingPath,
-                            metadata_id: null,
-                            confidence_score: 100,
-                            file_size: null
-                        }];
-                        console.log('Loaded existing photo:', existingPath);
-                    }
+            loadExistingPhotos() {
+                const existingData = $wire.get(this.___statePath);
+                console.log('Loading photos for {{ $photoType }}:', existingData);
+
+                if (!existingData) {
+                    this.capturedPhotos = [];
+                    return;
+                }
+
+                // Handle array of paths (new format)
+                if (Array.isArray(existingData)) {
+                    this.capturedPhotos = existingData.map((path, index) => ({
+                        path: path,
+                        url: '/storage/' + path,
+                        metadata_id: null,
+                        confidence_score: 100,
+                        file_size: null
+                    }));
+                }
+                // Handle single string path (old format - migrate to array)
+                else if (typeof existingData === 'string' && existingData.length > 0) {
+                    this.capturedPhotos = [{
+                        path: existingData,
+                        url: '/storage/' + existingData,
+                        metadata_id: null,
+                        confidence_score: 100,
+                        file_size: null
+                    }];
+                    // Migrate to array format
+                    $wire.set(this.___statePath, [existingData]);
                 }
             },
 
-            // Get lokasi_id from Livewire state (reactive)
             getCurrentLokasiId() {
-                // First try to get from Livewire state
                 const lokasiFromState = $wire.get('data.lokasi_id');
-                if (lokasiFromState) {
-                    return lokasiFromState;
-                }
-                // Fallback to initial value
-                return this.___lokasiId;
+                return lokasiFromState || this.___lokasiId;
             },
 
             updateDateTime() {
@@ -88,16 +87,23 @@
                 });
             },
 
+            canAddMorePhotos() {
+                return this.capturedPhotos.length < this.___maxPhotos;
+            },
+
             async openCamera() {
+                if (!this.canAddMorePhotos()) {
+                    alert('Maksimal ' + this.___maxPhotos + ' foto');
+                    return;
+                }
+
                 const currentLokasiId = this.getCurrentLokasiId();
                 if (!currentLokasiId) {
                     alert('Pilih lokasi terlebih dahulu');
                     return;
                 }
 
-                // Update the internal lokasi ID from Livewire state
                 this.___lokasiId = currentLokasiId;
-
                 this.showCamera = true;
                 this.errorMessage = '';
                 this.successMessage = '';
@@ -112,7 +118,7 @@
                 try {
                     const response = await fetch('/api/camera/lokasi/' + currentLokasiId, {
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content
                         }
                     });
                     const data = await response.json();
@@ -159,10 +165,7 @@
                     },
                     (error) => {
                         console.error('GPS error:', error);
-                        // Show warning but allow camera to work
                         if (error.code === 3) {
-                            this.errorMessage = '⚠️ GPS timeout - gunakan mode development (akurasi rendah)';
-                            // Use mock GPS for development
                             this.latitude = -6.200000;
                             this.longitude = 106.816666;
                             this.accuracy = 999;
@@ -183,6 +186,10 @@
 
             async capturePhoto() {
                 if (!this.cameraReady || !this.gpsReady || this.capturing) return;
+                if (!this.canAddMorePhotos()) {
+                    this.errorMessage = 'Maksimal ' + this.___maxPhotos + ' foto';
+                    return;
+                }
 
                 this.capturing = true;
                 this.errorMessage = '';
@@ -196,6 +203,7 @@
                     canvas.height = video.videoHeight;
                     ctx.drawImage(video, 0, 0);
 
+                    // Draw watermark
                     const overlayHeight = 100;
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
                     ctx.fillRect(0, canvas.height - overlayHeight, canvas.width, overlayHeight);
@@ -218,7 +226,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content
                         },
                         body: JSON.stringify({
                             photo_data: photoData,
@@ -243,23 +251,33 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        // Replace with new photo (single photo field)
-                        this.capturedPhotos = [{
+                        // Add new photo to array
+                        this.capturedPhotos.push({
                             path: result.path,
                             url: result.url,
                             metadata_id: result.metadata.id,
                             confidence_score: result.metadata.confidence_score,
                             file_size: result.metadata.file_size
-                        }];
+                        });
 
-                        // Update Livewire state dengan path foto
-                        $wire.set(this.___statePath, result.path);
-                        console.log('Photo saved to Livewire state:', this.___statePath, result.path);
+                        // Update Livewire state with array of paths
+                        const paths = this.capturedPhotos.map(p => p.path);
+                        $wire.set(this.___statePath, paths);
+                        console.log('Photos saved to Livewire state:', this.___statePath, paths);
 
-                        this.successMessage = 'Foto berhasil diambil!';
-                        setTimeout(() => {
-                            this.closeCamera();
-                        }, 1500);
+                        this.successMessage = 'Foto ' + this.capturedPhotos.length + '/' + this.___maxPhotos + ' berhasil diambil!';
+
+                        // If max reached, close camera after delay
+                        if (!this.canAddMorePhotos()) {
+                            setTimeout(() => {
+                                this.closeCamera();
+                            }, 1500);
+                        } else {
+                            // Clear success message after 2 seconds to allow taking more photos
+                            setTimeout(() => {
+                                this.successMessage = '';
+                            }, 2000);
+                        }
                     } else {
                         this.errorMessage = result.error || 'Gagal mengambil foto';
                     }
@@ -274,9 +292,12 @@
             removePhoto(index) {
                 this.capturedPhotos.splice(index, 1);
 
-                // Update Livewire state - clear if no photos left
+                // Update Livewire state
                 if (this.capturedPhotos.length === 0) {
                     $wire.set(this.___statePath, null);
+                } else {
+                    const paths = this.capturedPhotos.map(p => p.path);
+                    $wire.set(this.___statePath, paths);
                 }
             },
 
@@ -296,12 +317,6 @@
                 this.gpsReady = false;
                 this.errorMessage = '';
                 this.successMessage = '';
-            },
-
-            getConfidenceBadgeColor(score) {
-                if (score >= 80) return 'bg-green-500';
-                if (score >= 60) return 'bg-yellow-500';
-                return 'bg-red-500';
             },
 
             getDeviceModel() {
@@ -337,66 +352,47 @@
             <button
                 type="button"
                 @click="openCamera()"
-                class="inline-flex items-center justify-center gap-2.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm transition-all"
+                :disabled="!canAddMorePhotos()"
+                class="inline-flex items-center justify-center gap-2.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style="background-color: #2563eb !important; color: white !important;"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
-                <span class="text-white font-medium">Ambil Foto dengan Kamera</span>
+                <span class="text-white font-medium">Ambil Foto</span>
             </button>
 
             <div class="text-sm text-gray-600 dark:text-gray-400">
-                <span x-show="capturedPhotos && capturedPhotos.length > 0">
-                    <span x-text="capturedPhotos.length"></span> foto terekam
-                </span>
-                <span x-show="!capturedPhotos || capturedPhotos.length === 0">
-                    Belum ada foto
-                </span>
+                <span x-text="capturedPhotos.length"></span>/<span x-text="___maxPhotos"></span> foto
             </div>
         </div>
 
         <!-- Captured Photos Grid -->
         <div
             x-show="capturedPhotos && capturedPhotos.length > 0"
-            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
         >
             <template x-for="(photo, index) in capturedPhotos" :key="index">
                 <div class="relative group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="aspect-video relative">
-                        <img :src="photo.url" :alt="`Photo ${index + 1}`" class="w-full h-full object-cover">
+                    <div class="aspect-square relative">
+                        <img :src="photo.url" :alt="`Foto ${index + 1}`" class="w-full h-full object-cover">
 
-                        <!-- Confidence Badge -->
-                        <div
-                            class="absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-bold shadow-lg"
-                            :class="{
-                                'bg-green-500 text-white': photo.confidence_score >= 90,
-                                'bg-yellow-500 text-black': photo.confidence_score >= 70 && photo.confidence_score < 90,
-                                'bg-red-500 text-white': photo.confidence_score < 70
-                            }"
-                        >
-                            <span x-text="photo.confidence_score >= 90 ? 'Verified' : (photo.confidence_score >= 70 ? 'Good' : 'Low')"></span>
-                            <span x-text="Math.round(photo.confidence_score)"></span>%
+                        <!-- Photo Number Badge -->
+                        <div class="absolute bottom-2 left-2 px-2 py-0.5 bg-black/70 text-white text-xs rounded">
+                            #<span x-text="index + 1"></span>
                         </div>
 
                         <!-- Remove Button -->
                         <button
                             @click="removePhoto(index)"
                             type="button"
-                            class="absolute top-2 left-2 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            class="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
                             </svg>
                         </button>
-                    </div>
-
-                    <div class="p-3 space-y-1 text-xs">
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-600 dark:text-gray-400">Foto #<span x-text="index + 1"></span></span>
-                            <span class="text-gray-500"><span x-text="(photo.file_size / 1024).toFixed(0)"></span> KB</span>
-                        </div>
                     </div>
                 </div>
             </template>
@@ -408,11 +404,7 @@
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
             </svg>
             <div class="text-blue-800 dark:text-blue-300">
-                <p class="font-semibold mb-1">Panduan Foto:</p>
-                <ul class="list-disc list-inside space-y-0.5">
-                    <li>Gunakan kamera langsung (bukan upload dari galeri)</li>
-                    <li>Foto otomatis diberi watermark dengan nama petugas, lokasi, dan waktu</li>
-                </ul>
+                <p>Maksimal <span x-text="___maxPhotos"></span> foto. Foto akan diberi watermark otomatis.</p>
             </div>
         </div>
 
@@ -432,7 +424,8 @@
                         <!-- Header -->
                         <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
                             <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-                                📷 Ambil Foto - {{ ucfirst($photoType) }}
+                                Ambil Foto {{ $photoType === 'before' ? 'Sebelum' : 'Sesudah' }}
+                                (<span x-text="capturedPhotos.length"></span>/<span x-text="___maxPhotos"></span>)
                             </h3>
                             <button @click="closeCamera()" type="button" class="text-gray-400 hover:text-gray-600">
                                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -463,9 +456,9 @@
                                         <!-- Live Watermark -->
                                         <div x-show="cameraReady" class="absolute bottom-0 left-0 right-0 bg-black/85 text-white p-4">
                                             <div class="space-y-1 text-sm">
-                                                <div>👤 <span x-text="petugasName"></span></div>
-                                                <div>📍 <span x-text="lokasiName"></span></div>
-                                                <div>📅 <span x-text="currentDateTime"></span></div>
+                                                <div><span x-text="petugasName"></span></div>
+                                                <div><span x-text="lokasiName"></span></div>
+                                                <div><span x-text="currentDateTime"></span></div>
                                             </div>
                                         </div>
 
@@ -484,14 +477,14 @@
                                     <div class="flex justify-center gap-4">
                                         <button
                                             @click="capturePhoto()"
-                                            :disabled="!cameraReady || !gpsReady || capturing"
+                                            :disabled="!cameraReady || !gpsReady || capturing || !canAddMorePhotos()"
                                             class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                             style="background-color: #2563eb !important; color: white !important;"
                                         >
-                                            <span x-show="!capturing">📸 Ambil Foto</span>
-                                            <span x-show="capturing">⏳ Memproses...</span>
+                                            <span x-show="!capturing">Ambil Foto</span>
+                                            <span x-show="capturing">Memproses...</span>
                                         </button>
-                                        <button @click="closeCamera()" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold" style="background-color: #4b5563 !important; color: white !important;">Tutup</button>
+                                        <button @click="closeCamera()" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold" style="background-color: #4b5563 !important; color: white !important;">Selesai</button>
                                     </div>
 
                                     <canvas x-ref="canvas" style="display: none;"></canvas>
