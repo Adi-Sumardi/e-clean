@@ -33,6 +33,20 @@ DB_USERNAME="ecleaning"
 DB_PASSWORD="B1sm1ll4h@eclean"
 
 # ===========================================
+# STEP 0: Check and upgrade Node.js if needed
+# ===========================================
+echo -e "\n${YELLOW}[0/10] Checking Node.js version...${NC}"
+NODE_VERSION=$(node -v 2>/dev/null | cut -d'v' -f2 | cut -d'.' -f1)
+if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" -lt 18 ]; then
+    echo -e "${YELLOW}Node.js version is too old or not installed. Installing Node.js 18 LTS...${NC}"
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt install -y nodejs
+    echo -e "${GREEN}✓ Node.js $(node -v) installed${NC}"
+else
+    echo -e "${GREEN}✓ Node.js v$NODE_VERSION is already installed${NC}"
+fi
+
+# ===========================================
 # STEP 1: Clean existing installation
 # ===========================================
 echo -e "\n${YELLOW}[1/10] Cleaning existing installation...${NC}"
