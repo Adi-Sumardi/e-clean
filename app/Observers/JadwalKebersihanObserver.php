@@ -62,7 +62,8 @@ class JadwalKebersihanObserver
     public function updated(JadwalKebersihan $jadwal): void
     {
         // Send notification if schedule details changed and petugas has phone
-        if ($jadwal->wasChanged(['tanggal', 'jam_mulai', 'jam_selesai', 'lokasi_id'])
+        if ($this->fontte
+            && $jadwal->wasChanged(['tanggal', 'jam_mulai', 'jam_selesai', 'lokasi_id'])
             && $jadwal->petugas
             && $jadwal->petugas->phone) {
             try {
