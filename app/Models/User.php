@@ -86,11 +86,22 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'phone',
         'is_active',
+        'avatar',
+    ];
+
+    /**
+     * The attributes that aren't mass assignable.
+     * Protect sensitive OAuth fields from mass assignment
+     *
+     * @var array
+     */
+    protected $guarded = [
+        'id',
         'google_id',
         'google_token',
         'google_refresh_token',
-        'avatar',
-        'provider',
+        'email_verified_at',
+        'remember_token',
     ];
 
     /**
