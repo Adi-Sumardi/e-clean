@@ -183,7 +183,7 @@
                     canvas.height = video.videoHeight;
                     ctx.drawImage(video, 0, 0);
 
-                    const overlayHeight = 140;
+                    const overlayHeight = 100;
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
                     ctx.fillRect(0, canvas.height - overlayHeight, canvas.width, overlayHeight);
 
@@ -192,10 +192,7 @@
                     let y = canvas.height - overlayHeight + 35;
                     ctx.fillText('👤 ' + this.petugasName, 20, y); y += 28;
                     ctx.fillText('📍 ' + this.lokasiName, 20, y); y += 28;
-                    ctx.fillText('📅 ' + this.currentDateTime, 20, y); y += 28;
-                    ctx.fillText('🌍 ' + this.latitude.toFixed(6) + ', ' + this.longitude.toFixed(6), 20, y); y += 28;
-                    ctx.fillStyle = '#22c55e';
-                    ctx.fillText('✓ Verified • GPS: ' + Math.round(this.accuracy) + 'm', 20, y);
+                    ctx.fillText('📅 ' + this.currentDateTime, 20, y);
 
                     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
                     const reader = new FileReader();
@@ -218,8 +215,9 @@
                                 accuracy: this.accuracy
                             },
                             device_data: {
-                                model: navigator.userAgent,
+                                model: this.getDeviceModel(),
                                 os: navigator.platform,
+                                agent: navigator.userAgent,
                                 screen: screen.width + 'x' + screen.height,
                                 network: navigator.connection?.effectiveType || 'unknown'
                             },
@@ -289,6 +287,32 @@
                 if (score >= 80) return 'bg-green-500';
                 if (score >= 60) return 'bg-yellow-500';
                 return 'bg-red-500';
+            },
+
+            getDeviceModel() {
+                const ua = navigator.userAgent;
+                let model = 'Unknown Device';
+
+                if (/iPhone/.test(ua)) {
+                    model = 'iPhone';
+                } else if (/iPad/.test(ua)) {
+                    model = 'iPad';
+                } else if (/Android/.test(ua)) {
+                    const match = ua.match(/Android[^;]*;\s*([^)]*)\)/);
+                    if (match && match[1]) {
+                        model = match[1].split(' Build')[0].trim().substring(0, 50);
+                    } else {
+                        model = 'Android Device';
+                    }
+                } else if (/Macintosh/.test(ua)) {
+                    model = 'Mac';
+                } else if (/Windows/.test(ua)) {
+                    model = 'Windows PC';
+                } else if (/Linux/.test(ua)) {
+                    model = 'Linux PC';
+                }
+
+                return model.substring(0, 80);
             }
         }"
         class="space-y-4"
@@ -372,9 +396,7 @@
                 <p class="font-semibold mb-1">Panduan Foto:</p>
                 <ul class="list-disc list-inside space-y-0.5">
                     <li>Gunakan kamera langsung (bukan upload dari galeri)</li>
-                    <li>Pastikan GPS accuracy &lt; 20m untuk skor tinggi</li>
-                    <li>Anda harus berada dalam radius 50m dari lokasi kerja</li>
-                    <li>Foto otomatis diberi watermark</li>
+                    <li>Foto otomatis diberi watermark dengan nama petugas, lokasi, dan waktu</li>
                 </ul>
             </div>
         </div>
@@ -429,14 +451,7 @@
                                                 <div>👤 <span x-text="petugasName"></span></div>
                                                 <div>📍 <span x-text="lokasiName"></span></div>
                                                 <div>📅 <span x-text="currentDateTime"></span></div>
-                                                <div x-show="gpsReady">🌍 <span x-text="latitude.toFixed(6) + ', ' + longitude.toFixed(6)"></span></div>
-                                                <div x-show="gpsReady" class="text-green-400">✓ GPS Accuracy: <span x-text="Math.round(accuracy)"></span>m</div>
                                             </div>
-                                        </div>
-
-                                        <!-- GPS Loading -->
-                                        <div x-show="!gpsReady && cameraReady" class="absolute top-4 right-4 bg-yellow-500 text-black px-3 py-2 rounded animate-pulse">
-                                            📡 Menunggu GPS...
                                         </div>
 
                                         <!-- Error/Success Messages -->

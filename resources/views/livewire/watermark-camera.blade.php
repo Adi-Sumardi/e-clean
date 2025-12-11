@@ -48,14 +48,6 @@
                     <span class="mr-2">📅</span>
                     <span x-text="currentDateTime"></span>
                 </div>
-                <div class="flex items-center" x-show="gpsReady">
-                    <span class="mr-2">🌍</span>
-                    <span x-text="`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`"></span>
-                </div>
-                <div class="flex items-center" x-show="gpsReady">
-                    <span class="mr-2 text-green-400">✓</span>
-                    <span x-text="`Verified • GPS Accuracy: ${Math.round(accuracy)}m`"></span>
-                </div>
             </div>
         </div>
 
@@ -296,7 +288,7 @@ function watermarkCamera(petugasName, lokasiName, photoType) {
 
                 // Get device info
                 const deviceData = {
-                    model: navigator.userAgent,
+                    model: this.getDeviceModel(),
                     os: navigator.platform,
                     agent: navigator.userAgent,
                     screen: `${screen.width}x${screen.height}`,
@@ -324,8 +316,8 @@ function watermarkCamera(petugasName, lokasiName, photoType) {
         },
 
         drawWatermark(ctx, width, height) {
-            // Watermark background
-            const overlayHeight = 140;
+            // Watermark background (reduced height since fewer lines)
+            const overlayHeight = 100;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
             ctx.fillRect(0, height - overlayHeight, width, overlayHeight);
 
@@ -354,15 +346,6 @@ function watermarkCamera(petugasName, lokasiName, photoType) {
 
             // DateTime
             ctx.fillText(`📅 ${this.currentDateTime}`, padding, y);
-            y += 28;
-
-            // GPS
-            ctx.fillText(`🌍 ${this.latitude.toFixed(6)}, ${this.longitude.toFixed(6)}`, padding, y);
-            y += 28;
-
-            // Verified badge
-            ctx.fillStyle = '#22c55e';
-            ctx.fillText(`✓ Verified • GPS Accuracy: ${Math.round(this.accuracy)}m`, padding, y);
         },
 
         blobToBase64(blob) {
@@ -390,6 +373,34 @@ function watermarkCamera(petugasName, lokasiName, photoType) {
 
             // Optionally close modal/drawer
             // You can emit event to parent component
+        },
+
+        getDeviceModel() {
+            const ua = navigator.userAgent;
+            // Try to extract device model from user agent
+            let model = 'Unknown Device';
+
+            // Check for mobile devices
+            if (/iPhone/.test(ua)) {
+                model = 'iPhone';
+            } else if (/iPad/.test(ua)) {
+                model = 'iPad';
+            } else if (/Android/.test(ua)) {
+                const match = ua.match(/Android[^;]*;\s*([^)]*)\)/);
+                if (match && match[1]) {
+                    model = match[1].split(' Build')[0].trim().substring(0, 50);
+                } else {
+                    model = 'Android Device';
+                }
+            } else if (/Macintosh/.test(ua)) {
+                model = 'Mac';
+            } else if (/Windows/.test(ua)) {
+                model = 'Windows PC';
+            } else if (/Linux/.test(ua)) {
+                model = 'Linux PC';
+            }
+
+            return model.substring(0, 80); // Ensure max 80 chars
         },
 
         handleError(detail) {
