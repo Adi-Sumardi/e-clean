@@ -198,34 +198,48 @@ document.addEventListener('alpine:init', () => {
             this.updateDateTime();
             this.timeInterval = setInterval(() => this.updateDateTime(), 1000);
             this.loadExistingPhotos();
+
+            // Watch for Livewire state changes
+            this.$wire.$watch(this.statePath, (value) => {
+                console.log('Livewire state changed for', this.photoType, ':', value);
+                this.syncPhotosFromState(value);
+            });
         },
 
         loadExistingPhotos() {
             const existingData = this.$wire.get(this.statePath);
             console.log('Loading photos for', this.photoType, ':', existingData);
+            this.syncPhotosFromState(existingData);
+        },
 
-            if (!existingData) {
+        syncPhotosFromState(data) {
+            if (!data) {
                 this.capturedPhotos = [];
                 return;
             }
 
-            if (Array.isArray(existingData)) {
-                this.capturedPhotos = existingData.map((path) => ({
-                    path: path,
-                    url: '/storage/' + path,
-                    metadata_id: null,
-                    confidence_score: 100,
-                    file_size: null
-                }));
-            } else if (typeof existingData === 'string' && existingData.length > 0) {
+            if (Array.isArray(data)) {
+                // Only update if different to prevent infinite loops
+                const currentPaths = this.capturedPhotos.map(p => p.path).join(',');
+                const newPaths = data.join(',');
+                if (currentPaths !== newPaths) {
+                    this.capturedPhotos = data.map((path) => ({
+                        path: path,
+                        url: '/storage/' + path,
+                        metadata_id: null,
+                        confidence_score: 100,
+                        file_size: null
+                    }));
+                }
+            } else if (typeof data === 'string' && data.length > 0) {
                 this.capturedPhotos = [{
-                    path: existingData,
-                    url: '/storage/' + existingData,
+                    path: data,
+                    url: '/storage/' + data,
                     metadata_id: null,
                     confidence_score: 100,
                     file_size: null
                 }];
-                this.$wire.set(this.statePath, [existingData]);
+                this.$wire.set(this.statePath, [data]);
             }
         },
 
@@ -407,19 +421,21 @@ document.addEventListener('alpine:init', () => {
                 const result = await response.json();
 
                 if (result.success) {
-                    this.capturedPhotos.push({
+                    // Create new array to trigger Alpine reactivity
+                    const newPhoto = {
                         path: result.path,
                         url: result.url,
                         metadata_id: result.metadata.id,
                         confidence_score: result.metadata.confidence_score,
                         file_size: result.metadata.file_size
-                    });
+                    };
+                    this.capturedPhotos = [...this.capturedPhotos, newPhoto];
 
                     const paths = this.capturedPhotos.map(p => p.path);
                     this.$wire.set(this.statePath, paths);
-                    console.log('Photos saved to Livewire state:', this.statePath, paths);
+                    console.log('Photos saved:', this.statePath, paths, 'Total:', this.capturedPhotos.length);
 
-                    this.successMessage = 'Foto ' + this.capturedPhotos.length + '/' + this.maxPhotos + ' berhasil diambil!';
+                    this.successMessage = 'Foto ' + this.capturedPhotos.length + '/' + this.maxPhotos + ' berhasil!';
 
                     if (!this.canAddMorePhotos()) {
                         setTimeout(() => {
@@ -442,7 +458,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         removePhoto(index) {
-            this.capturedPhotos.splice(index, 1);
+            // Create new array to trigger Alpine reactivity
+            this.capturedPhotos = this.capturedPhotos.filter((_, i) => i !== index);
 
             if (this.capturedPhotos.length === 0) {
                 this.$wire.set(this.statePath, null);
