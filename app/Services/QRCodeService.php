@@ -67,21 +67,24 @@ class QRCodeService
 
     /**
      * Generate all QR codes for locations without QR codes
+     * Uses chunk to prevent memory exhaustion with large datasets
      *
      * @param int $size
      * @return int - Returns count of generated QR codes
      */
     public function generateMissingQRCodes(int $size = 300): int
     {
-        $lokasis = Lokasi::whereNull('qr_code')
-            ->orWhere('qr_code', '')
-            ->get();
-
         $count = 0;
-        foreach ($lokasis as $lokasi) {
-            $this->generateForLokasi($lokasi, $size);
-            $count++;
-        }
+
+        // Use chunk to avoid memory overload with large datasets
+        Lokasi::whereNull('qr_code')
+            ->orWhere('qr_code', '')
+            ->chunk(100, function ($lokasis) use ($size, &$count) {
+                foreach ($lokasis as $lokasi) {
+                    $this->generateForLokasi($lokasi, $size);
+                    $count++;
+                }
+            });
 
         return $count;
     }
