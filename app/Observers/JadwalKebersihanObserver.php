@@ -14,7 +14,13 @@ class JadwalKebersihanObserver
 
     public function __construct()
     {
-        $this->fontte = new FontteService();
+        // Initialize services, skip Fontte if token not configured
+        try {
+            $this->fontte = new FontteService();
+        } catch (\Exception $e) {
+            $this->fontte = null;
+            Log::warning('Fontte service not available: ' . $e->getMessage());
+        }
         $this->templates = new NotificationTemplateService();
     }
 
