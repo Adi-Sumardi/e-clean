@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('activity_reports', function (Blueprint $table) {
-            // Change status default from 'draft' to 'submitted'
-            $table->enum('status', ['draft', 'submitted', 'approved', 'rejected'])
-                ->default('submitted')
-                ->change();
-        });
+        // PostgreSQL: Change default value only (enum constraint already exists)
+        DB::statement("ALTER TABLE activity_reports ALTER COLUMN status SET DEFAULT 'submitted'");
     }
 
     /**
