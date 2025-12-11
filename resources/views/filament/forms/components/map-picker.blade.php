@@ -2,7 +2,7 @@
     {{-- Load Leaflet CSS --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 
-    {{-- Load Leaflet JS first --}}
+    {{-- Load Leaflet JS --}}
     <script>
         if (typeof L === 'undefined') {
             document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""><\/script>');
@@ -26,12 +26,30 @@
             zoom: {{ $zoom }},
             searchQuery: '',
             isLoading: false,
+            gpsStatus: 'unknown',
             mapId: '{{ $uniqueId }}',
 
             init() {
                 this.$nextTick(() => {
+                    this.checkGpsPermission();
                     this.waitForLeaflet();
                 });
+            },
+
+            async checkGpsPermission() {
+                if (!navigator.permissions) {
+                    this.gpsStatus = 'unsupported';
+                    return;
+                }
+                try {
+                    const result = await navigator.permissions.query({ name: 'geolocation' });
+                    this.gpsStatus = result.state;
+                    result.onchange = () => {
+                        this.gpsStatus = result.state;
+                    };
+                } catch (e) {
+                    this.gpsStatus = 'unknown';
+                }
             },
 
             waitForLeaflet() {
@@ -104,21 +122,23 @@
                             $wire.set('data.address', r.display_name);
                         }
                     } else {
-                        alert('Lokasi tidak ditemukan');
+                        alert('Lokasi tidak ditemukan. Coba kata kunci lain.');
                     }
                 } catch (err) {
                     console.error(err);
-                    alert('Gagal mencari lokasi');
+                    alert('Gagal mencari lokasi. Periksa koneksi internet.');
                 }
                 this.isLoading = false;
             },
 
             getMyLoc() {
                 if (!navigator.geolocation) {
-                    alert('Geolocation tidak didukung');
+                    alert('Browser Anda tidak mendukung GPS/Geolocation.');
                     return;
                 }
+
                 this.isLoading = true;
+                this.gpsStatus = 'requesting';
 
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
@@ -128,13 +148,32 @@
                         this.marker.setLatLng([lat, lng]);
                         this.updateCoords(lat, lng);
                         this.isLoading = false;
+                        this.gpsStatus = 'granted';
                     },
                     (err) => {
-                        console.error(err);
-                        alert('Gagal mendapatkan lokasi');
                         this.isLoading = false;
+                        console.error('GPS Error:', err);
+
+                        switch(err.code) {
+                            case err.PERMISSION_DENIED:
+                                this.gpsStatus = 'denied';
+                                alert('Izin lokasi ditolak.\\n\\nUntuk mengaktifkan:\\n1. Klik ikon gembok/info di address bar\\n2. Pilih \"Site settings\" atau \"Izin\"\\n3. Aktifkan izin Lokasi\\n4. Refresh halaman');
+                                break;
+                            case err.POSITION_UNAVAILABLE:
+                                alert('Posisi tidak tersedia. Pastikan GPS perangkat aktif.');
+                                break;
+                            case err.TIMEOUT:
+                                alert('Waktu habis. Coba lagi atau pastikan GPS aktif.');
+                                break;
+                            default:
+                                alert('Gagal mendapatkan lokasi: ' + err.message);
+                        }
                     },
-                    { enableHighAccuracy: true, timeout: 10000 }
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 15000,
+                        maximumAge: 0
+                    }
                 );
             }
         }"
@@ -142,6 +181,19 @@
         wire:ignore
         class="space-y-3"
     >
+        {{-- GPS Permission Alert --}}
+        <div x-show="gpsStatus === 'denied'" class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <div class="text-sm">
+                    <p class="font-medium text-red-800 dark:text-red-200">Izin Lokasi Ditolak</p>
+                    <p class="text-red-600 dark:text-red-300 mt-1">Klik ikon gembok di address bar browser untuk mengaktifkan izin lokasi, lalu refresh halaman.</p>
+                </div>
+            </div>
+        </div>
+
         {{-- Search Bar --}}
         <div class="flex gap-2">
             <input
@@ -164,13 +216,15 @@
                 type="button"
                 @click="getMyLoc()"
                 :disabled="isLoading"
-                class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 text-sm font-medium"
-                title="Lokasi saya"
+                :class="gpsStatus === 'denied' ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'"
+                class="px-4 py-2 text-white rounded-lg disabled:opacity-50 text-sm font-medium flex items-center gap-2"
+                :title="gpsStatus === 'denied' ? 'Izin lokasi ditolak' : 'Ambil lokasi GPS saya'"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
+                <span class="hidden sm:inline">GPS</span>
             </button>
         </div>
 
@@ -191,6 +245,14 @@
                 <span class="text-gray-500">Lng:</span>
                 <span class="font-mono font-medium" x-text="longitude.toFixed(7)"></span>
             </div>
+            <div class="flex items-center gap-1">
+                <span class="text-gray-500">GPS:</span>
+                <span x-show="gpsStatus === 'granted'" class="text-emerald-600 font-medium">Diizinkan</span>
+                <span x-show="gpsStatus === 'denied'" class="text-red-600 font-medium">Ditolak</span>
+                <span x-show="gpsStatus === 'prompt'" class="text-amber-600 font-medium">Belum diizinkan</span>
+                <span x-show="gpsStatus === 'requesting'" class="text-blue-600 font-medium">Meminta izin...</span>
+                <span x-show="gpsStatus === 'unknown' || gpsStatus === 'unsupported'" class="text-gray-500">-</span>
+            </div>
             <a
                 :href="'https://www.google.com/maps?q=' + latitude + ',' + longitude"
                 target="_blank"
@@ -201,7 +263,7 @@
         </div>
 
         <p class="text-xs text-gray-500">
-            Klik peta atau drag marker untuk pilih lokasi. Tombol hijau untuk ambil GPS perangkat.
+            <strong>Cara penggunaan:</strong> Klik pada peta atau drag marker merah untuk memilih lokasi. Gunakan tombol GPS hijau untuk mengambil koordinat dari perangkat Anda (memerlukan izin lokasi).
         </p>
     </div>
 
