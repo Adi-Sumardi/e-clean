@@ -30,7 +30,7 @@ class JadwalKebersihanObserver
     public function created(JadwalKebersihan $jadwal): void
     {
         // Send notification when new schedule is assigned
-        if ($jadwal->petugas && $jadwal->petugas->phone) {
+        if ($this->fontte && $jadwal->petugas && $jadwal->petugas->phone) {
             try {
                 $message = $this->templates->scheduleAssigned($jadwal);
 
