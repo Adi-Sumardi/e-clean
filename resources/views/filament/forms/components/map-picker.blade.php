@@ -157,7 +157,7 @@
                         switch(err.code) {
                             case err.PERMISSION_DENIED:
                                 this.gpsStatus = 'denied';
-                                alert('Izin lokasi ditolak.\\n\\nUntuk mengaktifkan:\\n1. Klik ikon gembok/info di address bar\\n2. Pilih \"Site settings\" atau \"Izin\"\\n3. Aktifkan izin Lokasi\\n4. Refresh halaman');
+                                alert('Izin lokasi ditolak. Untuk mengaktifkan: Klik ikon gembok di address bar, pilih Site settings, aktifkan izin Lokasi, lalu refresh halaman.');
                                 break;
                             case err.POSITION_UNAVAILABLE:
                                 alert('Posisi tidak tersedia. Pastikan GPS perangkat aktif.');
@@ -166,7 +166,7 @@
                                 alert('Waktu habis. Coba lagi atau pastikan GPS aktif.');
                                 break;
                             default:
-                                alert('Gagal mendapatkan lokasi: ' + err.message);
+                                alert('Gagal mendapatkan lokasi.');
                         }
                     },
                     {
