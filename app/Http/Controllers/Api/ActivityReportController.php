@@ -149,20 +149,35 @@ class ActivityReportController extends Controller
 
             $validated = $validator->validated();
 
-            // Handle foto_sebelum upload
+            // Use ImageService for compression (saves ~80% storage!)
+            $imageService = app(\App\Services\ImageService::class);
+
+            // Handle foto_sebelum upload with compression
             $fotoSebelumPaths = [];
             if ($request->hasFile('foto_sebelum')) {
                 foreach ($request->file('foto_sebelum') as $foto) {
-                    $path = $foto->store('activity-reports/before', 'public');
+                    $path = $imageService->compressAndStore(
+                        $foto,
+                        'activity-reports/before',
+                        quality: 85,
+                        maxWidth: 1920,
+                        maxHeight: 1920
+                    );
                     $fotoSebelumPaths[] = $path;
                 }
             }
 
-            // Handle foto_sesudah upload
+            // Handle foto_sesudah upload with compression
             $fotoSesudahPaths = [];
             if ($request->hasFile('foto_sesudah')) {
                 foreach ($request->file('foto_sesudah') as $foto) {
-                    $path = $foto->store('activity-reports/after', 'public');
+                    $path = $imageService->compressAndStore(
+                        $foto,
+                        'activity-reports/after',
+                        quality: 85,
+                        maxWidth: 1920,
+                        maxHeight: 1920
+                    );
                     $fotoSesudahPaths[] = $path;
                 }
             }
