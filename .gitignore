@@ -57,3 +57,7 @@ Homestead.yaml
 # Testing
 .phpunit.result.cache
 /coverage
+-e 
+# Environment files
+*.env
+*.env.*
