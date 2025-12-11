@@ -38,14 +38,17 @@ class SecurityHeaders
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
-        // Content Security Policy
+        // Content Security Policy (More secure - removed unsafe-eval)
+        // Note: Filament requires some unsafe-inline for styles, but we removed unsafe-eval
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " .
-               "style-src 'self' 'unsafe-inline'; " .
-               "img-src 'self' data: https:; " .
-               "font-src 'self' data:; " .
+               "script-src 'self' 'unsafe-inline'; " .
+               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
+               "img-src 'self' data: https: blob:; " .
+               "font-src 'self' data: https://fonts.gstatic.com; " .
                "connect-src 'self'; " .
-               "frame-ancestors 'none';";
+               "frame-ancestors 'none'; " .
+               "base-uri 'self'; " .
+               "form-action 'self';";
 
         $response->headers->set('Content-Security-Policy', $csp);
 
