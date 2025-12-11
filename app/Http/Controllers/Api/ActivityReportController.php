@@ -126,18 +126,18 @@ class ActivityReportController extends Controller
         try {
             $user = $request->user();
 
-            // Validate input
+            // Validate input with enhanced image validation
             $validator = Validator::make($request->all(), [
                 'jadwal_id' => 'required|exists:jadwal_kebersihans,id',
                 'lokasi_id' => 'required|exists:lokasis,id',
-                'tanggal' => 'required|date',
+                'tanggal' => 'required|date|before_or_equal:today',
                 'jam_mulai' => 'required|date_format:H:i',
                 'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
-                'kegiatan' => 'required|string|max:1000',
-                'foto_sebelum' => 'nullable|array|max:5',
-                'foto_sebelum.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:5120', // 5MB max per image
-                'foto_sesudah' => 'nullable|array|max:5',
-                'foto_sesudah.*' => 'image|mimes:jpeg,png,jpg,webp|extensions:jpg,jpeg,png,webp|max:5120',
+                'kegiatan' => 'required|string|min:10|max:1000',
+                'foto_sebelum' => 'required|array|min:1|max:5',
+                'foto_sebelum.*' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120|dimensions:min_width=100,min_height=100',
+                'foto_sesudah' => 'required|array|min:1|max:5',
+                'foto_sesudah.*' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120|dimensions:min_width=100,min_height=100',
                 'koordinat_lokasi' => 'nullable|string|max:255',
                 'catatan_petugas' => 'nullable|string|max:1000',
                 'status' => 'nullable|in:draft,submitted',
