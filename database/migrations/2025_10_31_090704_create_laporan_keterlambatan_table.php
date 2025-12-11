@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('laporan_keterlambatan', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('jadwal_kebersihan_id')->constrained('jadwal_kebersihan')->onDelete('cascade');
+            $table->foreignId('jadwal_kebersihan_id')->constrained('jadwal_kebersihanans')->onDelete('cascade');
             $table->foreignId('petugas_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('lokasi_id')->constrained('lokasi')->onDelete('cascade');
+            $table->foreignId('lokasi_id')->constrained('lokasis')->onDelete('cascade');
             $table->date('tanggal');
             $table->enum('shift', ['pagi', 'siang', 'sore']);
             $table->time('batas_waktu_mulai'); // Jam mulai shift
