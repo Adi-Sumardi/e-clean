@@ -56,6 +56,17 @@
                 }
             },
 
+            // Get lokasi_id from Livewire state (reactive)
+            getCurrentLokasiId() {
+                // First try to get from Livewire state
+                const lokasiFromState = $wire.get('data.lokasi_id');
+                if (lokasiFromState) {
+                    return lokasiFromState;
+                }
+                // Fallback to initial value
+                return this.___lokasiId;
+            },
+
             updateDateTime() {
                 const now = new Date();
                 this.currentDateTime = now.toLocaleString('id-ID', {
@@ -65,10 +76,14 @@
             },
 
             async openCamera() {
-                if (!this.___lokasiId) {
+                const currentLokasiId = this.getCurrentLokasiId();
+                if (!currentLokasiId) {
                     alert('Pilih lokasi terlebih dahulu');
                     return;
                 }
+
+                // Update the internal lokasi ID from Livewire state
+                this.___lokasiId = currentLokasiId;
 
                 this.showCamera = true;
                 this.errorMessage = '';
@@ -80,8 +95,9 @@
             },
 
             async loadLokasiInfo() {
+                const currentLokasiId = this.getCurrentLokasiId();
                 try {
-                    const response = await fetch('/api/camera/lokasi/' + this.___lokasiId, {
+                    const response = await fetch('/api/camera/lokasi/' + currentLokasiId, {
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
                         }
