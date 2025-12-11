@@ -19,6 +19,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -110,6 +111,38 @@ class LokasiResource extends Resource
                 Toggle::make('is_active')
                     ->label('Aktif')
                     ->default(true),
+
+                Section::make('Koordinat GPS')
+                    ->description('Koordinat GPS diperlukan untuk validasi foto lokasi. Petugas harus berada dalam radius 50m dari koordinat ini saat mengambil foto.')
+                    ->icon('heroicon-o-map-pin')
+                    ->schema([
+                        TextInput::make('latitude')
+                            ->label('Latitude')
+                            ->numeric()
+                            ->step(0.0000001)
+                            ->minValue(-90)
+                            ->maxValue(90)
+                            ->placeholder('-6.2088')
+                            ->helperText('Contoh: -6.2088 (untuk Jakarta)'),
+
+                        TextInput::make('longitude')
+                            ->label('Longitude')
+                            ->numeric()
+                            ->step(0.0000001)
+                            ->minValue(-180)
+                            ->maxValue(180)
+                            ->placeholder('106.8456')
+                            ->helperText('Contoh: 106.8456 (untuk Jakarta)'),
+
+                        Textarea::make('address')
+                            ->label('Alamat')
+                            ->rows(2)
+                            ->placeholder('Alamat lengkap lokasi (opsional)')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2)
+                    ->collapsible()
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -151,6 +184,20 @@ class LokasiResource extends Resource
                     ->defaultImageUrl(url('/images/no-barcode.png'))
                     ->tooltip(fn (Lokasi $record): string => $record->qr_code ? 'Barcode tersedia' : 'Barcode belum dibuat'),
 
+                IconColumn::make('has_gps')
+                    ->label('GPS')
+                    ->getStateUsing(fn (Lokasi $record): bool => $record->latitude && $record->longitude)
+                    ->boolean()
+                    ->trueIcon('heroicon-o-map-pin')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger')
+                    ->tooltip(fn (Lokasi $record): string =>
+                        $record->latitude && $record->longitude
+                            ? "GPS: {$record->latitude}, {$record->longitude}"
+                            : 'GPS belum diisi'
+                    ),
+
                 TextColumn::make('status_kebersihan')
                     ->label('Status')
                     ->badge()
@@ -190,6 +237,21 @@ class LokasiResource extends Resource
                         'kotor' => 'Kotor',
                         'belum_dicek' => 'Belum Dicek',
                     ]),
+                SelectFilter::make('gps_status')
+                    ->label('Status GPS')
+                    ->options([
+                        'has_gps' => 'Sudah ada GPS',
+                        'no_gps' => 'Belum ada GPS',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return match ($data['value'] ?? null) {
+                            'has_gps' => $query->whereNotNull('latitude')->whereNotNull('longitude'),
+                            'no_gps' => $query->where(function ($q) {
+                                $q->whereNull('latitude')->orWhereNull('longitude');
+                            }),
+                            default => $query,
+                        };
+                    }),
             ])
             ->recordActions([
                 Action::make('generate_barcode')

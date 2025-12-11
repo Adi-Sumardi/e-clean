@@ -72,12 +72,17 @@ class Lokasi extends Model
         'status_kebersihan',
         'last_cleaned_at',
         'is_active',
+        'latitude',
+        'longitude',
+        'address',
     ];
 
     protected $casts = [
         'luas_area' => 'decimal:2',
         'last_cleaned_at' => 'datetime',
         'is_active' => 'boolean',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     // Relationships
