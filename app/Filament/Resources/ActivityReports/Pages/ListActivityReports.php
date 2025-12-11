@@ -34,7 +34,7 @@ class ListActivityReports extends ListRecords
             CreateAction::make()
                 ->label('Buat Laporan Baru')
                 ->icon('heroicon-o-plus-circle')
-                ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
+                ->hidden(fn () => Auth::user()->hasRole('pengurus')),
         ];
     }
 
