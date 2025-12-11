@@ -99,7 +99,7 @@ class JadwalKebersihanObserver
     public function deleted(JadwalKebersihan $jadwal): void
     {
         // Send notification when schedule is cancelled
-        if ($jadwal->petugas && $jadwal->petugas->phone) {
+        if ($this->fontte && $jadwal->petugas && $jadwal->petugas->phone) {
             try {
                 $message = "❌ *JADWAL DIBATALKAN*\n\n" .
                            "Halo {$jadwal->petugas->name},\n\n" .
