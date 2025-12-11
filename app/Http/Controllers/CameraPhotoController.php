@@ -120,8 +120,6 @@ class CameraPhotoController extends Controller
                 'success' => true,
                 'petugas_name' => $user->name,
                 'lokasi_name' => $lokasi->nama_lokasi,
-                'lokasi_lat' => $lokasi->latitude,
-                'lokasi_lon' => $lokasi->longitude,
             ]);
         } catch (\Exception $e) {
             return response()->json([

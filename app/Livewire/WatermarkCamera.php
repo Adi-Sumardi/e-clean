@@ -30,13 +30,6 @@ class WatermarkCamera extends Component
 
         // Load petugas (current user)
         $this->petugas = Auth::user();
-
-        // Check if lokasi has GPS coordinates
-        if (!$this->lokasi->latitude || !$this->lokasi->longitude) {
-            $this->dispatch('camera-error', [
-                'message' => 'Lokasi kerja belum memiliki koordinat GPS. Hubungi admin untuk menambahkan koordinat.'
-            ]);
-        }
     }
 
     public function capturePhoto($photoData, $gpsData, $deviceData)
@@ -107,8 +100,6 @@ class WatermarkCamera extends Component
         return view('livewire.watermark-camera', [
             'petugasName' => $this->petugas->name,
             'lokasiName' => $this->lokasi->nama_lokasi,
-            'lokasiLat' => $this->lokasi->latitude,
-            'lokasiLon' => $this->lokasi->longitude,
         ]);
     }
 }

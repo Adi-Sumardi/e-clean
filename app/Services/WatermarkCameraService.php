@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\ActivityReport;
 use App\Models\PhotoMetadata;
-use App\Models\Lokasi;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
@@ -14,53 +13,16 @@ use Intervention\Image\Typography\FontFactory;
 class WatermarkCameraService
 {
     /**
-     * Validate GPS location against work location
-     * Using Haversine formula for distance calculation
+     * Validate GPS - simplified, no longer validates against work location
+     * Just checks basic GPS accuracy
      */
     public function validateGPS(float $latitude, float $longitude, int $lokasiId, float $accuracy): array
     {
-        $lokasi = Lokasi::findOrFail($lokasiId);
-
-        // Check if lokasi has GPS coordinates
-        if (!$lokasi->latitude || !$lokasi->longitude) {
-            return [
-                'valid' => false,
-                'error' => 'Lokasi kerja belum memiliki koordinat GPS. Hubungi admin untuk menambahkan koordinat.',
-                'distance' => null
-            ];
-        }
-
-        // Calculate distance using Haversine formula
-        $distance = $this->calculateDistance(
-            $latitude,
-            $longitude,
-            floatval($lokasi->latitude),
-            floatval($lokasi->longitude)
-        );
-
-        // Check GPS accuracy first
-        if ($accuracy > 50) {
-            return [
-                'valid' => false,
-                'error' => "Akurasi GPS terlalu rendah ({$accuracy}m). Tunggu hingga akurasi lebih baik (< 50m).",
-                'distance' => $distance,
-                'accuracy_too_low' => true
-            ];
-        }
-
-        // Check if within 50 meters radius
-        if ($distance > 50) {
-            return [
-                'valid' => false,
-                'error' => "Anda terlalu jauh dari lokasi kerja. Jarak: " . round($distance, 1) . "m (Maksimal: 50m)",
-                'distance' => $distance
-            ];
-        }
-
+        // Just return valid - no GPS validation against location required
         return [
             'valid' => true,
-            'distance' => $distance,
-            'message' => 'Lokasi GPS valid'
+            'distance' => null,
+            'message' => 'GPS data diterima'
         ];
     }
 
