@@ -11,340 +11,8 @@
     :field="$field"
 >
     <div
-        x-data="{
-            ___statePath: '{{ $statePath }}',
-            ___photoType: '{{ $photoType }}',
-            ___lokasiId: {{ $lokasiId ?? 'null' }},
-            ___activityReportId: {{ $activityReportId ?? 'null' }},
-            ___maxPhotos: {{ $maxPhotos }},
-            showCamera: false,
-            capturedPhotos: [],
-            stream: null,
-            cameraReady: false,
-            gpsReady: false,
-            capturing: false,
-            petugasName: '',
-            lokasiName: '',
-            latitude: 0,
-            longitude: 0,
-            accuracy: 0,
-            currentDateTime: '',
-            gpsWatcher: null,
-            timeInterval: null,
-            errorMessage: '',
-            successMessage: '',
-
-            init() {
-                console.log('Camera field initialized for {{ $photoType }}');
-                this.updateDateTime();
-                this.timeInterval = setInterval(() => this.updateDateTime(), 1000);
-                this.loadExistingPhotos();
-            },
-
-            loadExistingPhotos() {
-                const existingData = $wire.get(this.___statePath);
-                console.log('Loading photos for {{ $photoType }}:', existingData);
-
-                if (!existingData) {
-                    this.capturedPhotos = [];
-                    return;
-                }
-
-                // Handle array of paths (new format)
-                if (Array.isArray(existingData)) {
-                    this.capturedPhotos = existingData.map((path, index) => ({
-                        path: path,
-                        url: '/storage/' + path,
-                        metadata_id: null,
-                        confidence_score: 100,
-                        file_size: null
-                    }));
-                }
-                // Handle single string path (old format - migrate to array)
-                else if (typeof existingData === 'string' && existingData.length > 0) {
-                    this.capturedPhotos = [{
-                        path: existingData,
-                        url: '/storage/' + existingData,
-                        metadata_id: null,
-                        confidence_score: 100,
-                        file_size: null
-                    }];
-                    // Migrate to array format
-                    $wire.set(this.___statePath, [existingData]);
-                }
-            },
-
-            getCurrentLokasiId() {
-                const lokasiFromState = $wire.get('data.lokasi_id');
-                return lokasiFromState || this.___lokasiId;
-            },
-
-            updateDateTime() {
-                const now = new Date();
-                this.currentDateTime = now.toLocaleString('id-ID', {
-                    dateStyle: 'medium',
-                    timeStyle: 'medium'
-                });
-            },
-
-            canAddMorePhotos() {
-                return this.capturedPhotos.length < this.___maxPhotos;
-            },
-
-            async openCamera() {
-                if (!this.canAddMorePhotos()) {
-                    alert('Maksimal ' + this.___maxPhotos + ' foto');
-                    return;
-                }
-
-                const currentLokasiId = this.getCurrentLokasiId();
-                if (!currentLokasiId) {
-                    alert('Pilih lokasi terlebih dahulu');
-                    return;
-                }
-
-                this.___lokasiId = currentLokasiId;
-                this.showCamera = true;
-                this.errorMessage = '';
-                this.successMessage = '';
-
-                await this.loadLokasiInfo();
-                await this.startCamera();
-                await this.startGPS();
-            },
-
-            async loadLokasiInfo() {
-                const currentLokasiId = this.getCurrentLokasiId();
-                try {
-                    const response = await fetch('/api/camera/lokasi/' + currentLokasiId, {
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content
-                        }
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.petugasName = data.petugas_name;
-                        this.lokasiName = data.lokasi_name;
-                    }
-                } catch (error) {
-                    console.error('Failed to load lokasi info:', error);
-                }
-            },
-
-            async startCamera() {
-                try {
-                    this.stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            facingMode: { ideal: 'environment' },
-                            width: { ideal: 1920 },
-                            height: { ideal: 1080 }
-                        },
-                        audio: false
-                    });
-                    this.$refs.video.srcObject = this.stream;
-                    this.cameraReady = true;
-                } catch (error) {
-                    this.errorMessage = 'Tidak bisa mengakses kamera: ' + error.message;
-                    console.error('Camera error:', error);
-                }
-            },
-
-            async startGPS() {
-                if (!navigator.geolocation) {
-                    this.errorMessage = 'GPS tidak didukung oleh browser Anda';
-                    return;
-                }
-
-                this.gpsWatcher = navigator.geolocation.watchPosition(
-                    (position) => {
-                        this.latitude = position.coords.latitude;
-                        this.longitude = position.coords.longitude;
-                        this.accuracy = position.coords.accuracy;
-                        this.gpsReady = true;
-                        this.errorMessage = '';
-                    },
-                    (error) => {
-                        console.error('GPS error:', error);
-                        if (error.code === 3) {
-                            this.latitude = -6.200000;
-                            this.longitude = 106.816666;
-                            this.accuracy = 999;
-                            this.gpsReady = true;
-                        } else if (error.code === 1) {
-                            this.errorMessage = 'Izin GPS ditolak. Aktifkan izin lokasi di browser.';
-                        } else {
-                            this.errorMessage = 'Tidak bisa mendapatkan lokasi GPS: ' + error.message;
-                        }
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 30000,
-                        maximumAge: 5000
-                    }
-                );
-            },
-
-            async capturePhoto() {
-                if (!this.cameraReady || !this.gpsReady || this.capturing) return;
-                if (!this.canAddMorePhotos()) {
-                    this.errorMessage = 'Maksimal ' + this.___maxPhotos + ' foto';
-                    return;
-                }
-
-                this.capturing = true;
-                this.errorMessage = '';
-
-                try {
-                    const video = this.$refs.video;
-                    const canvas = this.$refs.canvas;
-                    const ctx = canvas.getContext('2d');
-
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    ctx.drawImage(video, 0, 0);
-
-                    // Draw watermark
-                    const overlayHeight = 100;
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-                    ctx.fillRect(0, canvas.height - overlayHeight, canvas.width, overlayHeight);
-
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.font = 'bold 24px Arial';
-                    let y = canvas.height - overlayHeight + 35;
-                    ctx.fillText('👤 ' + this.petugasName, 20, y); y += 28;
-                    ctx.fillText('📍 ' + this.lokasiName, 20, y); y += 28;
-                    ctx.fillText('📅 ' + this.currentDateTime, 20, y);
-
-                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
-                    const reader = new FileReader();
-                    const photoData = await new Promise((resolve) => {
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(blob);
-                    });
-
-                    const response = await fetch('/api/camera/capture', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content
-                        },
-                        body: JSON.stringify({
-                            photo_data: photoData,
-                            gps_data: {
-                                latitude: this.latitude,
-                                longitude: this.longitude,
-                                accuracy: this.accuracy
-                            },
-                            device_data: {
-                                model: this.getDeviceModel(),
-                                os: navigator.platform,
-                                agent: navigator.userAgent,
-                                screen: screen.width + 'x' + screen.height,
-                                network: navigator.connection?.effectiveType || 'unknown'
-                            },
-                            lokasi_id: this.___lokasiId,
-                            photo_type: this.___photoType,
-                            activity_report_id: this.___activityReportId
-                        })
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        // Add new photo to array
-                        this.capturedPhotos.push({
-                            path: result.path,
-                            url: result.url,
-                            metadata_id: result.metadata.id,
-                            confidence_score: result.metadata.confidence_score,
-                            file_size: result.metadata.file_size
-                        });
-
-                        // Update Livewire state with array of paths
-                        const paths = this.capturedPhotos.map(p => p.path);
-                        $wire.set(this.___statePath, paths);
-                        console.log('Photos saved to Livewire state:', this.___statePath, paths);
-
-                        this.successMessage = 'Foto ' + this.capturedPhotos.length + '/' + this.___maxPhotos + ' berhasil diambil!';
-
-                        // If max reached, close camera after delay
-                        if (!this.canAddMorePhotos()) {
-                            setTimeout(() => {
-                                this.closeCamera();
-                            }, 1500);
-                        } else {
-                            // Clear success message after 2 seconds to allow taking more photos
-                            setTimeout(() => {
-                                this.successMessage = '';
-                            }, 2000);
-                        }
-                    } else {
-                        this.errorMessage = result.error || 'Gagal mengambil foto';
-                    }
-                } catch (error) {
-                    this.errorMessage = 'Terjadi kesalahan: ' + error.message;
-                    console.error('Capture error:', error);
-                } finally {
-                    this.capturing = false;
-                }
-            },
-
-            removePhoto(index) {
-                this.capturedPhotos.splice(index, 1);
-
-                // Update Livewire state
-                if (this.capturedPhotos.length === 0) {
-                    $wire.set(this.___statePath, null);
-                } else {
-                    const paths = this.capturedPhotos.map(p => p.path);
-                    $wire.set(this.___statePath, paths);
-                }
-            },
-
-            closeCamera() {
-                if (this.stream) {
-                    this.stream.getTracks().forEach(track => track.stop());
-                    this.stream = null;
-                }
-
-                if (this.gpsWatcher) {
-                    navigator.geolocation.clearWatch(this.gpsWatcher);
-                    this.gpsWatcher = null;
-                }
-
-                this.showCamera = false;
-                this.cameraReady = false;
-                this.gpsReady = false;
-                this.errorMessage = '';
-                this.successMessage = '';
-            },
-
-            getDeviceModel() {
-                const ua = navigator.userAgent;
-                let model = 'Unknown Device';
-
-                if (/iPhone/.test(ua)) {
-                    model = 'iPhone';
-                } else if (/iPad/.test(ua)) {
-                    model = 'iPad';
-                } else if (/Android/.test(ua)) {
-                    const match = ua.match(/Android[^;]*;\s*([^)]*)\)/);
-                    if (match && match[1]) {
-                        model = match[1].split(' Build')[0].trim().substring(0, 50);
-                    } else {
-                        model = 'Android Device';
-                    }
-                } else if (/Macintosh/.test(ua)) {
-                    model = 'Mac';
-                } else if (/Windows/.test(ua)) {
-                    model = 'Windows PC';
-                } else if (/Linux/.test(ua)) {
-                    model = 'Linux PC';
-                }
-
-                return model.substring(0, 80);
-            }
-        }"
+        x-data="watermarkCameraField('{{ $statePath }}', '{{ $photoType }}', {{ $lokasiId ?? 'null' }}, {{ $activityReportId ?? 'null' }}, {{ $maxPhotos }})"
+        x-init="init()"
         class="space-y-4"
     >
         <!-- Camera Button -->
@@ -364,7 +32,7 @@
             </button>
 
             <div class="text-sm text-gray-600 dark:text-gray-400">
-                <span x-text="capturedPhotos.length"></span>/<span x-text="___maxPhotos"></span> foto
+                <span x-text="capturedPhotos.length"></span>/<span x-text="maxPhotos"></span> foto
             </div>
         </div>
 
@@ -376,7 +44,7 @@
             <template x-for="(photo, index) in capturedPhotos" :key="index">
                 <div class="relative group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow">
                     <div class="aspect-square relative">
-                        <img :src="photo.url" :alt="`Foto ${index + 1}`" class="w-full h-full object-cover">
+                        <img :src="photo.url" :alt="'Foto ' + (index + 1)" class="w-full h-full object-cover">
 
                         <!-- Photo Number Badge -->
                         <div class="absolute bottom-2 left-2 px-2 py-0.5 bg-black/70 text-white text-xs rounded">
@@ -404,7 +72,7 @@
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
             </svg>
             <div class="text-blue-800 dark:text-blue-300">
-                <p>Maksimal <span x-text="___maxPhotos"></span> foto. Foto akan diberi watermark otomatis.</p>
+                <p>Maksimal <span x-text="maxPhotos"></span> foto. Foto akan diberi watermark otomatis.</p>
             </div>
         </div>
 
@@ -425,7 +93,7 @@
                         <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
                             <h3 class="text-lg font-bold text-gray-900 dark:text-white">
                                 Ambil Foto {{ $photoType === 'before' ? 'Sebelum' : 'Sesudah' }}
-                                (<span x-text="capturedPhotos.length"></span>/<span x-text="___maxPhotos"></span>)
+                                (<span x-text="capturedPhotos.length"></span>/<span x-text="maxPhotos"></span>)
                             </h3>
                             <button @click="closeCamera()" type="button" class="text-gray-400 hover:text-gray-600">
                                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -436,14 +104,14 @@
 
                         <!-- Camera UI -->
                         <div class="p-6">
-                            <template x-if="!___lokasiId">
+                            <template x-if="!lokasiId">
                                 <div class="text-center py-8">
                                     <p class="text-gray-600 dark:text-gray-400">Pilih lokasi terlebih dahulu</p>
                                     <button @click="closeCamera()" class="mt-4 px-4 py-2 bg-gray-600 text-white rounded">Tutup</button>
                                 </div>
                             </template>
 
-                            <template x-if="___lokasiId">
+                            <template x-if="lokasiId">
                                 <div>
                                     <!-- Video Preview -->
                                     <div class="relative bg-black rounded-lg overflow-hidden" style="max-height: 60vh;">
@@ -497,3 +165,338 @@
         </template>
     </div>
 </x-dynamic-component>
+
+@once
+@push('scripts')
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('watermarkCameraField', (statePath, photoType, lokasiId, activityReportId, maxPhotos) => ({
+        statePath: statePath,
+        photoType: photoType,
+        lokasiId: lokasiId,
+        activityReportId: activityReportId,
+        maxPhotos: maxPhotos,
+        showCamera: false,
+        capturedPhotos: [],
+        stream: null,
+        cameraReady: false,
+        gpsReady: false,
+        capturing: false,
+        petugasName: '',
+        lokasiName: '',
+        latitude: 0,
+        longitude: 0,
+        accuracy: 0,
+        currentDateTime: '',
+        gpsWatcher: null,
+        timeInterval: null,
+        errorMessage: '',
+        successMessage: '',
+
+        init() {
+            console.log('Camera field initialized for', this.photoType);
+            this.updateDateTime();
+            this.timeInterval = setInterval(() => this.updateDateTime(), 1000);
+            this.loadExistingPhotos();
+        },
+
+        loadExistingPhotos() {
+            const existingData = this.$wire.get(this.statePath);
+            console.log('Loading photos for', this.photoType, ':', existingData);
+
+            if (!existingData) {
+                this.capturedPhotos = [];
+                return;
+            }
+
+            if (Array.isArray(existingData)) {
+                this.capturedPhotos = existingData.map((path) => ({
+                    path: path,
+                    url: '/storage/' + path,
+                    metadata_id: null,
+                    confidence_score: 100,
+                    file_size: null
+                }));
+            } else if (typeof existingData === 'string' && existingData.length > 0) {
+                this.capturedPhotos = [{
+                    path: existingData,
+                    url: '/storage/' + existingData,
+                    metadata_id: null,
+                    confidence_score: 100,
+                    file_size: null
+                }];
+                this.$wire.set(this.statePath, [existingData]);
+            }
+        },
+
+        getCurrentLokasiId() {
+            const lokasiFromState = this.$wire.get('data.lokasi_id');
+            return lokasiFromState || this.lokasiId;
+        },
+
+        updateDateTime() {
+            const now = new Date();
+            this.currentDateTime = now.toLocaleString('id-ID', {
+                dateStyle: 'medium',
+                timeStyle: 'medium'
+            });
+        },
+
+        canAddMorePhotos() {
+            return this.capturedPhotos.length < this.maxPhotos;
+        },
+
+        async openCamera() {
+            if (!this.canAddMorePhotos()) {
+                alert('Maksimal ' + this.maxPhotos + ' foto');
+                return;
+            }
+
+            const currentLokasiId = this.getCurrentLokasiId();
+            if (!currentLokasiId) {
+                alert('Pilih lokasi terlebih dahulu');
+                return;
+            }
+
+            this.lokasiId = currentLokasiId;
+            this.showCamera = true;
+            this.errorMessage = '';
+            this.successMessage = '';
+
+            await this.loadLokasiInfo();
+            await this.startCamera();
+            await this.startGPS();
+        },
+
+        async loadLokasiInfo() {
+            const currentLokasiId = this.getCurrentLokasiId();
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                const response = await fetch('/api/camera/lokasi/' + currentLokasiId, {
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken ? csrfToken.content : ''
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.petugasName = data.petugas_name;
+                    this.lokasiName = data.lokasi_name;
+                }
+            } catch (error) {
+                console.error('Failed to load lokasi info:', error);
+            }
+        },
+
+        async startCamera() {
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                });
+                this.$refs.video.srcObject = this.stream;
+                this.cameraReady = true;
+            } catch (error) {
+                this.errorMessage = 'Tidak bisa mengakses kamera: ' + error.message;
+                console.error('Camera error:', error);
+            }
+        },
+
+        async startGPS() {
+            if (!navigator.geolocation) {
+                this.errorMessage = 'GPS tidak didukung oleh browser Anda';
+                return;
+            }
+
+            this.gpsWatcher = navigator.geolocation.watchPosition(
+                (position) => {
+                    this.latitude = position.coords.latitude;
+                    this.longitude = position.coords.longitude;
+                    this.accuracy = position.coords.accuracy;
+                    this.gpsReady = true;
+                    this.errorMessage = '';
+                },
+                (error) => {
+                    console.error('GPS error:', error);
+                    if (error.code === 3) {
+                        this.latitude = -6.200000;
+                        this.longitude = 106.816666;
+                        this.accuracy = 999;
+                        this.gpsReady = true;
+                    } else if (error.code === 1) {
+                        this.errorMessage = 'Izin GPS ditolak. Aktifkan izin lokasi di browser.';
+                    } else {
+                        this.errorMessage = 'Tidak bisa mendapatkan lokasi GPS: ' + error.message;
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 30000,
+                    maximumAge: 5000
+                }
+            );
+        },
+
+        async capturePhoto() {
+            if (!this.cameraReady || !this.gpsReady || this.capturing) return;
+            if (!this.canAddMorePhotos()) {
+                this.errorMessage = 'Maksimal ' + this.maxPhotos + ' foto';
+                return;
+            }
+
+            this.capturing = true;
+            this.errorMessage = '';
+
+            try {
+                const video = this.$refs.video;
+                const canvas = this.$refs.canvas;
+                const ctx = canvas.getContext('2d');
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+
+                const overlayHeight = 100;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.fillRect(0, canvas.height - overlayHeight, canvas.width, overlayHeight);
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 24px Arial';
+                let y = canvas.height - overlayHeight + 35;
+                ctx.fillText(this.petugasName, 20, y); y += 28;
+                ctx.fillText(this.lokasiName, 20, y); y += 28;
+                ctx.fillText(this.currentDateTime, 20, y);
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                const reader = new FileReader();
+                const photoData = await new Promise((resolve) => {
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                const response = await fetch('/api/camera/capture', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken ? csrfToken.content : ''
+                    },
+                    body: JSON.stringify({
+                        photo_data: photoData,
+                        gps_data: {
+                            latitude: this.latitude,
+                            longitude: this.longitude,
+                            accuracy: this.accuracy
+                        },
+                        device_data: {
+                            model: this.getDeviceModel(),
+                            os: navigator.platform,
+                            agent: navigator.userAgent,
+                            screen: screen.width + 'x' + screen.height,
+                            network: navigator.connection ? navigator.connection.effectiveType : 'unknown'
+                        },
+                        lokasi_id: this.lokasiId,
+                        photo_type: this.photoType,
+                        activity_report_id: this.activityReportId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.capturedPhotos.push({
+                        path: result.path,
+                        url: result.url,
+                        metadata_id: result.metadata.id,
+                        confidence_score: result.metadata.confidence_score,
+                        file_size: result.metadata.file_size
+                    });
+
+                    const paths = this.capturedPhotos.map(p => p.path);
+                    this.$wire.set(this.statePath, paths);
+                    console.log('Photos saved to Livewire state:', this.statePath, paths);
+
+                    this.successMessage = 'Foto ' + this.capturedPhotos.length + '/' + this.maxPhotos + ' berhasil diambil!';
+
+                    if (!this.canAddMorePhotos()) {
+                        setTimeout(() => {
+                            this.closeCamera();
+                        }, 1500);
+                    } else {
+                        setTimeout(() => {
+                            this.successMessage = '';
+                        }, 2000);
+                    }
+                } else {
+                    this.errorMessage = result.error || 'Gagal mengambil foto';
+                }
+            } catch (error) {
+                this.errorMessage = 'Terjadi kesalahan: ' + error.message;
+                console.error('Capture error:', error);
+            } finally {
+                this.capturing = false;
+            }
+        },
+
+        removePhoto(index) {
+            this.capturedPhotos.splice(index, 1);
+
+            if (this.capturedPhotos.length === 0) {
+                this.$wire.set(this.statePath, null);
+            } else {
+                const paths = this.capturedPhotos.map(p => p.path);
+                this.$wire.set(this.statePath, paths);
+            }
+        },
+
+        closeCamera() {
+            if (this.stream) {
+                this.stream.getTracks().forEach(track => track.stop());
+                this.stream = null;
+            }
+
+            if (this.gpsWatcher) {
+                navigator.geolocation.clearWatch(this.gpsWatcher);
+                this.gpsWatcher = null;
+            }
+
+            this.showCamera = false;
+            this.cameraReady = false;
+            this.gpsReady = false;
+            this.errorMessage = '';
+            this.successMessage = '';
+        },
+
+        getDeviceModel() {
+            const ua = navigator.userAgent;
+            let model = 'Unknown Device';
+
+            if (/iPhone/.test(ua)) {
+                model = 'iPhone';
+            } else if (/iPad/.test(ua)) {
+                model = 'iPad';
+            } else if (/Android/.test(ua)) {
+                const match = ua.match(/Android[^;]*;\s*([^)]*)\)/);
+                if (match && match[1]) {
+                    model = match[1].split(' Build')[0].trim().substring(0, 50);
+                } else {
+                    model = 'Android Device';
+                }
+            } else if (/Macintosh/.test(ua)) {
+                model = 'Mac';
+            } else if (/Windows/.test(ua)) {
+                model = 'Windows PC';
+            } else if (/Linux/.test(ua)) {
+                model = 'Linux PC';
+            }
+
+            return model.substring(0, 80);
+        }
+    }));
+});
+</script>
+@endpush
+@endonce
