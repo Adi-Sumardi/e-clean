@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Lokasis;
 
+use App\Filament\Forms\Components\MapPicker;
 use App\Filament\Resources\Lokasis\Pages;
 use App\Filament\Resources\Lokasis\Pages\ManageLokasis;
 use App\Models\Lokasi;
@@ -116,6 +117,13 @@ class LokasiResource extends Resource
                     ->description('Koordinat GPS diperlukan untuk validasi foto lokasi. Petugas harus berada dalam radius 50m dari koordinat ini saat mengambil foto.')
                     ->icon('heroicon-o-map-pin')
                     ->schema([
+                        MapPicker::make('map_picker')
+                            ->label('Pilih Lokasi di Peta')
+                            ->defaultLocation(-6.2088, 106.8456)
+                            ->defaultZoom(15)
+                            ->height(350)
+                            ->columnSpanFull(),
+
                         TextInput::make('latitude')
                             ->label('Latitude')
                             ->numeric()
@@ -123,7 +131,8 @@ class LokasiResource extends Resource
                             ->minValue(-90)
                             ->maxValue(90)
                             ->placeholder('-6.2088')
-                            ->helperText('Contoh: -6.2088 (untuk Jakarta)'),
+                            ->live()
+                            ->helperText('Akan terisi otomatis dari peta'),
 
                         TextInput::make('longitude')
                             ->label('Longitude')
@@ -132,7 +141,8 @@ class LokasiResource extends Resource
                             ->minValue(-180)
                             ->maxValue(180)
                             ->placeholder('106.8456')
-                            ->helperText('Contoh: 106.8456 (untuk Jakarta)'),
+                            ->live()
+                            ->helperText('Akan terisi otomatis dari peta'),
 
                         Textarea::make('address')
                             ->label('Alamat')
