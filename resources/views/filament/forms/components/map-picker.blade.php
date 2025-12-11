@@ -1,14 +1,4 @@
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
-    {{-- Load Leaflet CSS --}}
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-
-    {{-- Load Leaflet JS --}}
-    <script>
-        if (typeof L === 'undefined') {
-            document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""><\/script>');
-        }
-    </script>
-
     @php
         $latitude = $getRecord()?->latitude ?? $getDefaultLatitude();
         $longitude = $getRecord()?->longitude ?? $getDefaultLongitude();
@@ -16,6 +6,14 @@
         $height = $getHeight();
         $uniqueId = 'map-' . uniqid();
     @endphp
+
+    {{-- Leaflet CSS --}}
+    @once
+        @push('styles')
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+            <style>.leaflet-container { font-family: inherit; }</style>
+        @endpush
+    @endonce
 
     <div
         x-data="{
@@ -28,12 +26,47 @@
             isLoading: false,
             gpsStatus: 'unknown',
             mapId: '{{ $uniqueId }}',
+            leafletLoaded: false,
 
             init() {
-                this.$nextTick(() => {
-                    this.checkGpsPermission();
-                    this.waitForLeaflet();
-                });
+                this.checkGpsPermission();
+                this.loadLeafletAndInit();
+            },
+
+            loadLeafletAndInit() {
+                if (typeof L !== 'undefined') {
+                    this.leafletLoaded = true;
+                    this.$nextTick(() => this.initMap());
+                    return;
+                }
+
+                // Load Leaflet CSS
+                if (!document.querySelector('link[href*=\"leaflet\"]')) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                    document.head.appendChild(link);
+                }
+
+                // Load Leaflet JS
+                if (!document.querySelector('script[src*=\"leaflet\"]')) {
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                    script.onload = () => {
+                        this.leafletLoaded = true;
+                        this.$nextTick(() => this.initMap());
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    // Wait for existing script to load
+                    const check = setInterval(() => {
+                        if (typeof L !== 'undefined') {
+                            clearInterval(check);
+                            this.leafletLoaded = true;
+                            this.$nextTick(() => this.initMap());
+                        }
+                    }, 100);
+                }
             },
 
             async checkGpsPermission() {
@@ -44,19 +77,9 @@
                 try {
                     const result = await navigator.permissions.query({ name: 'geolocation' });
                     this.gpsStatus = result.state;
-                    result.onchange = () => {
-                        this.gpsStatus = result.state;
-                    };
+                    result.onchange = () => { this.gpsStatus = result.state; };
                 } catch (e) {
                     this.gpsStatus = 'unknown';
-                }
-            },
-
-            waitForLeaflet() {
-                if (typeof L !== 'undefined') {
-                    setTimeout(() => this.initMap(), 100);
-                } else {
-                    setTimeout(() => this.waitForLeaflet(), 100);
                 }
             },
 
@@ -68,7 +91,7 @@
                     this.map = L.map(container).setView([this.latitude, this.longitude], this.zoom);
 
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap'
+                        attribution: '&copy; OpenStreetMap'
                     }).addTo(this.map);
 
                     this.marker = L.marker([this.latitude, this.longitude], {
@@ -85,7 +108,7 @@
                         this.marker.setLatLng(e.latlng);
                     });
 
-                    setTimeout(() => this.map.invalidateSize(), 200);
+                    setTimeout(() => this.map.invalidateSize(), 300);
                 } catch (err) {
                     console.error('Map init error:', err);
                 }
@@ -133,7 +156,7 @@
 
             getMyLoc() {
                 if (!navigator.geolocation) {
-                    alert('Browser Anda tidak mendukung GPS/Geolocation.');
+                    alert('Browser tidak mendukung GPS.');
                     return;
                 }
 
@@ -154,26 +177,18 @@
                         this.isLoading = false;
                         console.error('GPS Error:', err);
 
-                        switch(err.code) {
-                            case err.PERMISSION_DENIED:
-                                this.gpsStatus = 'denied';
-                                alert('Izin lokasi ditolak. Untuk mengaktifkan: Klik ikon gembok di address bar, pilih Site settings, aktifkan izin Lokasi, lalu refresh halaman.');
-                                break;
-                            case err.POSITION_UNAVAILABLE:
-                                alert('Posisi tidak tersedia. Pastikan GPS perangkat aktif.');
-                                break;
-                            case err.TIMEOUT:
-                                alert('Waktu habis. Coba lagi atau pastikan GPS aktif.');
-                                break;
-                            default:
-                                alert('Gagal mendapatkan lokasi.');
+                        if (err.code === 1) {
+                            this.gpsStatus = 'denied';
+                            alert('Izin lokasi ditolak. Klik ikon gembok di address bar untuk mengaktifkan.');
+                        } else if (err.code === 2) {
+                            alert('Posisi tidak tersedia. Pastikan GPS aktif.');
+                        } else if (err.code === 3) {
+                            alert('Waktu habis. Coba lagi.');
+                        } else {
+                            alert('Gagal mendapatkan lokasi.');
                         }
                     },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 15000,
-                        maximumAge: 0
-                    }
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                 );
             }
         }"
@@ -182,20 +197,29 @@
         class="space-y-3"
     >
         {{-- GPS Permission Alert --}}
-        <div x-show="gpsStatus === 'denied'" class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+        <div x-show="gpsStatus === 'denied'" x-cloak class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <div class="flex items-start gap-2">
-                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
                 <div class="text-sm">
                     <p class="font-medium text-red-800 dark:text-red-200">Izin Lokasi Ditolak</p>
-                    <p class="text-red-600 dark:text-red-300 mt-1">Klik ikon gembok di address bar browser untuk mengaktifkan izin lokasi, lalu refresh halaman.</p>
+                    <p class="text-red-600 dark:text-red-300 mt-1">Klik ikon gembok di address bar browser untuk mengaktifkan izin lokasi.</p>
                 </div>
             </div>
         </div>
 
+        {{-- Loading indicator while Leaflet loads --}}
+        <div x-show="!leafletLoaded" class="flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <svg class="animate-spin h-5 w-5 text-primary-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-sm text-gray-600 dark:text-gray-400">Memuat peta...</span>
+        </div>
+
         {{-- Search Bar --}}
-        <div class="flex gap-2">
+        <div x-show="leafletLoaded" class="flex gap-2">
             <input
                 type="text"
                 x-model="searchQuery"
@@ -230,13 +254,14 @@
 
         {{-- Map Container --}}
         <div
+            x-show="leafletLoaded"
             id="{{ $uniqueId }}"
             class="rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden"
             style="height: {{ $height }}px; z-index: 1;"
         ></div>
 
         {{-- Coordinates Display --}}
-        <div class="flex flex-wrap gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
+        <div x-show="leafletLoaded" class="flex flex-wrap gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
             <div>
                 <span class="text-gray-500">Lat:</span>
                 <span class="font-mono font-medium" x-text="latitude.toFixed(7)"></span>
@@ -262,12 +287,8 @@
             </a>
         </div>
 
-        <p class="text-xs text-gray-500">
-            <strong>Cara penggunaan:</strong> Klik pada peta atau drag marker merah untuk memilih lokasi. Gunakan tombol GPS hijau untuk mengambil koordinat dari perangkat Anda (memerlukan izin lokasi).
+        <p x-show="leafletLoaded" class="text-xs text-gray-500">
+            <strong>Cara penggunaan:</strong> Klik pada peta atau drag marker merah untuk memilih lokasi. Gunakan tombol GPS hijau untuk mengambil koordinat dari perangkat Anda.
         </p>
     </div>
-
-    <style>
-        .leaflet-container { font-family: inherit; }
-    </style>
 </x-dynamic-component>
