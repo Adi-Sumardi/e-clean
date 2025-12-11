@@ -9,17 +9,18 @@ use Illuminate\Support\Facades\Log;
 
 class JadwalKebersihanObserver
 {
-    protected FontteService $fontte;
+    protected ?FontteService $fontte = null;
     protected NotificationTemplateService $templates;
 
     public function __construct()
     {
         // Initialize services, skip Fontte if token not configured
-        try {
-            $this->fontte = new FontteService();
-        } catch (\Exception $e) {
-            $this->fontte = null;
-            Log::warning('Fontte service not available: ' . $e->getMessage());
+        if (config('services.fonnte.token')) {
+            try {
+                $this->fontte = new FontteService();
+            } catch (\Exception $e) {
+                Log::warning('Fontte service not available: ' . $e->getMessage());
+            }
         }
         $this->templates = new NotificationTemplateService();
     }
