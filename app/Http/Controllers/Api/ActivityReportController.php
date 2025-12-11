@@ -220,7 +220,18 @@ class ActivityReportController extends Controller
                 }
             }
 
-            return $this->errorResponse('Failed to create activity report: ' . $e->getMessage(), 500);
+            // Log detailed error for debugging
+            Log::error('Activity report creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+            ]);
+
+            // Return user-friendly error message
+            return $this->errorResponse(
+                'Gagal membuat laporan kegiatan. Silakan coba lagi atau hubungi administrator.',
+                500
+            );
         }
     }
 
