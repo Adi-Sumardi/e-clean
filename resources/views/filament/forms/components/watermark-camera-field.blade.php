@@ -3,7 +3,7 @@
     $photoType = $getPhotoType();
     $lokasiId = $getLokasiId();
     $activityReportId = $getActivityReportId();
-    $componentId = 'cameraField_' . $photoType . '_' . uniqid();
+    $componentId = 'cameraField_' . $photoType;
 @endphp
 
 <x-dynamic-component
@@ -42,17 +42,30 @@
                 this.timeInterval = setInterval(() => this.updateDateTime(), 1000);
 
                 // Load existing photo from Livewire state
+                this.loadExistingPhoto();
+
+                // Watch for changes in Livewire state
+                this.$watch('$wire.$get(\"' + this.___statePath + '\")', (value) => {
+                    console.log('Livewire state changed for {{ $photoType }}:', value);
+                    this.loadExistingPhoto();
+                });
+            },
+
+            loadExistingPhoto() {
                 const existingPath = $wire.get(this.___statePath);
-                if (existingPath && typeof existingPath === 'string') {
-                    // Convert string path to array format for display
-                    this.capturedPhotos = [{
-                        path: existingPath,
-                        url: '/storage/' + existingPath,
-                        metadata_id: null,
-                        confidence_score: null,
-                        file_size: null
-                    }];
-                    console.log('Loaded existing photo:', existingPath);
+                console.log('Loading photo for {{ $photoType }}:', existingPath);
+                if (existingPath && typeof existingPath === 'string' && existingPath.length > 0) {
+                    // Only update if different from current
+                    if (this.capturedPhotos.length === 0 || this.capturedPhotos[0].path !== existingPath) {
+                        this.capturedPhotos = [{
+                            path: existingPath,
+                            url: '/storage/' + existingPath,
+                            metadata_id: null,
+                            confidence_score: 100,
+                            file_size: null
+                        }];
+                        console.log('Loaded existing photo:', existingPath);
+                    }
                 }
             },
 
@@ -230,21 +243,23 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        this.capturedPhotos.push({
+                        // Replace with new photo (single photo field)
+                        this.capturedPhotos = [{
                             path: result.path,
                             url: result.url,
                             metadata_id: result.metadata.id,
                             confidence_score: result.metadata.confidence_score,
                             file_size: result.metadata.file_size
-                        });
+                        }];
 
                         // Update Livewire state dengan path foto
                         $wire.set(this.___statePath, result.path);
+                        console.log('Photo saved to Livewire state:', this.___statePath, result.path);
 
                         this.successMessage = 'Foto berhasil diambil!';
                         setTimeout(() => {
                             this.closeCamera();
-                        }, 2000);
+                        }, 1500);
                     } else {
                         this.errorMessage = result.error || 'Gagal mengambil foto';
                     }
