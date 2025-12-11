@@ -20,11 +20,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('activity_reports', function (Blueprint $table) {
-            // Revert back to 'draft' as default
-            $table->enum('status', ['draft', 'submitted', 'approved', 'rejected'])
-                ->default('draft')
-                ->change();
-        });
+        // Revert back to 'draft' as default
+        DB::statement("ALTER TABLE activity_reports ALTER COLUMN status SET DEFAULT 'draft'");
     }
 };
