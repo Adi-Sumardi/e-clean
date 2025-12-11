@@ -71,7 +71,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
             <!-- Buat Laporan Baru -->
-            <a href="/admin/activity-reports" class="action-card emerald">
+            <a href="{{ \App\Filament\Resources\ActivityReports\ActivityReportResource::getUrl('create') }}" class="action-card emerald">
                 <div class="icon-wrapper">
                     <svg style="width: 36px; height: 36px; color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -154,7 +154,8 @@
                             <strong style="color: #dc2626;">{{ $pendingReports }} laporan</strong> masih berstatus draft.
                         </p>
                     </div>
-                    <a href="/admin/activity-reports"
+                    <a href="{{ \App\Filament\Resources\ActivityReports\ActivityReportResource::getUrl('index') }}"
+                       class="pending-reports-btn"
                        style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1rem; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; font-size: 0.875rem; font-weight: 600; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); transition: all 0.2s ease; text-decoration: none; border: none;">
                         <span>Selesaikan Sekarang</span>
                         <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +166,7 @@
             </div>
 
             <style>
-                a[href="/admin/activity-reports"]:hover {
+                .pending-reports-btn:hover {
                     background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
                     transform: translateY(-1px);

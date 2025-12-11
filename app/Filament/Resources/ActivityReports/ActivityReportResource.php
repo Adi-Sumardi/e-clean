@@ -520,7 +520,7 @@ class ActivityReportResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        // Hide dari sidebar navigation untuk petugas
-        return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus']);
+        // Show untuk semua role yang bisa mengakses activity reports
+        return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor', 'pengurus', 'petugas']);
     }
 }
