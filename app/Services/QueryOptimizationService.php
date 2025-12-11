@@ -227,10 +227,21 @@ class QueryOptimizationService
 
     /**
      * Analyze query performance
+     * SECURITY: Disabled in production to prevent SQL injection
      */
     public static function analyzeQuery(string $sql): array
     {
+        // Disable in production for security
+        if (app()->environment('production')) {
+            return [
+                'error' => 'Query analysis is disabled in production environment',
+            ];
+        }
+
         try {
+            // Sanitize SQL to prevent injection
+            $sql = preg_replace('/[^a-zA-Z0-9_\s,\.\(\)\*\=\-]/', '', $sql);
+            
             $explain = DB::select("EXPLAIN {$sql}");
 
             return [
