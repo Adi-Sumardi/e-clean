@@ -21,7 +21,7 @@ class ManageLokasis extends ManageRecords
     {
         return [
             CreateAction::make()
-                ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus', 'supervisor'])),
+                ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor'])),
 
             Action::make('generate_all_barcode')
                 ->label('Generate Semua Barcode')
@@ -42,7 +42,7 @@ class ManageLokasis extends ManageRecords
                         ->send();
                 })
                 ->visible(fn () => Lokasi::whereNull('qr_code')->orWhere('qr_code', '')->exists())
-                ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
+                ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor'])),
 
             Action::make('print_barcode')
                 ->label('Print Barcodes')
