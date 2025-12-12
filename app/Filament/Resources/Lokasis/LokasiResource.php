@@ -196,7 +196,7 @@ class LokasiResource extends Resource
                     ->icon('heroicon-o-qr-code')
                     ->color('success')
                     ->visible(fn (Lokasi $record) => !$record->qr_code)
-                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus']))
+                    ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']))
                     ->action(function (Lokasi $record) {
                         $barcodeService = new BarcodeService();
                         $barcodeService->generateForLokasi($record);
@@ -213,7 +213,7 @@ class LokasiResource extends Resource
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
                     ->visible(fn (Lokasi $record) => $record->qr_code)
-                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus']))
+                    ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']))
                     ->requiresConfirmation()
                     ->action(function (Lokasi $record) {
                         $barcodeService = new BarcodeService();
@@ -227,15 +227,15 @@ class LokasiResource extends Resource
                     }),
 
                 EditAction::make()
-                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor'])),
                 DeleteAction::make()
-                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor'])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ])
-                    ->hidden(fn () => Auth::user()->hasAnyRole(['petugas', 'pengurus'])),
+                    ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor'])),
             ])
             ->defaultSort('kode_lokasi');
     }
@@ -252,24 +252,24 @@ class LokasiResource extends Resource
     {
         $user = Auth::user();
 
-        // Hanya admin & super_admin yang bisa create lokasi
-        return $user->hasAnyRole(['admin', 'super_admin']);
+        // Admin, super_admin, dan supervisor bisa create lokasi
+        return $user->hasAnyRole(['admin', 'super_admin', 'supervisor']);
     }
 
     public static function canEdit($record): bool
     {
         $user = Auth::user();
 
-        // Hanya admin & super_admin yang bisa edit
-        return $user->hasAnyRole(['admin', 'super_admin']);
+        // Admin, super_admin, dan supervisor bisa edit
+        return $user->hasAnyRole(['admin', 'super_admin', 'supervisor']);
     }
 
     public static function canDelete($record): bool
     {
         $user = Auth::user();
 
-        // Hanya admin & super_admin yang bisa delete
-        return $user->hasAnyRole(['admin', 'super_admin']);
+        // Admin, super_admin, dan supervisor bisa delete
+        return $user->hasAnyRole(['admin', 'super_admin', 'supervisor']);
     }
 
     public static function canViewAny(): bool
