@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\JadwalKebersihanans;
 
+use App\Enums\WorkShift;
 use App\Filament\Resources\JadwalKebersihanans\Pages\ManageJadwalKebersihanans;
 use App\Models\JadwalKebersihan;
 use App\Models\LaporanKeterlambatan;
@@ -88,11 +89,7 @@ class JadwalKebersihanResource extends Resource
                 CheckboxList::make('shifts')
                     ->label('⏰ Shift')
                     ->required()
-                    ->options([
-                        'pagi' => 'Pagi (05:00 - 08:00)',
-                        'siang' => 'Siang (10:00 - 14:00)',
-                        'sore' => 'Sore (15:00 - 18:00)',
-                    ])
+                    ->options(WorkShift::options())
                     ->columns(3)
                     ->gridDirection('row')
                     ->helperText('Pilih satu atau lebih shift (jam otomatis dari shift)')
@@ -158,13 +155,8 @@ class JadwalKebersihanResource extends Resource
                 TextColumn::make('shift')
                     ->label('Shift')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pagi' => 'info',
-                        'siang' => 'warning',
-                        'sore' => 'success',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                    ->color(fn (string $state): string => WorkShift::tryFrom($state)?->color() ?? 'gray')
+                    ->formatStateUsing(fn (string $state): string => WorkShift::tryFrom($state)?->shortLabel() ?? ucfirst($state))
                     ->sortable(),
 
                 TextColumn::make('petugas.name')
@@ -223,11 +215,7 @@ class JadwalKebersihanResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('shift')
-                    ->options([
-                        'pagi' => 'Pagi',
-                        'siang' => 'Siang',
-                        'sore' => 'Sore',
-                    ]),
+                    ->options(WorkShift::options()),
                 SelectFilter::make('prioritas')
                     ->options([
                         'rendah' => 'Rendah',

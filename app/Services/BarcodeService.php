@@ -176,4 +176,15 @@ class BarcodeService
         // Generate new barcode
         return $this->generateForLokasi($lokasi, $widthFactor, $height);
     }
+
+    /**
+     * Get complaint URL for a location (for barcode label)
+     *
+     * @param Lokasi $lokasi
+     * @return string
+     */
+    public function getComplaintUrl(Lokasi $lokasi): string
+    {
+        return url('/keluhan/' . $lokasi->kode_lokasi);
+    }
 }

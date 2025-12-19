@@ -45,6 +45,13 @@ class LokasiResource extends Resource
     {
         return $schema
             ->components([
+                Select::make('unit_id')
+                    ->label('Unit')
+                    ->relationship('unit', 'nama_unit')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Pilih Unit'),
+
                 TextInput::make('kode_lokasi')
                     ->label('Kode Lokasi')
                     ->required()
@@ -116,6 +123,12 @@ class LokasiResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('unit.nama_unit')
+                    ->label('Unit')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('-'),
+
                 TextColumn::make('kode_lokasi')
                     ->label('Kode')
                     ->searchable()
@@ -173,6 +186,12 @@ class LokasiResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('unit_id')
+                    ->label('Unit')
+                    ->relationship('unit', 'nama_unit')
+                    ->searchable()
+                    ->preload(),
+
                 SelectFilter::make('kategori')
                     ->options([
                         'ruang_kelas' => 'Ruang Kelas',

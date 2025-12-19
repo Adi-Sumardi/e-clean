@@ -2,10 +2,18 @@
 
 use App\Http\Controllers\CameraPhotoController;
 use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\GuestComplaintController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect('/admin/login');
+});
+
+// Guest Complaint Routes (Public - for barcode scanning)
+Route::prefix('keluhan')->group(function () {
+    Route::get('/{lokasi}', [GuestComplaintController::class, 'showForm'])->name('guest-complaint.form');
+    Route::post('/', [GuestComplaintController::class, 'store'])->name('guest-complaint.store');
+    Route::get('/{lokasi}/success', [GuestComplaintController::class, 'success'])->name('guest-complaint.success');
 });
 
 // Google OAuth Routes
