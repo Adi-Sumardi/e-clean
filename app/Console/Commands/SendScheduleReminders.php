@@ -57,7 +57,7 @@ class SendScheduleReminders extends Command
         }
 
         // Get schedules with phone
-        $jadwals = JadwalKebersihan::with(['petugas', 'lokasi'])
+        $jadwals = JadwalKebersihan::with(['petugas', 'lokasi.unit'])
             ->whereDate('tanggal', $tomorrow)
             ->whereHas('petugas', function ($query) {
                 $query->whereNotNull('phone')

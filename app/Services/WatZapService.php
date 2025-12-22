@@ -320,8 +320,10 @@ class WatZapService
 
         $lokasi = $complaint->lokasi;
         $jenisKeluhan = \App\Models\GuestComplaint::getJenisKeluhanOptions()[$complaint->jenis_keluhan] ?? $complaint->jenis_keluhan;
+        $unitInfo = $lokasi->unit ? "Unit: {$lokasi->unit->nama_unit}\n" : "";
 
         $message = "*KELUHAN BARU DARI TAMU*\n\n"
+            . $unitInfo
             . "Lokasi: {$lokasi->nama_lokasi}\n"
             . "Kode: {$lokasi->kode_lokasi}\n"
             . ($lokasi->lantai ? "Lantai: {$lokasi->lantai}\n" : "")
@@ -390,8 +392,10 @@ class WatZapService
 
         $lokasi = $complaint->lokasi;
         $status = \App\Models\GuestComplaint::getStatusOptions()[$complaint->status] ?? $complaint->status;
+        $unitInfo = $lokasi->unit ? "Unit: {$lokasi->unit->nama_unit}\n" : "";
 
         $message = "*UPDATE STATUS KELUHAN*\n\n"
+            . $unitInfo
             . "Lokasi: {$lokasi->nama_lokasi}\n"
             . "Status: {$status}\n";
 

@@ -18,9 +18,12 @@ class NotificationTemplateService
      */
     public function scheduleAssigned(JadwalKebersihan $jadwal): string
     {
+        $unitInfo = $jadwal->lokasi->unit ? "🏢 Unit: {$jadwal->lokasi->unit->nama_unit}\n" : "";
+
         return "📅 *JADWAL KEBERSIHAN BARU*\n\n" .
             "Halo {$jadwal->petugas->name},\n\n" .
             "Anda mendapat jadwal kebersihan baru:\n\n" .
+            $unitInfo .
             "📍 Lokasi: {$jadwal->lokasi->nama_lokasi}\n" .
             "📆 Tanggal: {$jadwal->tanggal->format('d/m/Y')}\n" .
             "⏰ Shift: " . ucfirst($jadwal->shift) . "\n" .
@@ -39,11 +42,14 @@ class NotificationTemplateService
      */
     public function scheduleReminder(JadwalKebersihan $jadwal): string
     {
+        $unitInfo = $jadwal->lokasi->unit ? "🏢 Unit: {$jadwal->lokasi->unit->nama_unit}\n" : "";
+
         return "🔔 *PENGINGAT JADWAL BESOK*\n\n" .
             "Halo {$jadwal->petugas->name},\n\n" .
             "Pengingat: Anda memiliki jadwal kebersihan besok:\n\n" .
-            "📍 {$jadwal->lokasi->nama_lokasi}\n" .
-            "⏰ {$jadwal->shift} ({$jadwal->jam_mulai->format('H:i')} - {$jadwal->jam_selesai->format('H:i')})\n\n" .
+            $unitInfo .
+            "📍 Lokasi: {$jadwal->lokasi->nama_lokasi}\n" .
+            "⏰ Shift: {$jadwal->shift} ({$jadwal->jam_mulai->format('H:i')} - {$jadwal->jam_selesai->format('H:i')})\n\n" .
             "Jangan lupa untuk:\n" .
             "✅ Scan QR Code lokasi\n" .
             "✅ Foto sebelum & sesudah pembersihan\n" .
@@ -60,10 +66,13 @@ class NotificationTemplateService
      */
     public function reportSubmitted(ActivityReport $report, User $supervisor): string
     {
+        $unitInfo = $report->lokasi->unit ? "🏢 Unit: {$report->lokasi->unit->nama_unit}\n" : "";
+
         return "📄 *LAPORAN KEGIATAN BARU*\n\n" .
             "Halo {$supervisor->name},\n\n" .
             "Ada laporan kegiatan baru yang perlu direview:\n\n" .
             "👤 Petugas: {$report->petugas->name}\n" .
+            $unitInfo .
             "📍 Lokasi: {$report->lokasi->nama_lokasi}\n" .
             "📅 Tanggal: {$report->tanggal->format('d/m/Y')}\n" .
             "⏰ Waktu: {$report->jam_mulai->format('H:i')} - " .
@@ -81,9 +90,12 @@ class NotificationTemplateService
      */
     public function reportApproved(ActivityReport $report): string
     {
+        $unitInfo = $report->lokasi->unit ? "🏢 Unit: {$report->lokasi->unit->nama_unit}\n" : "";
+
         return "✅ *LAPORAN DISETUJUI*\n\n" .
             "Halo {$report->petugas->name},\n\n" .
             "Laporan kegiatan Anda telah disetujui:\n\n" .
+            $unitInfo .
             "📍 Lokasi: {$report->lokasi->nama_lokasi}\n" .
             "📅 Tanggal: {$report->tanggal->format('d/m/Y')}\n" .
             ($report->rating ? "⭐ Rating: {$report->rating}/5\n" : "") .
@@ -102,9 +114,12 @@ class NotificationTemplateService
      */
     public function reportRejected(ActivityReport $report): string
     {
+        $unitInfo = $report->lokasi->unit ? "🏢 Unit: {$report->lokasi->unit->nama_unit}\n" : "";
+
         return "❌ *LAPORAN DITOLAK*\n\n" .
             "Halo {$report->petugas->name},\n\n" .
             "Laporan kegiatan Anda ditolak dan perlu diperbaiki:\n\n" .
+            $unitInfo .
             "📍 Lokasi: {$report->lokasi->nama_lokasi}\n" .
             "📅 Tanggal: {$report->tanggal->format('d/m/Y')}\n\n" .
             "❗ Alasan Penolakan:\n\"{$report->rejected_reason}\"\n\n" .
