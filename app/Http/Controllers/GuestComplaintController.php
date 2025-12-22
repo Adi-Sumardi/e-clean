@@ -16,14 +16,22 @@ class GuestComplaintController extends Controller
      */
     public function showForm(string $kodeOrId)
     {
-        // Try to find by kode_lokasi or id
+        // Try to find by kode_lokasi first
         $lokasi = Lokasi::where('kode_lokasi', $kodeOrId)
-            ->orWhere('id', $kodeOrId)
             ->where('is_active', true)
             ->first();
 
+        // Try by ID if not found by kode
+        if (!$lokasi && is_numeric($kodeOrId)) {
+            $lokasi = Lokasi::where('id', $kodeOrId)
+                ->where('is_active', true)
+                ->first();
+        }
+
         if (!$lokasi) {
-            abort(404, 'Lokasi tidak ditemukan');
+            return response()->view('guest-complaint.not-found', [
+                'kode' => $kodeOrId,
+            ], 404);
         }
 
         return view('guest-complaint.form', [

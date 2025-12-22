@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Lokasi;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 
 class BarcodeService
@@ -185,6 +186,6 @@ class BarcodeService
      */
     public function getComplaintUrl(Lokasi $lokasi): string
     {
-        return url('/keluhan/' . $lokasi->kode_lokasi);
+        return URL::to('/keluhan/' . $lokasi->kode_lokasi);
     }
 }
