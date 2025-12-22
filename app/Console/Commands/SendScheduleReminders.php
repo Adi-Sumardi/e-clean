@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\JadwalKebersihan;
-use App\Services\FontteService;
+use App\Services\WatZapService;
 use App\Services\NotificationTemplateService;
 use Carbon\Carbon;
 
@@ -29,20 +29,43 @@ class SendScheduleReminders extends Command
      */
     public function handle()
     {
-        $fontte = new FontteService();
+        $watzap = new WatZapService();
         $templates = new NotificationTemplateService();
+
+        if (!$watzap->isConfigured()) {
+            $this->error('WatZap is not configured. Please set WATZAP_API_KEY and WATZAP_NUMBER_KEY in .env');
+            return Command::FAILURE;
+        }
 
         // Get tomorrow's schedules
         $tomorrow = Carbon::tomorrow()->toDateString();
 
-        $jadwals = JadwalKebersihan::with(['petugas', 'lokasi'])
+        // Check schedules without phone
+        $jadwalsWithoutPhone = JadwalKebersihan::with(['petugas'])
             ->whereDate('tanggal', $tomorrow)
             ->whereHas('petugas', function ($query) {
-                $query->whereNotNull('phone');
+                $query->whereNull('phone');
             })
             ->get();
 
-        $this->info("Found {$jadwals->count()} schedules for tomorrow ({$tomorrow})");
+        if ($jadwalsWithoutPhone->isNotEmpty()) {
+            $this->warn("Warning: {$jadwalsWithoutPhone->count()} schedules have petugas without phone number:");
+            foreach ($jadwalsWithoutPhone as $j) {
+                $this->warn("  - {$j->petugas->name} (ID: {$j->petugas->id})");
+            }
+            $this->newLine();
+        }
+
+        // Get schedules with phone
+        $jadwals = JadwalKebersihan::with(['petugas', 'lokasi'])
+            ->whereDate('tanggal', $tomorrow)
+            ->whereHas('petugas', function ($query) {
+                $query->whereNotNull('phone')
+                    ->where('is_active', true);
+            })
+            ->get();
+
+        $this->info("Found {$jadwals->count()} schedules with phone for tomorrow ({$tomorrow})");
 
         $sent = 0;
         $failed = 0;
@@ -51,7 +74,7 @@ class SendScheduleReminders extends Command
             try {
                 $message = $templates->scheduleReminder($jadwal);
 
-                $fontte->sendMessage(
+                $watzap->sendMessage(
                     $jadwal->petugas->phone,
                     $message,
                     [
@@ -73,7 +96,8 @@ class SendScheduleReminders extends Command
 
         $this->newLine();
         $this->info("Summary:");
-        $this->info("  Total schedules: {$jadwals->count()}");
+        $this->info("  Schedules with phone: {$jadwals->count()}");
+        $this->info("  Schedules without phone: {$jadwalsWithoutPhone->count()}");
         $this->info("  Successfully sent: {$sent}");
         $this->info("  Failed: {$failed}");
 

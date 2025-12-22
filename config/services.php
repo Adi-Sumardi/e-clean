@@ -40,6 +40,12 @@ return [
         'token' => env('FONNTE_TOKEN'),
     ],
 
+    'watzap' => [
+        'url' => env('WATZAP_URL', 'https://api.watzap.id/v1'),
+        'api_key' => env('WATZAP_API_KEY'),
+        'number_key' => env('WATZAP_NUMBER_KEY'),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

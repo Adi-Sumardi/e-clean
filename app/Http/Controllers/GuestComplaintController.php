@@ -6,7 +6,7 @@ use App\Models\GuestComplaint;
 use App\Models\JadwalKebersihan;
 use App\Models\Lokasi;
 use App\Models\User;
-use App\Services\FontteService;
+use App\Services\WatZapService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -99,10 +99,10 @@ class GuestComplaintController extends Controller
     protected function sendNotificationToPetugas(GuestComplaint $complaint, Lokasi $lokasi): void
     {
         try {
-            $fontteService = new FontteService();
+            $watzapService = new WatZapService();
 
-            if (!$fontteService->isConfigured()) {
-                Log::warning('Fontte not configured, skipping complaint notification');
+            if (!$watzapService->isConfigured()) {
+                Log::warning('WatZap not configured, skipping complaint notification');
                 return;
             }
 
@@ -137,7 +137,7 @@ class GuestComplaintController extends Controller
                 return;
             }
 
-            $result = $fontteService->sendGuestComplaintNotification($complaint, $petugasUsers);
+            $result = $watzapService->sendGuestComplaintNotification($complaint, $petugasUsers);
 
             Log::info('Guest complaint notification sent', [
                 'complaint_id' => $complaint->id,

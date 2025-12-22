@@ -5,20 +5,20 @@ namespace App\Observers;
 use App\Models\ActivityReport;
 use App\Notifications\ReportApprovedNotification;
 use App\Notifications\ReportRejectedNotification;
-use App\Services\FontteService;
+use App\Services\WatZapService;
 use App\Services\NotificationTemplateService;
 use App\Services\PenilaianService;
 use Illuminate\Support\Facades\Log;
 
 class ActivityReportObserver
 {
-    protected FontteService $fontte;
+    protected WatZapService $watzap;
     protected NotificationTemplateService $templates;
     protected PenilaianService $penilaianService;
 
     public function __construct()
     {
-        $this->fontte = new FontteService();
+        $this->watzap = new WatZapService();
         $this->templates = new NotificationTemplateService();
         $this->penilaianService = new PenilaianService();
     }
@@ -39,7 +39,7 @@ class ActivityReportObserver
                 foreach ($supervisors as $supervisor) {
                     $message = $this->templates->reportSubmitted($report, $supervisor);
 
-                    $this->fontte->sendMessage(
+                    $this->watzap->sendMessage(
                         $supervisor->phone,
                         $message,
                         [
@@ -91,7 +91,7 @@ class ActivityReportObserver
         }
 
         // Notify petugas when report status changed
-        if ($report->wasChanged('status') && $report->petugas && $report->petugas->phone) {
+        if ($report->wasChanged('status') && $report->petugas) {
             try {
                 $message = match($report->status) {
                     'approved' => $this->templates->reportApproved($report),
@@ -100,18 +100,29 @@ class ActivityReportObserver
                 };
 
                 if ($message) {
-                    // Send WhatsApp notification
-                    $this->fontte->sendMessage(
-                        $report->petugas->phone,
-                        $message,
-                        [
-                            'type' => 'report_status_changed',
-                            'report_id' => $report->id,
-                            'new_status' => $report->status,
-                        ]
-                    );
+                    $whatsappSent = false;
 
-                    // Send in-app notification
+                    // Send WhatsApp notification if configured and petugas has phone
+                    if ($this->watzap->isConfigured() && $report->petugas->phone) {
+                        $this->watzap->sendMessage(
+                            $report->petugas->phone,
+                            $message,
+                            [
+                                'type' => 'report_status_changed',
+                                'report_id' => $report->id,
+                                'new_status' => $report->status,
+                            ]
+                        );
+                        $whatsappSent = true;
+                    } elseif (!$report->petugas->phone) {
+                        Log::warning('Petugas has no phone number, skipping WhatsApp notification', [
+                            'report_id' => $report->id,
+                            'petugas_id' => $report->petugas_id,
+                            'petugas_name' => $report->petugas->name,
+                        ]);
+                    }
+
+                    // Send in-app notification (always, regardless of phone)
                     if ($report->status === 'approved') {
                         $report->petugas->notify(new ReportApprovedNotification($report));
                     } elseif ($report->status === 'rejected') {
@@ -122,6 +133,8 @@ class ActivityReportObserver
                         'report_id' => $report->id,
                         'status' => $report->status,
                         'petugas_id' => $report->petugas_id,
+                        'whatsapp_sent' => $whatsappSent,
+                        'in_app_sent' => true,
                     ]);
                 }
             } catch (\Exception $e) {

@@ -9,7 +9,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Schedule automatic WhatsApp notifications
-Schedule::command('notifications:schedule-reminders')->dailyAt('18:00');
+Schedule::command('notifications:daily-schedule')->dailyAt('06:00'); // Send today's schedule at 6 AM
+Schedule::command('notifications:schedule-reminders')->dailyAt('18:00'); // Reminder for tomorrow's schedule
 Schedule::command('notifications:attendance-reminders morning')->dailyAt('07:00');
 Schedule::command('notifications:attendance-reminders evening')->dailyAt('16:00');
 

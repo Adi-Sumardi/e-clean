@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\GuestComplaint;
-use App\Services\FontteService;
+use App\Services\WatZapService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -40,14 +40,14 @@ class GuestComplaintObserver
     protected function sendStatusUpdateToGuest(GuestComplaint $complaint): void
     {
         try {
-            $fontteService = new FontteService();
+            $watzapService = new WatZapService();
 
-            if (!$fontteService->isConfigured()) {
-                Log::warning('Fonnte not configured, skipping status update notification');
+            if (!$watzapService->isConfigured()) {
+                Log::warning('WatZap not configured, skipping status update notification');
                 return;
             }
 
-            $result = $fontteService->sendComplaintStatusUpdate($complaint);
+            $result = $watzapService->sendComplaintStatusUpdate($complaint);
 
             Log::info('Complaint status update notification sent', [
                 'complaint_id' => $complaint->id,

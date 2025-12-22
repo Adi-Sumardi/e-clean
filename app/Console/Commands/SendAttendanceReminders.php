@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use App\Services\FontteService;
+use App\Services\WatZapService;
 use App\Services\NotificationTemplateService;
 
 class SendAttendanceReminders extends Command
@@ -28,7 +28,7 @@ class SendAttendanceReminders extends Command
      */
     public function handle()
     {
-        $fontte = new FontteService();
+        $watzap = new WatZapService();
         $templates = new NotificationTemplateService();
 
         $type = $this->argument('type');
@@ -38,8 +38,24 @@ class SendAttendanceReminders extends Command
             return Command::FAILURE;
         }
 
+        if (!$watzap->isConfigured()) {
+            $this->error('WatZap is not configured. Please set WATZAP_API_KEY and WATZAP_NUMBER_KEY in .env');
+            return Command::FAILURE;
+        }
+
+        // Check petugas without phone
+        $petugasWithoutPhone = User::role('petugas')
+            ->where('is_active', true)
+            ->whereNull('phone')
+            ->count();
+
+        if ($petugasWithoutPhone > 0) {
+            $this->warn("Warning: {$petugasWithoutPhone} petugas have no phone number and will be skipped.");
+        }
+
         // Get all active petugas with phone numbers
         $petugasList = User::role('petugas')
+            ->where('is_active', true)
             ->whereNotNull('phone')
             ->get();
 
@@ -54,7 +70,7 @@ class SendAttendanceReminders extends Command
                     ? $templates->attendanceReminder($petugas)
                     : $templates->checkoutReminder($petugas);
 
-                $fontte->sendMessage(
+                $watzap->sendMessage(
                     $petugas->phone,
                     $message,
                     [
@@ -76,7 +92,8 @@ class SendAttendanceReminders extends Command
 
         $this->newLine();
         $this->info("Summary:");
-        $this->info("  Total petugas: {$petugasList->count()}");
+        $this->info("  Total petugas with phone: {$petugasList->count()}");
+        $this->info("  Petugas without phone: {$petugasWithoutPhone}");
         $this->info("  Successfully sent: {$sent}");
         $this->info("  Failed: {$failed}");
 
