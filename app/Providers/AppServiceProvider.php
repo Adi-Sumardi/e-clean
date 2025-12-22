@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Http\Request;
 use App\Models\JadwalKebersihan;
 use App\Models\ActivityReport;
+use App\Models\GuestComplaint;
 use App\Observers\JadwalKebersihanObserver;
 use App\Observers\ActivityReportObserver;
+use App\Observers\GuestComplaintObserver;
 use App\Policies\RolePolicy;
 use Spatie\Permission\Models\Role;
 
@@ -35,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         // Register observers for automatic WhatsApp notifications
         JadwalKebersihan::observe(JadwalKebersihanObserver::class);
         ActivityReport::observe(ActivityReportObserver::class);
+        GuestComplaint::observe(GuestComplaintObserver::class);
 
         // Register Role policy to hide Shield menu from non-admins
         Gate::policy(Role::class, RolePolicy::class);

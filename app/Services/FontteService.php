@@ -226,4 +226,120 @@ class FontteService
             return null;
         }
     }
+
+    /**
+     * Send guest complaint notification to petugas
+     *
+     * @param \App\Models\GuestComplaint $complaint
+     * @param array $petugasUsers - Array of User models to notify
+     * @return array
+     */
+    public function sendGuestComplaintNotification(\App\Models\GuestComplaint $complaint, array $petugasUsers): array
+    {
+        $results = [
+            'sent' => 0,
+            'failed' => 0,
+            'details' => []
+        ];
+
+        $lokasi = $complaint->lokasi;
+        $jenisKeluhan = \App\Models\GuestComplaint::getJenisKeluhanOptions()[$complaint->jenis_keluhan] ?? $complaint->jenis_keluhan;
+
+        $message = "🚨 *KELUHAN BARU DARI TAMU*\n\n"
+            . "📍 *Lokasi:* {$lokasi->nama_lokasi}\n"
+            . "🏢 *Kode:* {$lokasi->kode_lokasi}\n"
+            . ($lokasi->lantai ? "🏗️ *Lantai:* {$lokasi->lantai}\n" : "")
+            . "\n"
+            . "⚠️ *Jenis:* {$jenisKeluhan}\n"
+            . "👤 *Pelapor:* {$complaint->nama_pelapor}\n"
+            . ($complaint->telepon_pelapor ? "📞 *Telepon:* {$complaint->telepon_pelapor}\n" : "")
+            . "\n"
+            . "📝 *Keluhan:*\n{$complaint->deskripsi_keluhan}\n"
+            . "\n"
+            . "⏰ *Waktu:* " . $complaint->created_at->format('d/m/Y H:i') . "\n"
+            . "\n"
+            . "_Segera tangani keluhan ini._";
+
+        foreach ($petugasUsers as $user) {
+            if (!$user->phone) {
+                $results['failed']++;
+                $results['details'][] = [
+                    'user_id' => $user->id,
+                    'name' => $user->name,
+                    'status' => 'failed',
+                    'message' => 'No phone number'
+                ];
+                continue;
+            }
+
+            $result = $this->sendToUser($user, $message, 'guest_complaint', [
+                'complaint_id' => $complaint->id,
+                'lokasi_id' => $lokasi->id,
+            ]);
+
+            if ($result['success']) {
+                $results['sent']++;
+            } else {
+                $results['failed']++;
+            }
+
+            $results['details'][] = [
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'status' => $result['success'] ? 'sent' : 'failed',
+                'message' => $result['message']
+            ];
+
+            // Small delay to avoid rate limiting
+            usleep(300000); // 0.3 second delay
+        }
+
+        return $results;
+    }
+
+    /**
+     * Send complaint status update to guest (if they provided phone)
+     *
+     * @param \App\Models\GuestComplaint $complaint
+     * @return array
+     */
+    public function sendComplaintStatusUpdate(\App\Models\GuestComplaint $complaint): array
+    {
+        if (!$complaint->telepon_pelapor) {
+            return [
+                'success' => false,
+                'message' => 'Guest has no phone number'
+            ];
+        }
+
+        $lokasi = $complaint->lokasi;
+        $status = \App\Models\GuestComplaint::getStatusOptions()[$complaint->status] ?? $complaint->status;
+
+        $message = "📋 *UPDATE STATUS KELUHAN*\n\n"
+            . "📍 *Lokasi:* {$lokasi->nama_lokasi}\n"
+            . "📌 *Status:* {$status}\n";
+
+        if ($complaint->status === 'resolved') {
+            $message .= "\n✅ Keluhan Anda telah ditangani.\n";
+            if ($complaint->catatan_penanganan) {
+                $message .= "\n📝 *Catatan:*\n{$complaint->catatan_penanganan}\n";
+            }
+            $message .= "\nTerima kasih telah membantu menjaga kebersihan. 🙏";
+        } elseif ($complaint->status === 'in_progress') {
+            $message .= "\n🔄 Keluhan Anda sedang dalam proses penanganan.\n"
+                . "\nMohon tunggu, tim kami sedang bekerja. 👷";
+        } elseif ($complaint->status === 'rejected') {
+            $message .= "\n❌ Keluhan tidak dapat diproses.\n";
+            if ($complaint->catatan_penanganan) {
+                $message .= "\n📝 *Alasan:*\n{$complaint->catatan_penanganan}\n";
+            }
+        }
+
+        $phone = $this->formatPhoneNumber($complaint->telepon_pelapor);
+
+        return $this->sendMessage($phone, $message, [
+            'type' => 'complaint_status_update',
+            'complaint_id' => $complaint->id,
+        ]);
+    }
 }

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\GuestComplaint;
+use App\Models\JadwalKebersihan;
 use App\Models\Lokasi;
+use App\Models\User;
+use App\Services\FontteService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -82,9 +85,73 @@ class GuestComplaintController extends Controller
         // Get lokasi for redirect
         $lokasi = Lokasi::find($data['lokasi_id']);
 
+        // Send WhatsApp notification to petugas
+        $this->sendNotificationToPetugas($complaint, $lokasi);
+
         return redirect()
             ->route('guest-complaint.success', ['lokasi' => $lokasi->kode_lokasi])
             ->with('success', 'Keluhan Anda telah berhasil dikirim. Terima kasih atas laporannya.');
+    }
+
+    /**
+     * Send WhatsApp notification to petugas assigned to this location
+     */
+    protected function sendNotificationToPetugas(GuestComplaint $complaint, Lokasi $lokasi): void
+    {
+        try {
+            $fontteService = new FontteService();
+
+            if (!$fontteService->isConfigured()) {
+                Log::warning('Fontte not configured, skipping complaint notification');
+                return;
+            }
+
+            // Get petugas assigned to this location today
+            $petugasIds = JadwalKebersihan::where('lokasi_id', $lokasi->id)
+                ->where('tanggal', today())
+                ->where('status', 'active')
+                ->pluck('petugas_id')
+                ->unique()
+                ->toArray();
+
+            // If no petugas today, get supervisors
+            if (empty($petugasIds)) {
+                $petugasUsers = User::role('supervisor')
+                    ->where('is_active', true)
+                    ->whereNotNull('phone')
+                    ->get()
+                    ->all();
+            } else {
+                $petugasUsers = User::whereIn('id', $petugasIds)
+                    ->where('is_active', true)
+                    ->whereNotNull('phone')
+                    ->get()
+                    ->all();
+            }
+
+            if (empty($petugasUsers)) {
+                Log::info('No petugas/supervisor to notify for complaint', [
+                    'complaint_id' => $complaint->id,
+                    'lokasi_id' => $lokasi->id,
+                ]);
+                return;
+            }
+
+            $result = $fontteService->sendGuestComplaintNotification($complaint, $petugasUsers);
+
+            Log::info('Guest complaint notification sent', [
+                'complaint_id' => $complaint->id,
+                'lokasi_id' => $lokasi->id,
+                'sent' => $result['sent'],
+                'failed' => $result['failed'],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send complaint notification: ' . $e->getMessage(), [
+                'complaint_id' => $complaint->id,
+                'lokasi_id' => $lokasi->id,
+            ]);
+        }
     }
 
     /**
