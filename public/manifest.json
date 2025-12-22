@@ -1,7 +1,7 @@
 {
-  "name": "E-Clean Management System",
-  "short_name": "E-Clean",
-  "description": "Sistem Manajemen Kebersihan Sekolah",
+  "name": "Clean Service System",
+  "short_name": "CSS",
+  "description": "Clean Service System - Sistem Manajemen Kebersihan",
   "start_url": "/admin",
   "display": "standalone",
   "background_color": "#ffffff",

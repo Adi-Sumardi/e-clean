@@ -1,9 +1,10 @@
 <div class="custom-login-header" style="text-align: center; margin-bottom: 2rem;">
-    <h2 class="welcome-heading" style="font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; animation: fadeInDown 0.8s ease-out;">
-        Selamat Datang 👋
+    <img src="/pwa/icon-192x192.png" alt="CSS Logo" style="width: 100px; height: 100px; margin: 0 auto 1rem; display: block; animation: fadeInDown 0.8s ease-out;">
+    <h2 class="welcome-heading" style="font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem; animation: fadeInDown 0.8s ease-out 0.1s backwards;">
+        Selamat Datang
     </h2>
     <p class="welcome-subheading" style="font-size: 0.875rem; animation: fadeInDown 0.8s ease-out 0.2s backwards;">
-        E-Clean Management System
+        Clean Service System
     </p>
 </div>
 
