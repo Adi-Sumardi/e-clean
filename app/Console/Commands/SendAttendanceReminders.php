@@ -67,8 +67,8 @@ class SendAttendanceReminders extends Command
         foreach ($petugasList as $petugas) {
             try {
                 $message = $type === 'morning'
-                    ? $templates->attendanceReminder($petugas)
-                    : $templates->checkoutReminder($petugas);
+                    ? $templates->morningWorkReminder($petugas)
+                    : $templates->shiftEndReminder($petugas);
 
                 $watzap->sendMessage(
                     $petugas->phone,
