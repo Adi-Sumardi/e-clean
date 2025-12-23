@@ -117,7 +117,7 @@ class ActivityReportResource extends Resource
                             // Petugas: hanya tampilkan jadwal mereka hari ini yang BELUM dilaporkan
                             $query = JadwalKebersihan::where('petugas_id', $user->id)
                                 ->whereDate('tanggal', now()->toDateString())
-                                ->with('lokasi');
+                                ->with(['lokasi', 'lokasi.unit']);
 
                             // Exclude jadwal yang sudah dilaporkan (kecuali saat edit, jangan exclude jadwal yang sedang diedit)
                             if (!empty($reportedJadwalIds)) {
@@ -132,24 +132,27 @@ class ActivityReportResource extends Resource
 
                             $options = $query->get()
                                 ->mapWithKeys(function ($jadwal) {
-                                    return [$jadwal->id => $jadwal->lokasi->nama_lokasi . ' - Shift ' . ucfirst($jadwal->shift) . ' (' . $jadwal->tanggal->format('d/m/Y') . ')'];
+                                    $unitName = $jadwal->lokasi->unit?->nama_unit ?? 'No Unit';
+                                    return [$jadwal->id => '[' . $unitName . '] ' . $jadwal->lokasi->nama_lokasi . ' - Shift ' . ucfirst($jadwal->shift)];
                                 });
 
                             // Saat edit, include jadwal yang sudah dipilih sebelumnya
                             if ($record && $record->jadwal_id && !$options->has($record->jadwal_id)) {
-                                $jadwal = JadwalKebersihan::with('lokasi')->find($record->jadwal_id);
+                                $jadwal = JadwalKebersihan::with(['lokasi', 'lokasi.unit'])->find($record->jadwal_id);
                                 if ($jadwal) {
-                                    $options->put($record->jadwal_id, $jadwal->lokasi->nama_lokasi . ' - Shift ' . ucfirst($jadwal->shift) . ' (' . $jadwal->tanggal->format('d/m/Y') . ')');
+                                    $unitName = $jadwal->lokasi->unit?->nama_unit ?? 'No Unit';
+                                    $options->put($record->jadwal_id, '[' . $unitName . '] ' . $jadwal->lokasi->nama_lokasi . ' - Shift ' . ucfirst($jadwal->shift));
                                 }
                             }
 
                             return $options;
                         } else {
                             // Supervisor/Admin: tampilkan semua jadwal
-                            return JadwalKebersihan::with(['petugas', 'lokasi'])
+                            return JadwalKebersihan::with(['petugas', 'lokasi', 'lokasi.unit'])
                                 ->get()
                                 ->mapWithKeys(function ($jadwal) {
-                                    return [$jadwal->id => $jadwal->tanggal->format('d/m/Y') . ' - ' . $jadwal->lokasi->nama_lokasi . ' (' . ucfirst($jadwal->shift) . ')'];
+                                    $unitName = $jadwal->lokasi->unit?->nama_unit ?? 'No Unit';
+                                    return [$jadwal->id => $jadwal->tanggal->format('d/m/Y') . ' - [' . $unitName . '] ' . $jadwal->lokasi->nama_lokasi . ' (' . ucfirst($jadwal->shift) . ')'];
                                 });
                         }
                     })
@@ -280,6 +283,11 @@ class ActivityReportResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('lokasi.unit.nama_unit')
+                    ->label('Unit')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('lokasi.nama_lokasi')
                     ->label('Lokasi')
                     ->searchable()
@@ -350,6 +358,11 @@ class ActivityReportResource extends Resource
                     ->options(User::whereHas('roles', function ($query) {
                         $query->where('name', 'petugas');
                     })->pluck('name', 'id')),
+                SelectFilter::make('unit')
+                    ->label('Unit')
+                    ->relationship('lokasi.unit', 'nama_unit')
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('lokasi_id')
                     ->label('Lokasi')
                     ->options(Lokasi::pluck('nama_lokasi', 'id')),
