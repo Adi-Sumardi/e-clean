@@ -7,6 +7,7 @@ use App\Filament\Resources\JadwalKebersihanans\Pages\ManageJadwalKebersihanans;
 use App\Models\JadwalKebersihan;
 use App\Models\LaporanKeterlambatan;
 use App\Models\Lokasi;
+use App\Models\Unit;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -105,13 +106,32 @@ class JadwalKebersihanResource extends Resource
                     ->placeholder('Pilih Petugas')
                     ->helperText('Petugas yang akan bertugas'),
 
+                Select::make('unit_id')
+                    ->label('🏢 Unit')
+                    ->required()
+                    ->searchable()
+                    ->options(Unit::where('is_active', true)->pluck('nama_unit', 'id'))
+                    ->placeholder('Pilih Unit terlebih dahulu')
+                    ->helperText('Pilih unit untuk menampilkan lokasi')
+                    ->live()
+                    ->afterStateUpdated(fn ($set) => $set('lokasi_id', null)),
+
                 Select::make('lokasi_id')
                     ->label('📍 Lokasi')
                     ->required()
                     ->searchable()
-                    ->options(Lokasi::where('is_active', true)->pluck('nama_lokasi', 'id'))
-                    ->placeholder('Pilih Lokasi')
-                    ->helperText('Lokasi yang akan dibersihkan'),
+                    ->options(function ($get) {
+                        $unitId = $get('unit_id');
+                        if (!$unitId) {
+                            return [];
+                        }
+                        return Lokasi::where('is_active', true)
+                            ->where('unit_id', $unitId)
+                            ->pluck('nama_lokasi', 'id');
+                    })
+                    ->placeholder(fn ($get) => $get('unit_id') ? 'Pilih Lokasi' : 'Pilih Unit terlebih dahulu')
+                    ->helperText('Lokasi yang akan dibersihkan')
+                    ->disabled(fn ($get) => !$get('unit_id')),
 
                 Select::make('prioritas')
                     ->label('⭐ Prioritas')
