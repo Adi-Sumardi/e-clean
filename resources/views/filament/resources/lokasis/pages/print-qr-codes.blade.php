@@ -209,13 +209,88 @@
         }
     </style>
 
+    {{-- Filter Section --}}
+    <div class="no-print mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div class="flex flex-wrap gap-4 items-end">
+            {{-- Filter Unit --}}
+            <div class="flex-1 min-w-[200px]">
+                <label for="unit-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Filter Unit
+                </label>
+                <select
+                    id="unit-filter"
+                    wire:model.live="selectedUnit"
+                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                >
+                    <option value="">Semua Unit</option>
+                    @foreach($units as $id => $nama)
+                        <option value="{{ $id }}">{{ $nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filter Lokasi --}}
+            <div class="flex-1 min-w-[200px]">
+                <label for="lokasi-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Filter Lokasi
+                </label>
+                <select
+                    id="lokasi-filter"
+                    wire:model.live="selectedLokasi"
+                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                >
+                    <option value="">Semua Lokasi</option>
+                    @foreach($this->getLokasiOptions() as $id => $nama)
+                        <option value="{{ $id }}">{{ $nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Reset Button --}}
+            @if($selectedUnit || $selectedLokasi)
+                <button
+                    type="button"
+                    wire:click="resetFilters"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition"
+                >
+                    <x-heroicon-o-x-mark class="w-4 h-4"/>
+                    Reset Filter
+                </button>
+            @endif
+        </div>
+
+        {{-- Active Filter Info --}}
+        @if($selectedUnit || $selectedLokasi)
+            <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                <span class="font-medium">Filter aktif:</span>
+                @if($selectedUnit && isset($units[$selectedUnit]))
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 ml-2">
+                        Unit: {{ $units[$selectedUnit] }}
+                    </span>
+                @endif
+                @if($selectedLokasi)
+                    @php
+                        $lokasiOptions = $this->getLokasiOptions();
+                        $lokasiName = $lokasiOptions[$selectedLokasi] ?? null;
+                    @endphp
+                    @if($lokasiName)
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200 ml-2">
+                            Lokasi: {{ $lokasiName }}
+                        </span>
+                    @endif
+                @endif
+            </div>
+        @endif
+    </div>
+
+    {{-- Action Buttons --}}
     <div class="no-print mb-4 flex flex-wrap gap-3 items-center">
         <x-filament::button
             color="primary"
             icon="heroicon-o-printer"
             onclick="handlePrint()"
         >
-            Cetak Semua QR Code
+            Cetak {{ count($lokasis) }} QR Code
         </x-filament::button>
 
         @php
@@ -235,8 +310,8 @@
             </button>
         @endif
 
-        <div class="text-sm text-gray-600">
-            Total {{ count($lokasis) }} lokasi
+        <div class="text-sm text-gray-600 dark:text-gray-400">
+            Menampilkan {{ count($lokasis) }} lokasi
             @if($missingCount > 0)
                 <span class="text-red-600">({{ $missingCount }} QR Code hilang)</span>
             @endif

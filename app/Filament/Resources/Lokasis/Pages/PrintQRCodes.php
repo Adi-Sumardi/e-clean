@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Lokasis\Pages;
 
 use App\Filament\Resources\Lokasis\LokasiResource;
 use App\Models\Lokasi;
+use App\Models\Unit;
 use App\Services\QRCodeService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
@@ -19,17 +20,71 @@ class PrintQRCodes extends Page
     protected static ?string $title = 'Cetak QR Code Lokasi';
 
     public $lokasis = [];
+    public $units = [];
+    public $selectedUnit = null;
+    public $selectedLokasi = null;
 
     public function mount(): void
+    {
+        $this->loadUnits();
+        $this->loadLokasis();
+    }
+
+    public function loadUnits(): void
+    {
+        $this->units = Unit::where('is_active', true)
+            ->orderBy('nama_unit')
+            ->pluck('nama_unit', 'id')
+            ->toArray();
+    }
+
+    public function updatedSelectedUnit(): void
+    {
+        // Reset lokasi selection when unit changes
+        $this->selectedLokasi = null;
+        $this->loadLokasis();
+    }
+
+    public function updatedSelectedLokasi(): void
     {
         $this->loadLokasis();
     }
 
+    public function resetFilters(): void
+    {
+        $this->selectedUnit = null;
+        $this->selectedLokasi = null;
+        $this->loadLokasis();
+    }
+
+    public function getLokasiOptions(): array
+    {
+        $query = Lokasi::where('is_active', true);
+
+        if ($this->selectedUnit) {
+            $query->where('unit_id', $this->selectedUnit);
+        }
+
+        return $query->orderBy('nama_lokasi')
+            ->pluck('nama_lokasi', 'id')
+            ->toArray();
+    }
+
     public function loadLokasis(): void
     {
-        // Get all active locations
-        $this->lokasis = Lokasi::where('is_active', true)
-            ->orderBy('kode_lokasi')
+        $query = Lokasi::where('is_active', true);
+
+        // Filter by unit if selected
+        if ($this->selectedUnit) {
+            $query->where('unit_id', $this->selectedUnit);
+        }
+
+        // Filter by specific lokasi if selected
+        if ($this->selectedLokasi) {
+            $query->where('id', $this->selectedLokasi);
+        }
+
+        $this->lokasis = $query->orderBy('kode_lokasi')
             ->get()
             ->map(function ($lokasi) {
                 // Check if QR code file actually exists
@@ -43,6 +98,7 @@ class PrintQRCodes extends Page
                     'kode_lokasi' => $lokasi->kode_lokasi,
                     'nama_lokasi' => $lokasi->nama_lokasi,
                     'kategori' => $lokasi->kategori,
+                    'unit_nama' => $lokasi->unit?->nama_unit ?? '-',
                     'qr_code_url' => $qrCodeExists ? asset('storage/' . $lokasi->qr_code) : null,
                     'qr_code_exists' => $qrCodeExists,
                 ];
