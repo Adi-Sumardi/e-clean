@@ -114,7 +114,8 @@ class JadwalKebersihanResource extends Resource
                     ->placeholder('Pilih Unit terlebih dahulu')
                     ->helperText('Pilih unit untuk menampilkan lokasi')
                     ->live()
-                    ->afterStateUpdated(fn ($set) => $set('lokasi_id', null)),
+                    ->afterStateUpdated(fn ($set) => $set('lokasi_id', null))
+                    ->dehydrated(false),
 
                 Select::make('lokasi_id')
                     ->label('📍 Lokasi')
