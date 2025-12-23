@@ -22,15 +22,15 @@ class QRCodeService
         // This allows external scanners (Google Lens, etc.) to redirect directly
         $complaintUrl = url('/keluhan/' . $lokasi->kode_lokasi);
 
-        // Generate QR code image
-        $qrCode = QrCode::format('png')
+        // Generate QR code image as SVG (no imagick required)
+        $qrCode = QrCode::format('svg')
             ->size($size)
             ->errorCorrection('H') // High error correction
             ->margin(2)
             ->generate($complaintUrl);
 
         // Save to storage
-        $filename = 'qrcodes/' . $lokasi->kode_lokasi . '.png';
+        $filename = 'qrcodes/' . $lokasi->kode_lokasi . '.svg';
         Storage::disk('public')->put($filename, $qrCode);
 
         // Update lokasi with QR code path
