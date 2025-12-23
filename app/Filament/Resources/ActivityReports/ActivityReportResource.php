@@ -107,11 +107,30 @@ class ActivityReportResource extends Resource
                     ->searchable()
                     ->options(function ($record) use ($isPetugas, $user) {
                         if ($isPetugas) {
-                            // Petugas: hanya tampilkan jadwal mereka hari ini
-                            $options = JadwalKebersihan::where('petugas_id', $user->id)
+                            // Get jadwal IDs yang sudah dilaporkan hari ini oleh petugas ini
+                            $reportedJadwalIds = ActivityReport::where('petugas_id', $user->id)
                                 ->whereDate('tanggal', now()->toDateString())
-                                ->with('lokasi')
-                                ->get()
+                                ->whereNotNull('jadwal_id')
+                                ->pluck('jadwal_id')
+                                ->toArray();
+
+                            // Petugas: hanya tampilkan jadwal mereka hari ini yang BELUM dilaporkan
+                            $query = JadwalKebersihan::where('petugas_id', $user->id)
+                                ->whereDate('tanggal', now()->toDateString())
+                                ->with('lokasi');
+
+                            // Exclude jadwal yang sudah dilaporkan (kecuali saat edit, jangan exclude jadwal yang sedang diedit)
+                            if (!empty($reportedJadwalIds)) {
+                                // Saat edit, jangan exclude jadwal yang sedang diedit
+                                if ($record && $record->jadwal_id) {
+                                    $reportedJadwalIds = array_diff($reportedJadwalIds, [$record->jadwal_id]);
+                                }
+                                if (!empty($reportedJadwalIds)) {
+                                    $query->whereNotIn('id', $reportedJadwalIds);
+                                }
+                            }
+
+                            $options = $query->get()
                                 ->mapWithKeys(function ($jadwal) {
                                     return [$jadwal->id => $jadwal->lokasi->nama_lokasi . ' - Shift ' . ucfirst($jadwal->shift) . ' (' . $jadwal->tanggal->format('d/m/Y') . ')'];
                                 });
@@ -135,7 +154,7 @@ class ActivityReportResource extends Resource
                         }
                     })
                     ->placeholder($isPetugas ? 'Pilih jadwal hari ini' : 'Pilih Jadwal (Opsional)')
-                    ->helperText($isPetugas ? 'Pilih jadwal yang sesuai dengan pekerjaan ini' : null)
+                    ->helperText($isPetugas ? 'Hanya menampilkan jadwal yang belum dilaporkan' : null)
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) use ($isPetugas) {
                         // Auto-fill lokasi berdasarkan jadwal yang dipilih
