@@ -223,15 +223,16 @@
         @endphp
 
         @if($missingCount > 0)
-            <x-filament::button
-                color="success"
-                icon="heroicon-o-qr-code"
+            <button
+                type="button"
                 wire:click="generateAllMissing"
                 wire:loading.attr="disabled"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-success-600 hover:bg-success-500 text-white text-sm font-medium rounded-lg transition"
             >
+                <x-heroicon-o-qr-code class="w-5 h-5"/>
                 <span wire:loading.remove wire:target="generateAllMissing">Generate {{ $missingCount }} QR Code yang Hilang</span>
                 <span wire:loading wire:target="generateAllMissing">Generating...</span>
-            </x-filament::button>
+            </button>
         @endif
 
         <div class="text-sm text-gray-600">
@@ -285,17 +286,16 @@
                     <div class="w-full h-32 bg-gray-100 flex flex-col items-center justify-center mx-auto rounded-lg border-2 border-dashed border-gray-300 no-print">
                         <x-heroicon-o-qr-code class="w-8 h-8 text-gray-400 mb-2"/>
                         <span class="text-gray-500 text-sm mb-2">QR Code tidak tersedia</span>
-                        <x-filament::button
-                            color="success"
-                            size="sm"
-                            icon="heroicon-o-arrow-path"
+                        <button
+                            type="button"
                             wire:click="generateQRCode({{ $lokasi['id'] }})"
                             wire:loading.attr="disabled"
-                            wire:target="generateQRCode({{ $lokasi['id'] }})"
+                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-success-600 hover:bg-success-500 text-white text-sm font-medium rounded-lg transition"
                         >
+                            <x-heroicon-o-arrow-path class="w-4 h-4" wire:loading wire:target="generateQRCode({{ $lokasi['id'] }})" />
                             <span wire:loading.remove wire:target="generateQRCode({{ $lokasi['id'] }})">Generate</span>
-                            <span wire:loading wire:target="generateQRCode({{ $lokasi['id'] }})">...</span>
-                        </x-filament::button>
+                            <span wire:loading wire:target="generateQRCode({{ $lokasi['id'] }})">Generating...</span>
+                        </button>
                     </div>
                 @endif
 
