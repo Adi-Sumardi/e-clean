@@ -227,8 +227,10 @@
                 color="success"
                 icon="heroicon-o-qr-code"
                 wire:click="generateAllMissing"
+                wire:loading.attr="disabled"
             >
-                Generate {{ $missingCount }} QR Code yang Hilang
+                <span wire:loading.remove wire:target="generateAllMissing">Generate {{ $missingCount }} QR Code yang Hilang</span>
+                <span wire:loading wire:target="generateAllMissing">Generating...</span>
             </x-filament::button>
         @endif
 
@@ -288,8 +290,11 @@
                             size="sm"
                             icon="heroicon-o-arrow-path"
                             wire:click="generateQRCode({{ $lokasi['id'] }})"
+                            wire:loading.attr="disabled"
+                            wire:target="generateQRCode({{ $lokasi['id'] }})"
                         >
-                            Generate
+                            <span wire:loading.remove wire:target="generateQRCode({{ $lokasi['id'] }})">Generate</span>
+                            <span wire:loading wire:target="generateQRCode({{ $lokasi['id'] }})">...</span>
                         </x-filament::button>
                     </div>
                 @endif
