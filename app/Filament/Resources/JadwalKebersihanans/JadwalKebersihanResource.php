@@ -185,6 +185,11 @@ class JadwalKebersihanResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('lokasi.unit.nama_unit')
+                    ->label('Unit')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('lokasi.nama_lokasi')
                     ->label('Lokasi')
                     ->searchable()
