@@ -7,6 +7,7 @@ use App\Filament\Resources\ActivityReports\Pages;
 use App\Models\ActivityReport;
 use App\Models\JadwalKebersihan;
 use App\Models\Lokasi;
+use App\Models\Unit;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -69,11 +70,23 @@ class ActivityReportResource extends Resource
                     ->dehydrated()
                     ->placeholder('Pilih Petugas'),
 
+                // Unit field - hanya untuk Supervisor/Admin
+                Select::make('unit_id')
+                    ->label('Unit')
+                    ->searchable()
+                    ->options(Unit::where('is_active', true)->pluck('nama_unit', 'id'))
+                    ->placeholder('Pilih Unit terlebih dahulu')
+                    ->helperText('Pilih unit untuk menampilkan lokasi')
+                    ->live()
+                    ->afterStateUpdated(fn ($set) => $set('lokasi_id', null))
+                    ->dehydrated(false)
+                    ->hidden($isPetugas),
+
                 Select::make('lokasi_id')
                     ->label('Lokasi')
                     ->required()
                     ->searchable()
-                    ->options(function ($record) use ($isPetugas, $user) {
+                    ->options(function ($record, $get) use ($isPetugas, $user) {
                         if ($isPetugas) {
                             // Petugas: hanya tampilkan lokasi dari jadwal mereka hari ini
                             $options = JadwalKebersihan::where('petugas_id', $user->id)
@@ -93,11 +106,23 @@ class ActivityReportResource extends Resource
 
                             return $options;
                         } else {
-                            // Supervisor/Admin: tampilkan semua lokasi aktif
-                            return Lokasi::where('is_active', true)->pluck('nama_lokasi', 'id');
+                            // Supervisor/Admin: filter berdasarkan unit jika dipilih
+                            $unitId = $get('unit_id');
+                            $query = Lokasi::where('is_active', true);
+
+                            if ($unitId) {
+                                $query->where('unit_id', $unitId);
+                            }
+
+                            return $query->pluck('nama_lokasi', 'id');
                         }
                     })
-                    ->placeholder($isPetugas ? 'Pilih lokasi dari jadwal hari ini' : 'Pilih Lokasi')
+                    ->placeholder(function ($get) use ($isPetugas) {
+                        if ($isPetugas) {
+                            return 'Pilih lokasi dari jadwal hari ini';
+                        }
+                        return $get('unit_id') ? 'Pilih Lokasi' : 'Pilih Unit terlebih dahulu';
+                    })
                     ->helperText($isPetugas ? 'Hanya menampilkan lokasi sesuai jadwal Anda hari ini' : null)
                     ->disabled(fn ($get) => $isPetugas && $get('jadwal_id'))
                     ->dehydrated(),
