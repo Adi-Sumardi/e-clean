@@ -170,7 +170,7 @@ class QRCodeService
             return null;
         }
 
-        return Storage::disk('public')->url($lokasi->qr_code);
+        return asset("storage/{$lokasi->qr_code}");
     }
 
     /**

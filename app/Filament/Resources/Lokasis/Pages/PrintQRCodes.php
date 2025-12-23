@@ -6,7 +6,6 @@ use App\Filament\Resources\Lokasis\LokasiResource;
 use App\Models\Lokasi;
 use App\Services\QRCodeService;
 use Filament\Resources\Pages\Page;
-use Illuminate\Support\Facades\Storage;
 
 class PrintQRCodes extends Page
 {
@@ -38,7 +37,7 @@ class PrintQRCodes extends Page
                     'kode_lokasi' => $lokasi->kode_lokasi,
                     'nama_lokasi' => $lokasi->nama_lokasi,
                     'kategori' => $lokasi->kategori,
-                    'qr_code_url' => $lokasi->qr_code ? Storage::disk('public')->url($lokasi->qr_code) : null,
+                    'qr_code_url' => $lokasi->qr_code ? asset('storage/' . $lokasi->qr_code) : null,
                 ];
             })
             ->toArray();
