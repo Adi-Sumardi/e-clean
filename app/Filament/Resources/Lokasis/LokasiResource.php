@@ -160,6 +160,7 @@ class LokasiResource extends Resource
                     ->disk('public')
                     ->height(40)
                     ->width(40)
+                    ->checkFileExistence(false)
                     ->defaultImageUrl(url('/images/no-qrcode.png'))
                     ->tooltip(fn (Lokasi $record): string => $record->qr_code ? 'QR Code tersedia' : 'QR Code belum dibuat'),
 
