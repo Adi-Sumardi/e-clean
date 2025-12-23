@@ -51,9 +51,12 @@ class PrintQRCodes extends Page
 
     public function generateQRCode(int $lokasiId): void
     {
+        \Log::info('generateQRCode called', ['lokasi_id' => $lokasiId]);
+
         $lokasi = Lokasi::find($lokasiId);
 
         if (!$lokasi) {
+            \Log::error('Lokasi not found', ['lokasi_id' => $lokasiId]);
             Notification::make()
                 ->title('Error')
                 ->body('Lokasi tidak ditemukan')
@@ -62,14 +65,30 @@ class PrintQRCodes extends Page
             return;
         }
 
-        $qrCodeService = new QRCodeService();
-        $qrCodeService->generateForLokasi($lokasi);
+        try {
+            \Log::info('Generating QR Code', ['kode' => $lokasi->kode_lokasi]);
+            $qrCodeService = new QRCodeService();
+            $path = $qrCodeService->generateForLokasi($lokasi);
+            \Log::info('QR Code generated', ['path' => $path]);
 
-        Notification::make()
-            ->title('QR Code Berhasil Dibuat')
-            ->body('QR Code untuk ' . $lokasi->nama_lokasi . ' telah dibuat')
-            ->success()
-            ->send();
+            // Verify file exists
+            $exists = Storage::disk('public')->exists($path);
+            \Log::info('File exists check', ['exists' => $exists, 'path' => $path]);
+
+            Notification::make()
+                ->title('QR Code Berhasil Dibuat')
+                ->body('QR Code untuk ' . $lokasi->nama_lokasi . ' telah dibuat')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            \Log::error('QR Code generation failed', ['error' => $e->getMessage()]);
+            Notification::make()
+                ->title('Error')
+                ->body('Gagal membuat QR Code: ' . $e->getMessage())
+                ->danger()
+                ->send();
+            return;
+        }
 
         // Reload data
         $this->loadLokasis();
