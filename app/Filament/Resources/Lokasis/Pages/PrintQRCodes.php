@@ -7,6 +7,7 @@ use App\Models\Lokasi;
 use App\Services\QRCodeService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class PrintQRCodes extends Page
@@ -51,12 +52,12 @@ class PrintQRCodes extends Page
 
     public function generateQRCode(int $lokasiId): void
     {
-        \Log::info('generateQRCode called', ['lokasi_id' => $lokasiId]);
+        Log::info('generateQRCode called', ['lokasi_id' => $lokasiId]);
 
         $lokasi = Lokasi::find($lokasiId);
 
         if (!$lokasi) {
-            \Log::error('Lokasi not found', ['lokasi_id' => $lokasiId]);
+            Log::error('Lokasi not found', ['lokasi_id' => $lokasiId]);
             Notification::make()
                 ->title('Error')
                 ->body('Lokasi tidak ditemukan')
@@ -66,14 +67,14 @@ class PrintQRCodes extends Page
         }
 
         try {
-            \Log::info('Generating QR Code', ['kode' => $lokasi->kode_lokasi]);
+            Log::info('Generating QR Code', ['kode' => $lokasi->kode_lokasi]);
             $qrCodeService = new QRCodeService();
             $path = $qrCodeService->generateForLokasi($lokasi);
-            \Log::info('QR Code generated', ['path' => $path]);
+            Log::info('QR Code generated', ['path' => $path]);
 
             // Verify file exists
             $exists = Storage::disk('public')->exists($path);
-            \Log::info('File exists check', ['exists' => $exists, 'path' => $path]);
+            Log::info('File exists check', ['exists' => $exists, 'path' => $path]);
 
             Notification::make()
                 ->title('QR Code Berhasil Dibuat')
@@ -81,7 +82,7 @@ class PrintQRCodes extends Page
                 ->success()
                 ->send();
         } catch (\Exception $e) {
-            \Log::error('QR Code generation failed', ['error' => $e->getMessage()]);
+            Log::error('QR Code generation failed', ['error' => $e->getMessage()]);
             Notification::make()
                 ->title('Error')
                 ->body('Gagal membuat QR Code: ' . $e->getMessage())
