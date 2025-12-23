@@ -209,7 +209,7 @@
         }
     </style>
 
-    <div class="no-print mb-4">
+    <div class="no-print mb-4 flex flex-wrap gap-3 items-center">
         <x-filament::button
             color="primary"
             icon="heroicon-o-printer"
@@ -218,8 +218,25 @@
             Cetak Semua QR Code
         </x-filament::button>
 
-        <div class="mt-2 text-sm text-gray-600">
-            Total {{ count($lokasis) }} lokasi akan dicetak
+        @php
+            $missingCount = collect($lokasis)->where('qr_code_exists', false)->count();
+        @endphp
+
+        @if($missingCount > 0)
+            <x-filament::button
+                color="success"
+                icon="heroicon-o-qr-code"
+                wire:click="generateAllMissing"
+            >
+                Generate {{ $missingCount }} QR Code yang Hilang
+            </x-filament::button>
+        @endif
+
+        <div class="text-sm text-gray-600">
+            Total {{ count($lokasis) }} lokasi
+            @if($missingCount > 0)
+                <span class="text-red-600">({{ $missingCount }} QR Code hilang)</span>
+            @endif
         </div>
     </div>
 
@@ -260,11 +277,20 @@
     <div class="qrcode-grid">
         @foreach($lokasis as $lokasi)
             <div class="qrcode-card">
-                @if($lokasi['qr_code_url'])
+                @if($lokasi['qr_code_exists'] && $lokasi['qr_code_url'])
                     <img src="{{ $lokasi['qr_code_url'] }}" alt="QR Code {{ $lokasi['kode_lokasi'] }}">
                 @else
-                    <div class="w-full h-24 bg-gray-200 flex items-center justify-center mx-auto">
-                        <span class="text-gray-500">QR Code tidak tersedia</span>
+                    <div class="w-full h-32 bg-gray-100 flex flex-col items-center justify-center mx-auto rounded-lg border-2 border-dashed border-gray-300 no-print">
+                        <x-heroicon-o-qr-code class="w-8 h-8 text-gray-400 mb-2"/>
+                        <span class="text-gray-500 text-sm mb-2">QR Code tidak tersedia</span>
+                        <x-filament::button
+                            color="success"
+                            size="sm"
+                            icon="heroicon-o-arrow-path"
+                            wire:click="generateQRCode({{ $lokasi['id'] }})"
+                        >
+                            Generate
+                        </x-filament::button>
                     </div>
                 @endif
 
