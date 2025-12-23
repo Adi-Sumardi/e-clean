@@ -20,7 +20,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -215,9 +214,9 @@ class LokasiResource extends Resource
                     ->label('Generate QR Code')
                     ->icon('heroicon-o-qr-code')
                     ->color('success')
-                    ->visible(fn (Lokasi $record) => !$record->qr_code)
-                    ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']))
-                    ->action(function (Lokasi $record) {
+                    ->visible(fn (Lokasi $record): bool => empty($record->qr_code))
+                    ->hidden(fn (): bool => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']))
+                    ->action(function (Lokasi $record): void {
                         $qrCodeService = new QRCodeService();
                         $qrCodeService->generateForLokasi($record);
 
@@ -226,16 +225,20 @@ class LokasiResource extends Resource
                             ->title('QR Code Berhasil Dibuat')
                             ->body('QR Code untuk ' . $record->nama_lokasi . ' telah dibuat')
                             ->send();
-                    }),
+                    })
+                    ->successNotificationTitle('QR Code berhasil dibuat'),
 
                 Action::make('regenerate_qrcode')
                     ->label('Regenerate QR Code')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
-                    ->visible(fn (Lokasi $record) => $record->qr_code)
-                    ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']))
+                    ->visible(fn (Lokasi $record): bool => !empty($record->qr_code))
+                    ->hidden(fn (): bool => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']))
                     ->requiresConfirmation()
-                    ->action(function (Lokasi $record) {
+                    ->modalHeading('Regenerate QR Code')
+                    ->modalDescription('Apakah Anda yakin ingin membuat ulang QR Code untuk lokasi ini?')
+                    ->modalSubmitActionLabel('Ya, Regenerate')
+                    ->action(function (Lokasi $record): void {
                         $qrCodeService = new QRCodeService();
                         $qrCodeService->regenerateQRCode($record);
 
@@ -244,7 +247,8 @@ class LokasiResource extends Resource
                             ->title('QR Code Berhasil Diperbarui')
                             ->body('QR Code untuk ' . $record->nama_lokasi . ' telah diperbarui')
                             ->send();
-                    }),
+                    })
+                    ->successNotificationTitle('QR Code berhasil diperbarui'),
 
                 EditAction::make()
                     ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor'])),

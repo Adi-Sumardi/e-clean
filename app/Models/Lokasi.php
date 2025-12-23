@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\QRCodeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +62,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Lokasi extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::created(function (Lokasi $lokasi) {
+            // Auto-generate QR Code when a new Lokasi is created
+            $qrCodeService = new QRCodeService();
+            $qrCodeService->generateForLokasi($lokasi);
+        });
+    }
+
     protected $fillable = [
         'unit_id',
         'kode_lokasi',
