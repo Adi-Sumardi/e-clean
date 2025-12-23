@@ -181,7 +181,7 @@ class SendDailyScheduleNotification extends Command
         $message .= "---\n";
         $message .= "Total: *{$jadwals->count()} lokasi*\n\n";
         $message .= "Jangan lupa:\n";
-        $message .= "- Scan QR/barcode lokasi\n";
+        $message .= "- Scan QR Code lokasi\n";
         $message .= "- Foto sebelum & sesudah\n";
         $message .= "- Submit laporan tepat waktu\n\n";
         $message .= "Semangat bekerja!";

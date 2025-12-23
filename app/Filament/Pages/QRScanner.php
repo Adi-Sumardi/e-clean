@@ -17,9 +17,9 @@ class QRScanner extends Page
 
     protected string $view = 'filament.pages.qr-scanner';
 
-    protected static ?string $title = 'Scan Barcode Lokasi';
+    protected static ?string $title = 'Scan QR Code Lokasi';
 
-    protected static ?string $navigationLabel = 'Scan Barcode';
+    protected static ?string $navigationLabel = 'Scan QR Code';
 
     // Removed navigationGroup - make it a direct menu item
     // protected static string | \UnitEnum | null $navigationGroup = 'Tools';
@@ -51,8 +51,8 @@ class QRScanner extends Page
 
         if (!$decoded) {
             Notification::make()
-                ->title('Barcode Tidak Valid')
-                ->body('Barcode yang dipindai bukan Barcode lokasi E-Cleaning')
+                ->title('QR Code Tidak Valid')
+                ->body('QR Code yang dipindai bukan QR Code lokasi Clean Service System')
                 ->danger()
                 ->send();
             return;
@@ -82,7 +82,7 @@ class QRScanner extends Page
 
         if ($this->hasJadwal) {
             Notification::make()
-                ->title('Barcode Berhasil Dipindai!')
+                ->title('QR Code Berhasil Dipindai!')
                 ->body('Lokasi: ' . $this->scannedLokasi->nama_lokasi . ' - Shift: ' . ucfirst($this->jadwal->shift))
                 ->success()
                 ->send();

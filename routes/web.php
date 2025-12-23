@@ -9,7 +9,7 @@ Route::get('/', function () {
     return redirect('/admin/login');
 });
 
-// Guest Complaint Routes (Public - for barcode scanning)
+// Guest Complaint Routes (Public - for QR Code scanning)
 Route::prefix('keluhan')->group(function () {
     Route::get('/{lokasi}', [GuestComplaintController::class, 'showForm'])->name('guest-complaint.form');
     Route::post('/', [GuestComplaintController::class, 'store'])->name('guest-complaint.store');

@@ -35,11 +35,11 @@
                 opacity: 1 !important;
             }
 
-            /* Except barcode elements */
-            .barcode-grid::before,
-            .barcode-grid::after,
-            .barcode-card::before,
-            .barcode-card::after {
+            /* Except QR Code elements */
+            .qrcode-grid::before,
+            .qrcode-grid::after,
+            .qrcode-card::before,
+            .qrcode-card::after {
                 display: block !important;
             }
 
@@ -75,15 +75,15 @@
                 box-shadow: none !important;
             }
 
-            /* Keep barcode grid and cards visible */
-            .barcode-grid,
-            .barcode-card,
-            .barcode-card * {
+            /* Keep QR Code grid and cards visible */
+            .qrcode-grid,
+            .qrcode-card,
+            .qrcode-card * {
                 opacity: 1 !important;
                 visibility: visible !important;
             }
 
-            .barcode-card {
+            .qrcode-card {
                 page-break-inside: avoid;
                 break-inside: avoid;
             }
@@ -93,7 +93,7 @@
                Width per column: 190mm / 3 = ~63mm
                Height per row: 277mm / 5 = ~55mm
             */
-            .barcode-grid {
+            .qrcode-grid {
                 display: grid !important;
                 grid-template-columns: repeat(3, 1fr) !important;
                 gap: 3mm !important;
@@ -102,7 +102,7 @@
                 box-sizing: border-box !important;
             }
 
-            .barcode-card {
+            .qrcode-card {
                 border: 0.5px solid #000 !important;
                 padding: 2mm !important;
                 border-radius: 0 !important;
@@ -117,7 +117,7 @@
                 box-sizing: border-box !important;
             }
 
-            .barcode-card img {
+            .qrcode-card img {
                 display: block !important;
                 width: 100% !important;
                 max-width: 50mm !important;
@@ -127,7 +127,7 @@
                 margin: 0 auto 1mm auto !important;
             }
 
-            .barcode-card h3 {
+            .qrcode-card h3 {
                 font-size: 7pt !important;
                 line-height: 1.1 !important;
                 margin: 0.5mm 0 0 0 !important;
@@ -139,7 +139,7 @@
                 white-space: nowrap !important;
             }
 
-            .barcode-card p {
+            .qrcode-card p {
                 font-size: 6pt !important;
                 line-height: 1.1 !important;
                 margin: 0.5mm 0 0 0 !important;
@@ -147,7 +147,7 @@
                 color: #333 !important;
             }
 
-            .barcode-card .kode {
+            .qrcode-card .kode {
                 font-size: 9pt !important;
                 line-height: 1.1 !important;
                 margin: 0 0 0.5mm 0 !important;
@@ -158,14 +158,14 @@
             }
         }
 
-        .barcode-grid {
+        .qrcode-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
             margin-top: 1rem;
         }
 
-        .barcode-card {
+        .qrcode-card {
             border: 2px solid #e5e7eb;
             border-radius: 0.5rem;
             padding: 1.5rem;
@@ -173,7 +173,7 @@
             background: white;
         }
 
-        .barcode-card img {
+        .qrcode-card img {
             width: 100%;
             max-width: 300px;
             height: auto;
@@ -181,20 +181,20 @@
             display: block;
         }
 
-        .barcode-card h3 {
+        .qrcode-card h3 {
             font-size: 1.125rem;
             font-weight: 600;
             margin-top: 0.75rem;
             color: #111827;
         }
 
-        .barcode-card p {
+        .qrcode-card p {
             font-size: 0.875rem;
             color: #6b7280;
             margin-top: 0.25rem;
         }
 
-        .barcode-card .kode {
+        .qrcode-card .kode {
             font-size: 1rem;
             font-weight: 700;
             color: #1f2937;
@@ -203,7 +203,7 @@
         }
 
         @media (max-width: 1024px) {
-            .barcode-grid {
+            .qrcode-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -215,7 +215,7 @@
             icon="heroicon-o-printer"
             onclick="handlePrint()"
         >
-            Cetak Semua Barcode
+            Cetak Semua QR Code
         </x-filament::button>
 
         <div class="mt-2 text-sm text-gray-600">
@@ -257,14 +257,14 @@
         }
     </script>
 
-    <div class="barcode-grid">
+    <div class="qrcode-grid">
         @foreach($lokasis as $lokasi)
-            <div class="barcode-card">
+            <div class="qrcode-card">
                 @if($lokasi['qr_code_url'])
-                    <img src="{{ $lokasi['qr_code_url'] }}" alt="Barcode {{ $lokasi['kode_lokasi'] }}">
+                    <img src="{{ $lokasi['qr_code_url'] }}" alt="QR Code {{ $lokasi['kode_lokasi'] }}">
                 @else
                     <div class="w-full h-24 bg-gray-200 flex items-center justify-center mx-auto">
-                        <span class="text-gray-500">Barcode tidak tersedia</span>
+                        <span class="text-gray-500">QR Code tidak tersedia</span>
                     </div>
                 @endif
 

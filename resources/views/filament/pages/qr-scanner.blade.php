@@ -4,11 +4,11 @@
             <!-- Scanner Section -->
             <x-filament::section>
                 <x-slot name="heading">
-                    Scanner Barcode
+                    Scanner QR Code
                 </x-slot>
 
                 <x-slot name="description">
-                    Arahkan kamera ke Barcode lokasi untuk memindai
+                    Arahkan kamera ke QR Code lokasi untuk memindai
                 </x-slot>
 
                 <div class="space-y-4">
@@ -64,9 +64,9 @@
                     @if($hasJadwal)
                         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                             <div class="flex items-start gap-3">
-                                <x-heroicon-o-check-circle class="w-6 h-6 text-green-600 flex-shrink-0 mt-1"/>
+                                <x-heroicon-o-check-circle class="w-6 h-6 text-green-600 shrink-0 mt-1"/>
                                 <div>
-                                    <h3 class="text-lg font-semibold text-green-900">Barcode Berhasil Dipindai!</h3>
+                                    <h3 class="text-lg font-semibold text-green-900">QR Code Berhasil Dipindai!</h3>
                                     <p class="text-sm text-green-700 mt-1">Lokasi berhasil diidentifikasi dan Anda memiliki jadwal untuk lokasi ini</p>
                                 </div>
                             </div>
@@ -74,7 +74,7 @@
                     @else
                         <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
                             <div class="flex items-start gap-3">
-                                <x-heroicon-o-exclamation-triangle class="w-6 h-6 text-yellow-600 flex-shrink-0 mt-1"/>
+                                <x-heroicon-o-exclamation-triangle class="w-6 h-6 text-yellow-600 shrink-0 mt-1"/>
                                 <div>
                                     <h3 class="text-lg font-semibold text-yellow-900">Akses Ditolak</h3>
                                     <p class="text-sm text-yellow-800 mt-1">Anda tidak memiliki jadwal untuk lokasi ini hari ini</p>
@@ -90,7 +90,7 @@
                     @if($hasJadwal && $jadwal)
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <div class="flex items-start gap-3">
-                                <x-heroicon-o-calendar class="w-5 h-5 text-blue-600 flex-shrink-0 mt-1"/>
+                                <x-heroicon-o-calendar class="w-5 h-5 text-blue-600 shrink-0 mt-1"/>
                                 <div class="flex-1">
                                     <h4 class="text-sm font-semibold text-blue-900 mb-2">Jadwal Anda Hari Ini</h4>
                                     <div class="grid grid-cols-2 gap-3 text-sm">
@@ -200,8 +200,8 @@
                 <li>Izinkan akses kamera saat diminta oleh browser</li>
                 <li>Pilih kamera yang akan digunakan (kamera belakang direkomendasikan)</li>
                 <li>Klik tombol "Mulai Scan"</li>
-                <li>Arahkan kamera ke Barcode lokasi</li>
-                <li>Tunggu hingga Barcode terdeteksi (akan otomatis scan)</li>
+                <li>Arahkan kamera ke QR Code lokasi</li>
+                <li>Tunggu hingga QR Code terdeteksi (akan otomatis scan)</li>
                 <li>Setelah berhasil, informasi lokasi akan ditampilkan</li>
                 <li>Klik "Buat Laporan Kegiatan" untuk melanjutkan atau "Scan Lagi" untuk scan lokasi lain</li>
             </ol>
@@ -263,8 +263,8 @@
                         cameraId,
                         config,
                         (decodedText, decodedResult) => {
-                            // Barcode detected
-                            console.log(`Barcode detected: ${decodedText}`);
+                            // QR Code detected
+                            console.log(`QR Code detected: ${decodedText}`);
 
                             // Stop scanning
                             html5QrCode.stop().then(() => {
@@ -284,7 +284,7 @@
                     ).then(() => {
                         startButton.style.display = 'none';
                         stopButton.style.display = 'inline-flex';
-                        statusDiv.textContent = 'Scanning... Arahkan kamera ke Barcode';
+                        statusDiv.textContent = 'Scanning... Arahkan kamera ke QR Code';
                         statusDiv.className = 'text-center text-sm text-blue-600';
                     }).catch(err => {
                         console.error('Start failed:', err);

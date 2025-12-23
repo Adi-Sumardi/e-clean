@@ -10,6 +10,7 @@ class QRCodeService
 {
     /**
      * Generate QR Code for a location
+     * QR Code contains URL to complaint form for easy scanning
      *
      * @param Lokasi $lokasi
      * @param int $size - Size in pixels
@@ -17,22 +18,16 @@ class QRCodeService
      */
     public function generateForLokasi(Lokasi $lokasi, int $size = 300): string
     {
-        // Generate QR code data (JSON format)
-        $qrData = json_encode([
-            'type' => 'lokasi',
-            'id' => $lokasi->id,
-            'kode' => $lokasi->kode_lokasi,
-            'nama' => $lokasi->nama_lokasi,
-            'kategori' => $lokasi->kategori,
-            'timestamp' => now()->toIso8601String(),
-        ]);
+        // Generate QR code with direct URL to complaint form
+        // This allows external scanners (Google Lens, etc.) to redirect directly
+        $complaintUrl = url('/keluhan/' . $lokasi->kode_lokasi);
 
         // Generate QR code image
         $qrCode = QrCode::format('png')
             ->size($size)
             ->errorCorrection('H') // High error correction
             ->margin(2)
-            ->generate($qrData);
+            ->generate($complaintUrl);
 
         // Save to storage
         $filename = 'qrcodes/' . $lokasi->kode_lokasi . '.png';
@@ -91,29 +86,47 @@ class QRCodeService
 
     /**
      * Decode QR code data
-     * Also supports barcode data (simple kode_lokasi string)
+     * Supports: URL format, JSON format, or simple kode_lokasi string
      *
-     * @param string $qrData - JSON string from QR code scan OR simple barcode string
+     * @param string $qrData - URL, JSON string, or simple kode_lokasi
      * @return array|null - Returns decoded data or null if invalid
      */
     public function decodeQRData(string $qrData): ?array
     {
+        // Try to extract kode_lokasi from URL format (e.g., https://domain.com/keluhan/ABC123)
+        if (str_contains($qrData, '/keluhan/')) {
+            $parts = explode('/keluhan/', $qrData);
+            if (isset($parts[1])) {
+                $kode = trim($parts[1], '/');
+                $lokasi = Lokasi::where('kode_lokasi', $kode)->first();
+                if ($lokasi) {
+                    return [
+                        'type' => 'lokasi',
+                        'id' => $lokasi->id,
+                        'kode' => $lokasi->kode_lokasi,
+                        'nama' => $lokasi->nama_lokasi,
+                        'kategori' => $lokasi->kategori,
+                        'timestamp' => now()->toIso8601String(),
+                    ];
+                }
+            }
+        }
+
+        // Try to decode as JSON (legacy QR Code format)
         try {
-            // Try to decode as JSON first (QR Code format)
             $data = json_decode($qrData, true);
 
             if (isset($data['type']) && $data['type'] === 'lokasi') {
                 return $data;
             }
         } catch (\Exception $e) {
-            // Not JSON, continue to barcode check
+            // Not JSON, continue
         }
 
-        // If not JSON or invalid JSON, try as barcode (simple string = kode_lokasi)
-        $lokasi = \App\Models\Lokasi::where('kode_lokasi', $qrData)->first();
+        // Try as simple kode_lokasi string
+        $lokasi = Lokasi::where('kode_lokasi', $qrData)->first();
 
         if ($lokasi) {
-            // Return standardized format
             return [
                 'type' => 'lokasi',
                 'id' => $lokasi->id,

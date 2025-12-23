@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#ef4444">
-    <title>Lokasi Tidak Ditemukan - E-Clean</title>
+    <title>Lokasi Tidak Ditemukan - Clean Service System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -257,7 +257,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                             </svg>
                         </div>
-                        <p class="reason-text">Barcode rusak atau tidak terbaca dengan benar</p>
+                        <p class="reason-text">QR Code rusak atau tidak terbaca dengan benar</p>
                     </div>
                     <div class="reason">
                         <div class="reason-icon">
@@ -285,9 +285,9 @@
                         Yang Bisa Anda Lakukan
                     </h3>
                     <ul class="tips-list">
-                        <li>• Coba scan ulang barcode dengan pencahayaan yang baik</li>
+                        <li>• Coba scan ulang QR Code dengan pencahayaan yang baik</li>
                         <li>• Hubungi petugas kebersihan terdekat untuk bantuan</li>
-                        <li>• Pastikan barcode tidak rusak atau terhalang</li>
+                        <li>• Pastikan QR Code tidak rusak atau terhalang</li>
                     </ul>
                 </div>
 
@@ -302,7 +302,7 @@
 
         <div class="footer">
             <p>Jika masalah berlanjut, hubungi petugas kebersihan terdekat</p>
-            <p>&copy; {{ date('Y') }} E-Clean &bull; Sistem Manajemen Kebersihan</p>
+            <p>&copy; {{ date('Y') }} Clean Service System &bull; Sistem Manajemen Kebersihan</p>
         </div>
     </div>
 </body>

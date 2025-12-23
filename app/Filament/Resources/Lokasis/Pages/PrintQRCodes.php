@@ -4,7 +4,7 @@ namespace App\Filament\Resources\Lokasis\Pages;
 
 use App\Filament\Resources\Lokasis\LokasiResource;
 use App\Models\Lokasi;
-use App\Services\BarcodeService;
+use App\Services\QRCodeService;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,22 +14,22 @@ class PrintQRCodes extends Page
 
     protected string $view = 'filament.resources.lokasis.pages.print-qr-codes';
 
-    protected static ?string $title = 'Cetak Barcode Lokasi';
+    protected static ?string $title = 'Cetak QR Code Lokasi';
 
     public $lokasis = [];
 
     public function mount(): void
     {
-        $barcodeService = new BarcodeService();
+        $qrCodeService = new QRCodeService();
 
         // Get all active locations
         $this->lokasis = Lokasi::where('is_active', true)
             ->orderBy('kode_lokasi')
             ->get()
-            ->map(function ($lokasi) use ($barcodeService) {
-                // Generate barcode if not exists
+            ->map(function ($lokasi) use ($qrCodeService) {
+                // Generate QR Code if not exists
                 if (!$lokasi->qr_code) {
-                    $barcodeService->generateForLokasi($lokasi);
+                    $qrCodeService->generateForLokasi($lokasi);
                     $lokasi->refresh();
                 }
 

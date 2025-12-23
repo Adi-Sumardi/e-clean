@@ -5,7 +5,7 @@ namespace App\Filament\Resources\Lokasis;
 use App\Filament\Resources\Lokasis\Pages;
 use App\Filament\Resources\Lokasis\Pages\ManageLokasis;
 use App\Models\Lokasi;
-use App\Services\BarcodeService;
+use App\Services\QRCodeService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -156,12 +156,12 @@ class LokasiResource extends Resource
                     ->sortable(),
 
                 ImageColumn::make('qr_code')
-                    ->label('Barcode')
+                    ->label('QR Code')
                     ->disk('public')
                     ->height(40)
-                    ->width(120)
-                    ->defaultImageUrl(url('/images/no-barcode.png'))
-                    ->tooltip(fn (Lokasi $record): string => $record->qr_code ? 'Barcode tersedia' : 'Barcode belum dibuat'),
+                    ->width(40)
+                    ->defaultImageUrl(url('/images/no-qrcode.png'))
+                    ->tooltip(fn (Lokasi $record): string => $record->qr_code ? 'QR Code tersedia' : 'QR Code belum dibuat'),
 
                 TextColumn::make('status_kebersihan')
                     ->label('Status')
@@ -210,38 +210,38 @@ class LokasiResource extends Resource
                     ]),
             ])
             ->recordActions([
-                Action::make('generate_barcode')
-                    ->label('Generate Barcode')
+                Action::make('generate_qrcode')
+                    ->label('Generate QR Code')
                     ->icon('heroicon-o-qr-code')
                     ->color('success')
                     ->visible(fn (Lokasi $record) => !$record->qr_code)
                     ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']))
                     ->action(function (Lokasi $record) {
-                        $barcodeService = new BarcodeService();
-                        $barcodeService->generateForLokasi($record);
+                        $qrCodeService = new QRCodeService();
+                        $qrCodeService->generateForLokasi($record);
 
                         Notification::make()
                             ->success()
-                            ->title('Barcode Berhasil Dibuat')
-                            ->body('Barcode untuk ' . $record->nama_lokasi . ' telah dibuat')
+                            ->title('QR Code Berhasil Dibuat')
+                            ->body('QR Code untuk ' . $record->nama_lokasi . ' telah dibuat')
                             ->send();
                     }),
 
-                Action::make('regenerate_barcode')
-                    ->label('Regenerate Barcode')
+                Action::make('regenerate_qrcode')
+                    ->label('Regenerate QR Code')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
                     ->visible(fn (Lokasi $record) => $record->qr_code)
                     ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']))
                     ->requiresConfirmation()
                     ->action(function (Lokasi $record) {
-                        $barcodeService = new BarcodeService();
-                        $barcodeService->regenerateBarcode($record);
+                        $qrCodeService = new QRCodeService();
+                        $qrCodeService->regenerateQRCode($record);
 
                         Notification::make()
                             ->success()
-                            ->title('Barcode Berhasil Diperbarui')
-                            ->body('Barcode untuk ' . $record->nama_lokasi . ' telah diperbarui')
+                            ->title('QR Code Berhasil Diperbarui')
+                            ->body('QR Code untuk ' . $record->nama_lokasi . ' telah diperbarui')
                             ->send();
                     }),
 

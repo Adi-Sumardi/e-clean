@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 class GuestComplaintController extends Controller
 {
     /**
-     * Show the complaint form for a specific location (via barcode scan)
+     * Show the complaint form for a specific location (via QR Code scan)
      */
     public function showForm(string $kodeOrId)
     {
