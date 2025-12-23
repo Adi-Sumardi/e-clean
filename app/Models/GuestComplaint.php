@@ -20,6 +20,8 @@ class GuestComplaint extends Model
         'deskripsi_keluhan',
         'foto_keluhan',
         'status',
+        'assigned_to',
+        'assigned_at',
         'handled_by',
         'handled_at',
         'catatan_penanganan',
@@ -27,6 +29,7 @@ class GuestComplaint extends Model
     ];
 
     protected $casts = [
+        'assigned_at' => 'datetime',
         'handled_at' => 'datetime',
     ];
 
@@ -73,6 +76,11 @@ class GuestComplaint extends Model
     public function handler(): BelongsTo
     {
         return $this->belongsTo(User::class, 'handled_by');
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     // Scopes

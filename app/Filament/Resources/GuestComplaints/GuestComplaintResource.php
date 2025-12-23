@@ -150,6 +150,12 @@ class GuestComplaintResource extends Resource
                         default => 'gray',
                     }),
 
+                TextColumn::make('assignee.name')
+                    ->label('Petugas Terjadwal')
+                    ->placeholder('Tidak ada')
+                    ->icon('heroicon-o-user')
+                    ->sortable(),
+
                 TextColumn::make('handler.name')
                     ->label('Ditangani Oleh')
                     ->placeholder('-')

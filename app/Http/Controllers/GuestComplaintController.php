@@ -80,10 +80,17 @@ class GuestComplaintController extends Controller
             $data['foto_keluhan'] = $path;
         }
 
-        $complaint = GuestComplaint::create($data);
-
         // Get lokasi for redirect
         $lokasi = Lokasi::find($data['lokasi_id']);
+
+        // Auto-assign to petugas yang sedang bertugas di lokasi ini
+        $assignedPetugas = $this->getAssignedPetugas($lokasi);
+        if ($assignedPetugas) {
+            $data['assigned_to'] = $assignedPetugas->id;
+            $data['assigned_at'] = now();
+        }
+
+        $complaint = GuestComplaint::create($data);
 
         // Send WhatsApp notification to petugas
         $this->sendNotificationToPetugas($complaint, $lokasi);
@@ -91,6 +98,38 @@ class GuestComplaintController extends Controller
         return redirect()
             ->route('guest-complaint.success', ['lokasi' => $lokasi->kode_lokasi])
             ->with('success', 'Keluhan Anda telah berhasil dikirim. Terima kasih atas laporannya.');
+    }
+
+    /**
+     * Get petugas yang sedang bertugas di lokasi ini berdasarkan jadwal dan shift saat ini
+     */
+    protected function getAssignedPetugas(Lokasi $lokasi): ?User
+    {
+        $now = now();
+        $currentTime = $now->format('H:i:s');
+
+        // Cari jadwal yang aktif hari ini di lokasi ini, sesuai jam saat ini
+        $jadwal = JadwalKebersihan::where('lokasi_id', $lokasi->id)
+            ->where('tanggal', $now->toDateString())
+            ->where('status', 'active')
+            ->where('jam_mulai', '<=', $currentTime)
+            ->where('jam_selesai', '>=', $currentTime)
+            ->first();
+
+        // Jika tidak ada jadwal pada jam ini, cari jadwal hari ini yang paling dekat
+        if (!$jadwal) {
+            $jadwal = JadwalKebersihan::where('lokasi_id', $lokasi->id)
+                ->where('tanggal', $now->toDateString())
+                ->where('status', 'active')
+                ->orderBy('jam_mulai')
+                ->first();
+        }
+
+        if ($jadwal) {
+            return User::find($jadwal->petugas_id);
+        }
+
+        return null;
     }
 
     /**
