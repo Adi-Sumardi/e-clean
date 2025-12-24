@@ -17,3 +17,7 @@ Schedule::command('notifications:schedule-reminders')->dailyAt('18:00'); // Remi
 Schedule::command('schedule:check-missed')->dailyAt('08:30'); // Check after Pagi shift (05:00-08:00)
 Schedule::command('schedule:check-missed')->dailyAt('14:30'); // Check after Siang shift (10:00-14:00)
 Schedule::command('schedule:check-missed')->dailyAt('18:30'); // Check after Sore shift (15:00-18:00)
+
+// Schedule to generate expired reports for jadwal that weren't reported
+// Run every 5 minutes to check for expired jadwal and auto-generate reports
+Schedule::command('reports:generate-expired')->everyFiveMinutes();

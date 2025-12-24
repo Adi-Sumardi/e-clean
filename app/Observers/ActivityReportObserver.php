@@ -3,11 +3,14 @@
 namespace App\Observers;
 
 use App\Models\ActivityReport;
+use App\Models\JadwalKebersihan;
+use App\Models\Setting;
 use App\Notifications\ReportApprovedNotification;
 use App\Notifications\ReportRejectedNotification;
 use App\Services\WatZapService;
 use App\Services\NotificationTemplateService;
 use App\Services\PenilaianService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class ActivityReportObserver
@@ -21,6 +24,60 @@ class ActivityReportObserver
         $this->watzap = new WatZapService();
         $this->templates = new NotificationTemplateService();
         $this->penilaianService = new PenilaianService();
+    }
+
+    /**
+     * Handle the ActivityReport "creating" event.
+     * Set reporting_status based on jadwal timing.
+     */
+    public function creating(ActivityReport $report): void
+    {
+        // Skip if already set (e.g., auto-generated expired reports)
+        if ($report->reporting_status && $report->reporting_status !== ActivityReport::REPORTING_STATUS_ONTIME) {
+            return;
+        }
+
+        // Only calculate status if there's a jadwal linked
+        if (!$report->jadwal_id) {
+            $report->reporting_status = ActivityReport::REPORTING_STATUS_ONTIME;
+            return;
+        }
+
+        $jadwal = JadwalKebersihan::find($report->jadwal_id);
+        if (!$jadwal) {
+            $report->reporting_status = ActivityReport::REPORTING_STATUS_ONTIME;
+            return;
+        }
+
+        $now = Carbon::now();
+        $toleranceMinutes = Setting::get('reporting_tolerance_minutes', 10);
+
+        // Create datetime from jadwal tanggal and jam_selesai
+        $jadwalEndTime = Carbon::parse($jadwal->tanggal->format('Y-m-d') . ' ' . $jadwal->jam_selesai->format('H:i:s'));
+        $toleranceEndTime = $jadwalEndTime->copy()->addMinutes($toleranceMinutes);
+
+        if ($now->lessThanOrEqualTo($jadwalEndTime)) {
+            // On time - reported before or at jam_selesai
+            $report->reporting_status = ActivityReport::REPORTING_STATUS_ONTIME;
+            $report->late_minutes = null;
+        } elseif ($now->lessThanOrEqualTo($toleranceEndTime)) {
+            // Late - reported after jam_selesai but within tolerance
+            $report->reporting_status = ActivityReport::REPORTING_STATUS_LATE;
+            $report->late_minutes = $now->diffInMinutes($jadwalEndTime);
+        } else {
+            // Expired - reported after tolerance (shouldn't happen normally since cron handles this)
+            $report->reporting_status = ActivityReport::REPORTING_STATUS_EXPIRED;
+            $report->late_minutes = $now->diffInMinutes($jadwalEndTime);
+        }
+
+        Log::info('ActivityReport reporting_status set', [
+            'jadwal_id' => $jadwal->id,
+            'jam_selesai' => $jadwalEndTime->format('Y-m-d H:i:s'),
+            'tolerance_end' => $toleranceEndTime->format('Y-m-d H:i:s'),
+            'now' => $now->format('Y-m-d H:i:s'),
+            'reporting_status' => $report->reporting_status,
+            'late_minutes' => $report->late_minutes,
+        ]);
     }
 
     /**

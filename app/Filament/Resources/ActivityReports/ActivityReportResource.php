@@ -263,11 +263,12 @@ class ActivityReportResource extends Resource
                     ->dehydrated(),
 
                 TextInput::make('rating')
-                    ->label('Rating (1-5)')
+                    ->label(fn ($record) => $record && $record->isExpired() ? 'Rating (1-3)' : 'Rating (1-5)')
                     ->numeric()
                     ->minValue(1)
-                    ->maxValue(5)
+                    ->maxValue(fn ($record) => $record && $record->isExpired() ? ActivityReport::getMaxRatingForExpired() : 5)
                     ->step(1)
+                    ->helperText(fn ($record) => $record && $record->isExpired() ? 'Laporan otomatis (Tidak Lapor) maksimal rating 3' : null)
                     ->hidden($isPetugas),
 
                 Textarea::make('catatan_supervisor')
@@ -347,6 +348,30 @@ class ActivityReportResource extends Resource
                     ->formatStateUsing(fn (string $state): string => ucfirst($state))
                     ->sortable(),
 
+                TextColumn::make('reporting_status')
+                    ->label('Status Lapor')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'ontime' => 'success',
+                        'late' => 'warning',
+                        'expired' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => ActivityReport::getReportingStatusOptions()[$state] ?? ucfirst($state))
+                    ->sortable(),
+
+                TextColumn::make('late_minutes')
+                    ->label('Keterlambatan')
+                    ->formatStateUsing(fn (?int $state): string => $state ? $state . ' menit' : '-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('is_auto_generated')
+                    ->label('Auto')
+                    ->badge()
+                    ->color('danger')
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ya' : '-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('rating')
                     ->label('Rating')
                     ->badge()
@@ -391,6 +416,9 @@ class ActivityReportResource extends Resource
                 SelectFilter::make('lokasi_id')
                     ->label('Lokasi')
                     ->options(Lokasi::pluck('nama_lokasi', 'id')),
+                SelectFilter::make('reporting_status')
+                    ->label('Status Lapor')
+                    ->options(ActivityReport::getReportingStatusOptions()),
             ])
             ->defaultSort('tanggal', 'desc')
             ->recordUrl(fn (ActivityReport $record): string => static::getUrl('view', ['record' => $record]));
@@ -454,7 +482,7 @@ class ActivityReportResource extends Resource
 
                 Section::make('Status & Penilaian')
                     ->schema([
-                        Grid::make(3)
+                        Grid::make(4)
                             ->schema([
                                 TextEntry::make('status')
                                     ->label('Status')
@@ -467,6 +495,32 @@ class ActivityReportResource extends Resource
                                         default => 'gray',
                                     }),
 
+                                TextEntry::make('reporting_status')
+                                    ->label('Status Lapor')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'ontime' => 'success',
+                                        'late' => 'warning',
+                                        'expired' => 'danger',
+                                        default => 'gray',
+                                    })
+                                    ->formatStateUsing(fn (string $state): string => ActivityReport::getReportingStatusOptions()[$state] ?? ucfirst($state)),
+
+                                TextEntry::make('late_minutes')
+                                    ->label('Keterlambatan')
+                                    ->formatStateUsing(fn (?int $state): string => $state ? $state . ' menit' : '-')
+                                    ->visible(fn ($record) => $record->late_minutes > 0),
+
+                                TextEntry::make('is_auto_generated')
+                                    ->label('Laporan Otomatis')
+                                    ->badge()
+                                    ->color('danger')
+                                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ya (Petugas tidak melapor)' : 'Tidak')
+                                    ->visible(fn ($record) => $record->is_auto_generated),
+                            ]),
+
+                        Grid::make(3)
+                            ->schema([
                                 TextEntry::make('rating')
                                     ->label('Rating')
                                     ->badge()
