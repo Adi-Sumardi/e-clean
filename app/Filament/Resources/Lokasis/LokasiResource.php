@@ -35,10 +35,9 @@ class LokasiResource extends Resource
 
     protected static ?string $navigationLabel = 'Lokasi';
 
-    // Remove navigationGroup - make it a top-level menu
-    // protected static string | \UnitEnum | null $navigationGroup = 'Master Data';
+    protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
