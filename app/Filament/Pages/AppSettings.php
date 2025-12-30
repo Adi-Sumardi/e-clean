@@ -25,7 +25,9 @@ class AppSettings extends Page implements HasForms
 
     protected static ?string $title = 'Pengaturan Aplikasi';
 
-    protected static ?int $navigationSort = 100;
+    protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
+
+    protected static ?int $navigationSort = 4;
 
     public ?array $data = [];
 
