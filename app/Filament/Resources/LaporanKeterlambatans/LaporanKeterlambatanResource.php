@@ -58,8 +58,13 @@ class LaporanKeterlambatanResource extends Resource
 
     public static function canViewAny(): bool
     {
-        // Hanya admin dan supervisor yang bisa lihat
-        return Auth::user()->hasAnyRole(['admin', 'supervisor']);
+        // Hanya admin, super_admin dan supervisor yang bisa lihat
+        return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::check() && Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']);
     }
 
     public static function form(Schema $schema): Schema
