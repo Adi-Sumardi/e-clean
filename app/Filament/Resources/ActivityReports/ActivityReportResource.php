@@ -36,10 +36,9 @@ class ActivityReportResource extends Resource
 
     protected static ?string $navigationLabel = 'Laporan Kegiatan';
 
-    // Remove navigationGroup - make it a top-level menu
-    // protected static string | \UnitEnum | null $navigationGroup = 'Laporan';
+    protected static string|\UnitEnum|null $navigationGroup = 'Monitoring';
 
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 1;
 
     public static function getModelLabel(): string
     {

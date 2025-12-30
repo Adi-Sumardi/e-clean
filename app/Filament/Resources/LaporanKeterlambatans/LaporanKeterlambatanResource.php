@@ -24,9 +24,9 @@ class LaporanKeterlambatanResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedExclamationTriangle;
 
-    protected static UnitEnum|string|null $navigationGroup = 'Monitoring';
+    protected static string|\UnitEnum|null $navigationGroup = 'Monitoring';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 2;
 
     public static function getModelLabel(): string
     {
