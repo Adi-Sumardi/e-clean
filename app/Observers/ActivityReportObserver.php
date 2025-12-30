@@ -63,11 +63,11 @@ class ActivityReportObserver
         } elseif ($now->lessThanOrEqualTo($toleranceEndTime)) {
             // Late - reported after jam_selesai but within tolerance
             $report->reporting_status = ActivityReport::REPORTING_STATUS_LATE;
-            $report->late_minutes = $now->diffInMinutes($jadwalEndTime);
+            $report->late_minutes = (int) abs($now->diffInMinutes($jadwalEndTime));
         } else {
             // Expired - reported after tolerance (shouldn't happen normally since cron handles this)
             $report->reporting_status = ActivityReport::REPORTING_STATUS_EXPIRED;
-            $report->late_minutes = $now->diffInMinutes($jadwalEndTime);
+            $report->late_minutes = (int) abs($now->diffInMinutes($jadwalEndTime));
         }
 
         Log::info('ActivityReport reporting_status set', [

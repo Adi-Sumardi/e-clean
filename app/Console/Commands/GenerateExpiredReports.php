@@ -53,7 +53,7 @@ class GenerateExpiredReports extends Command
 
             // Calculate how many minutes late (from jam_selesai)
             $jadwalEndTime = Carbon::parse($jadwal->tanggal->format('Y-m-d') . ' ' . $jadwal->jam_selesai->format('H:i:s'));
-            $lateMinutes = $now->diffInMinutes($jadwalEndTime);
+            $lateMinutes = (int) abs($now->diffInMinutes($jadwalEndTime));
 
             // Create auto-generated expired report
             $report = ActivityReport::create([
