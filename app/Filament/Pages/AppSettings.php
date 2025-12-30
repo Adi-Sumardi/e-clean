@@ -88,4 +88,9 @@ class AppSettings extends Page implements HasForms
     {
         return Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']);
     }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::check() && Auth::user()->hasAnyRole(['admin', 'super_admin', 'supervisor']);
+    }
 }
