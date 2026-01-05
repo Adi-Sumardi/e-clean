@@ -35,7 +35,7 @@ class PetugasStatsOverviewWidget extends BaseWidget
 
         if ($jumlahLokasi == 0) {
             $namaLokasiValue = 'Tidak ada jadwal';
-            $namaLokasiDesc = 'Hari ini libur';
+            $namaLokasiDesc = 'Tidak ada jadwal untuk hari ini';
         } else {
             // Tampilkan semua lokasi dengan format: Nama Lokasi - Shift
             $lokasiList = $jadwalHariIni->map(function ($jadwal) {
