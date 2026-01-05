@@ -48,13 +48,11 @@
     },
     "scripts": {
         "deploy": [
-            "@php artisan down --render='errors::maintenance'",
             "@php artisan optimize:clear",
             "@php artisan filament:assets",
             "@php artisan icons:cache",
             "@php artisan filament:cache-components",
-            "@php artisan optimize",
-            "@php artisan up"
+            "@php artisan optimize"
         ],
         "setup": [
             "composer install",
