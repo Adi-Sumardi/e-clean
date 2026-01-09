@@ -427,33 +427,32 @@ document.addEventListener('alpine:init', () => {
                 // Start countdown
                 this.timerCountdown = this.timerSeconds;
 
-                // Store reference to this for use in interval
-                const self = this;
+                // Use arrow function to preserve 'this' context properly with Alpine.js
+                const tick = () => {
+                    this.timerCountdown--;
+                    console.log('Timer countdown:', this.timerCountdown, 'GPS:', this.gpsReady, 'Camera:', this.cameraReady);
 
-                this.timerInterval = setInterval(() => {
-                    self.timerCountdown--;
-                    console.log('Timer countdown:', self.timerCountdown, 'GPS:', self.gpsReady, 'Camera:', self.cameraReady);
-
-                    if (self.timerCountdown <= 0) {
-                        clearInterval(self.timerInterval);
-                        self.timerInterval = null;
-                        self.timerCountdown = 0;
+                    if (this.timerCountdown <= 0) {
+                        clearInterval(this.timerInterval);
+                        this.timerInterval = null;
 
                         // Check conditions before capture
-                        console.log('Timer done. Capturing... GPS:', self.gpsReady, 'Camera:', self.cameraReady, 'Capturing:', self.capturing);
+                        console.log('Timer done. Capturing... GPS:', this.gpsReady, 'Camera:', this.cameraReady, 'Capturing:', this.capturing);
 
-                        if (self.cameraReady && self.gpsReady && !self.capturing) {
-                            self.capturePhoto();
+                        if (this.cameraReady && this.gpsReady && !this.capturing) {
+                            this.capturePhoto();
                         } else {
-                            self.errorMessage = 'Gagal mengambil foto: Kamera atau GPS tidak siap';
+                            this.errorMessage = 'Gagal mengambil foto: Kamera atau GPS tidak siap';
                             console.error('Capture conditions not met:', {
-                                cameraReady: self.cameraReady,
-                                gpsReady: self.gpsReady,
-                                capturing: self.capturing
+                                cameraReady: this.cameraReady,
+                                gpsReady: this.gpsReady,
+                                capturing: this.capturing
                             });
                         }
                     }
-                }, 1000);
+                };
+
+                this.timerInterval = setInterval(tick, 1000);
             }
         },
 
