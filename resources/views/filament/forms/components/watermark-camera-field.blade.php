@@ -469,7 +469,7 @@ document.addEventListener('alpine:init', () => {
                 {
                     enableHighAccuracy: true,
                     timeout: 30000,
-                    maximumAge: 5000
+                    maximumAge: 15000
                 }
             );
         },
