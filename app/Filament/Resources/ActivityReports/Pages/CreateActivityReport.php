@@ -6,6 +6,7 @@ use App\Filament\Resources\ActivityReports\ActivityReportResource;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Js;
 
 class CreateActivityReport extends CreateRecord
 {
@@ -18,9 +19,11 @@ class CreateActivityReport extends CreateRecord
 
     protected function getCancelFormAction(): Action
     {
+        $url = $this->getResource()::getUrl('index');
+
         return Action::make('cancel')
             ->label('Batal')
-            ->url($this->getResource()::getUrl('index'))
+            ->alpineClickHandler('window.location.href = ' . Js::from($url))
             ->color('gray');
     }
 
