@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ActivityReports\Pages;
 
 use App\Filament\Resources\ActivityReports\ActivityReportResource;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,6 +14,14 @@ class CreateActivityReport extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function getCancelFormAction(): Action
+    {
+        return Action::make('cancel')
+            ->label('Batal')
+            ->url($this->getResource()::getUrl('index'))
+            ->color('gray');
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
