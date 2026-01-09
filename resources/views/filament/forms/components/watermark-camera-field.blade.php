@@ -113,16 +113,85 @@
 
                             <template x-if="lokasiId">
                                 <div>
+                                    <!-- Camera Settings -->
+                                    <div class="flex flex-wrap items-center justify-center gap-4 mb-4">
+                                        <!-- Camera Selection -->
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">Kamera:</span>
+                                            <div class="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                                                <button
+                                                    type="button"
+                                                    @click="switchCamera('environment')"
+                                                    :class="facingMode === 'environment' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors"
+                                                >
+                                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    </svg>
+                                                    Belakang
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    @click="switchCamera('user')"
+                                                    :class="facingMode === 'user' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600"
+                                                >
+                                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                    </svg>
+                                                    Depan
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Timer Selection -->
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">Timer:</span>
+                                            <div class="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                                                <button
+                                                    type="button"
+                                                    @click="timerSeconds = 0"
+                                                    :class="timerSeconds === 0 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors"
+                                                >
+                                                    Off
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    @click="timerSeconds = 5"
+                                                    :class="timerSeconds === 5 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600"
+                                                >
+                                                    5s
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    @click="timerSeconds = 10"
+                                                    :class="timerSeconds === 10 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600"
+                                                >
+                                                    10s
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Video Preview -->
                                     <div class="relative bg-black rounded-lg overflow-hidden" style="max-height: 60vh;">
-                                        <video x-ref="video" autoplay playsinline class="w-full h-auto" x-show="cameraReady"></video>
+                                        <video x-ref="video" autoplay playsinline class="w-full h-auto" :class="facingMode === 'user' ? 'scale-x-[-1]' : ''" x-show="cameraReady"></video>
 
                                         <div x-show="!cameraReady" class="flex items-center justify-center h-96">
                                             <p class="text-white">Memulai kamera...</p>
                                         </div>
 
+                                        <!-- Timer Countdown Overlay -->
+                                        <div x-show="timerCountdown > 0" class="absolute inset-0 flex items-center justify-center bg-black/50">
+                                            <span class="text-9xl font-bold text-white animate-pulse" x-text="timerCountdown"></span>
+                                        </div>
+
                                         <!-- Live Watermark -->
-                                        <div x-show="cameraReady" class="absolute bottom-0 left-0 right-0 bg-black/85 text-white p-4">
+                                        <div x-show="cameraReady && timerCountdown === 0" class="absolute bottom-0 left-0 right-0 bg-black/85 text-white p-4">
                                             <div class="space-y-1 text-sm">
                                                 <div><span x-text="petugasName"></span></div>
                                                 <div><span x-text="lokasiName"></span></div>
@@ -144,12 +213,18 @@
                                     <!-- Controls -->
                                     <div class="flex justify-center gap-4">
                                         <button
-                                            @click="capturePhoto()"
-                                            :disabled="!cameraReady || !gpsReady || capturing || !canAddMorePhotos()"
-                                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                            @click="startCaptureWithTimer()"
+                                            :disabled="!cameraReady || !gpsReady || capturing || timerCountdown > 0 || !canAddMorePhotos()"
+                                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                             style="background-color: #2563eb !important; color: white !important;"
                                         >
-                                            <span x-show="!capturing">Ambil Foto</span>
+                                            <svg x-show="timerSeconds > 0 && timerCountdown === 0" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <span x-show="!capturing && timerCountdown === 0">
+                                                <span x-show="timerSeconds === 0">Ambil Foto</span>
+                                                <span x-show="timerSeconds > 0">Mulai Timer (<span x-text="timerSeconds"></span>s)</span>
+                                            </span>
                                             <span x-show="capturing">Memproses...</span>
                                         </button>
                                         <button @click="closeCamera()" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold" style="background-color: #4b5563 !important; color: white !important;">Selesai</button>
@@ -192,6 +267,11 @@ document.addEventListener('alpine:init', () => {
         timeInterval: null,
         errorMessage: '',
         successMessage: '',
+        // New camera features
+        facingMode: 'environment', // 'environment' = back camera, 'user' = front camera
+        timerSeconds: 0, // 0 = no timer, 5 = 5 seconds, 10 = 10 seconds
+        timerCountdown: 0,
+        timerInterval: null,
 
         init() {
             console.log('Camera field initialized for', this.photoType);
@@ -303,9 +383,16 @@ document.addEventListener('alpine:init', () => {
 
         async startCamera() {
             try {
+                // Stop existing stream if any
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                }
+
+                this.cameraReady = false;
+
                 this.stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        facingMode: { ideal: 'environment' },
+                        facingMode: { ideal: this.facingMode },
                         width: { ideal: 1920 },
                         height: { ideal: 1080 }
                     },
@@ -316,6 +403,39 @@ document.addEventListener('alpine:init', () => {
             } catch (error) {
                 this.errorMessage = 'Tidak bisa mengakses kamera: ' + error.message;
                 console.error('Camera error:', error);
+            }
+        },
+
+        async switchCamera(mode) {
+            if (this.facingMode === mode) return;
+
+            this.facingMode = mode;
+            await this.startCamera();
+        },
+
+        startCaptureWithTimer() {
+            // Clear any existing timer
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+
+            if (this.timerSeconds === 0) {
+                // No timer, capture immediately
+                this.capturePhoto();
+            } else {
+                // Start countdown
+                this.timerCountdown = this.timerSeconds;
+
+                this.timerInterval = setInterval(() => {
+                    this.timerCountdown--;
+
+                    if (this.timerCountdown <= 0) {
+                        clearInterval(this.timerInterval);
+                        this.timerInterval = null;
+                        this.capturePhoto();
+                    }
+                }, 1000);
             }
         },
 
@@ -371,7 +491,17 @@ document.addEventListener('alpine:init', () => {
 
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
+
+                // If using front camera, flip the image horizontally to match what user sees
+                if (this.facingMode === 'user') {
+                    ctx.translate(canvas.width, 0);
+                    ctx.scale(-1, 1);
+                }
+
                 ctx.drawImage(video, 0, 0);
+
+                // Reset transformation for watermark
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
 
                 const overlayHeight = 100;
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
@@ -479,6 +609,13 @@ document.addEventListener('alpine:init', () => {
                 navigator.geolocation.clearWatch(this.gpsWatcher);
                 this.gpsWatcher = null;
             }
+
+            // Clear timer if running
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+            this.timerCountdown = 0;
 
             this.showCamera = false;
             this.cameraReady = false;

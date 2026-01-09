@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\ActivityReport;
+use App\Models\Unit;
 use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -18,6 +19,7 @@ use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\ViewField;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Support\Facades\Storage;
@@ -46,7 +48,7 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
             ->query(
                 ActivityReport::query()
                     ->where('status', 'submitted')
-                    ->with(['petugas', 'lokasi'])
+                    ->with(['petugas', 'lokasi.unit'])
                     ->orderBy('tanggal', 'desc')
             )
             ->columns([
@@ -57,6 +59,13 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
 
                 TextColumn::make('petugas.name')
                     ->label('Petugas')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('lokasi.unit.nama_unit')
+                    ->label('Unit/Kampus')
+                    ->badge()
+                    ->color('info')
                     ->searchable()
                     ->sortable(),
 
@@ -86,6 +95,26 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
                     ->since()
                     ->sortable(),
             ])
+            ->filters([
+                SelectFilter::make('unit_id')
+                    ->label('Filter Unit/Kampus')
+                    ->options(
+                        Unit::where('is_active', true)
+                            ->orderBy('nama_unit')
+                            ->pluck('nama_unit', 'id')
+                    )
+                    ->query(function ($query, array $data) {
+                        if (!empty($data['value'])) {
+                            $query->whereHas('lokasi', function ($q) use ($data) {
+                                $q->where('unit_id', $data['value']);
+                            });
+                        }
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Semua Unit'),
+            ])
+            ->filtersFormColumns(1)
             ->emptyStateHeading('Tidak ada laporan yang menunggu approval')
             ->emptyStateDescription('Semua laporan sudah ditinjau!')
             ->emptyStateIcon('heroicon-o-check-badge')

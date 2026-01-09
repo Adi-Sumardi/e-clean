@@ -214,17 +214,6 @@ class ActivityReportResource extends Resource
                     ->required()
                     ->seconds(false),
 
-                TimePicker::make('jam_selesai')
-                    ->label('Jam Selesai')
-                    ->seconds(false),
-
-                Textarea::make('kegiatan')
-                    ->label('Deskripsi Kegiatan')
-                    ->required()
-                    ->rows(4)
-                    ->columnSpanFull()
-                    ->placeholder('Deskripsikan kegiatan pembersihan yang dilakukan...'),
-
                 WatermarkCameraField::make('foto_sebelum')
                     ->label('Foto Sebelum Dibersihkan')
                     ->photoType('before')
@@ -240,6 +229,17 @@ class ActivityReportResource extends Resource
                     ->activityReportId(fn (?ActivityReport $record): ?int => $record?->id)
                     ->maxPhotos(5)
                     ->columnSpanFull(),
+
+                TimePicker::make('jam_selesai')
+                    ->label('Jam Selesai')
+                    ->seconds(false),
+
+                Textarea::make('kegiatan')
+                    ->label('Deskripsi Kegiatan')
+                    ->required()
+                    ->rows(4)
+                    ->columnSpanFull()
+                    ->placeholder('Deskripsikan kegiatan pembersihan yang dilakukan...'),
 
                 Textarea::make('catatan_petugas')
                     ->label('Catatan Petugas')
