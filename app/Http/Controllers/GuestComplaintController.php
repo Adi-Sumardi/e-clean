@@ -52,7 +52,7 @@ class GuestComplaintController extends Controller
             'lokasi_id' => 'required|exists:lokasis,id',
             'nama_pelapor' => 'required|string|max:255',
             'email_pelapor' => 'nullable|email|max:255',
-            'telepon_pelapor' => 'nullable|string|max:20',
+            'telepon_pelapor' => ['nullable', 'string', 'max:20', 'regex:/^(08|628|\+628)[0-9]{8,12}$/'],
             'jenis_keluhan' => 'required|in:' . implode(',', array_keys(GuestComplaint::getJenisKeluhanOptions())),
             'deskripsi_keluhan' => 'required|string|max:1000',
             'foto_keluhan' => 'nullable|image|max:5120', // Max 5MB
@@ -64,6 +64,7 @@ class GuestComplaintController extends Controller
             'deskripsi_keluhan.required' => 'Deskripsi keluhan wajib diisi',
             'foto_keluhan.image' => 'File harus berupa gambar',
             'foto_keluhan.max' => 'Ukuran foto maksimal 5MB',
+            'telepon_pelapor.regex' => 'Format nomor telepon tidak valid (contoh: 08123456789)',
         ]);
 
         if ($validator->fails()) {
@@ -97,7 +98,8 @@ class GuestComplaintController extends Controller
 
         return redirect()
             ->route('guest-complaint.success', ['lokasi' => $lokasi->kode_lokasi])
-            ->with('success', 'Keluhan Anda telah berhasil dikirim. Terima kasih atas laporannya.');
+            ->with('success', 'Keluhan Anda telah berhasil dikirim. Terima kasih atas laporannya.')
+            ->with('has_phone', !empty($data['telepon_pelapor']));
     }
 
     /**

@@ -59,8 +59,13 @@ class GuestComplaintResource extends Resource
                             ->disabled()
                             ->columnSpanFull(),
 
-                        ImageColumn::make('foto_keluhan')
-                            ->label('Foto Keluhan'),
+                        FileUpload::make('foto_keluhan')
+                            ->label('Foto Keluhan')
+                            ->image()
+                            ->directory('complaints')
+                            ->visibility('public')
+                            ->disabled()
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
 

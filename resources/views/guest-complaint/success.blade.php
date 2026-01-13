@@ -221,7 +221,7 @@
             <div class="card-content">
                 <p class="message">
                     Tim kebersihan kami akan segera menangani laporan Anda.
-                    @if($lokasi)
+                    @if(session('has_phone'))
                     Kami akan mengirimkan update status ke nomor WhatsApp yang Anda berikan.
                     @endif
                 </p>

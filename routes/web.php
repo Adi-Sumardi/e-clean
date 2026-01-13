@@ -12,7 +12,9 @@ Route::get('/', function () {
 // Guest Complaint Routes (Public - for QR Code scanning)
 Route::prefix('keluhan')->group(function () {
     Route::get('/{lokasi}', [GuestComplaintController::class, 'showForm'])->name('guest-complaint.form');
-    Route::post('/', [GuestComplaintController::class, 'store'])->name('guest-complaint.store');
+    Route::post('/', [GuestComplaintController::class, 'store'])
+        ->middleware('throttle:5,1') // Max 5 submissions per minute per IP
+        ->name('guest-complaint.store');
     Route::get('/{lokasi}/success', [GuestComplaintController::class, 'success'])->name('guest-complaint.success');
 });
 
