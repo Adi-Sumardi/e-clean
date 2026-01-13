@@ -14,12 +14,14 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Placeholder;
 use Filament\Schemas\Components\Section;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -270,10 +272,18 @@ class GuestComplaintResource extends Resource
 
                 Section::make('Foto Keluhan')
                     ->schema([
-                        ImageEntry::make('foto_keluhan')
+                        Placeholder::make('foto_keluhan_display')
                             ->hiddenLabel()
-                            ->disk('public')
-                            ->height(300)
+                            ->content(function (GuestComplaint $record) {
+                                if (empty($record->foto_keluhan)) {
+                                    return new HtmlString('<p class="text-gray-500">Tidak ada foto keluhan</p>');
+                                }
+
+                                $imageUrl = Storage::disk('public')->url($record->foto_keluhan);
+                                return new HtmlString(
+                                    '<img src="' . e($imageUrl) . '" alt="Foto Keluhan" class="max-h-80 rounded-lg shadow-md" />'
+                                );
+                            })
                             ->columnSpanFull(),
                     ])
                     ->visible(fn (GuestComplaint $record): bool => !empty($record->foto_keluhan)),
@@ -312,71 +322,62 @@ class GuestComplaintResource extends Resource
 
                 Section::make('Foto Penanganan')
                     ->description('Foto sebelum dan sesudah dari laporan kebersihan')
-                    ->schema(function (GuestComplaint $record) {
-                        // Get related ActivityReport based on lokasi_id and handled_by
-                        $activityReport = ActivityReport::where('lokasi_id', $record->lokasi_id)
-                            ->where('petugas_id', $record->handled_by)
-                            ->where('created_at', '>=', $record->created_at)
-                            ->orderBy('created_at', 'asc')
-                            ->first();
+                    ->schema([
+                        Placeholder::make('foto_penanganan_display')
+                            ->hiddenLabel()
+                            ->content(function (GuestComplaint $record) {
+                                // Get related ActivityReport based on lokasi_id and handled_by
+                                $activityReport = ActivityReport::where('lokasi_id', $record->lokasi_id)
+                                    ->where('petugas_id', $record->handled_by)
+                                    ->where('created_at', '>=', $record->created_at)
+                                    ->orderBy('created_at', 'asc')
+                                    ->first();
 
-                        if (!$activityReport) {
-                            return [
-                                TextEntry::make('no_photos')
-                                    ->hiddenLabel()
-                                    ->state('Belum ada foto penanganan dari laporan kebersihan')
-                                    ->columnSpanFull(),
-                            ];
-                        }
+                                if (!$activityReport) {
+                                    return new HtmlString('<p class="text-gray-500">Belum ada foto penanganan dari laporan kebersihan</p>');
+                                }
 
-                        $components = [];
+                                $html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
 
-                        // Foto Sebelum
-                        if (!empty($activityReport->foto_sebelum)) {
-                            $components[] = Section::make('Foto Sebelum')
-                                ->schema([
-                                    ImageEntry::make('foto_sebelum_display')
-                                        ->hiddenLabel()
-                                        ->state($activityReport->foto_sebelum)
-                                        ->disk('public')
-                                        ->height(200)
-                                        ->stacked()
-                                        ->limit(5)
-                                        ->limitedRemainingText(),
-                                ])
-                                ->columnSpan(1);
-                        }
+                                // Foto Sebelum
+                                $html .= '<div class="space-y-2">';
+                                $html .= '<h4 class="font-medium text-gray-700">Foto Sebelum</h4>';
+                                if (!empty($activityReport->foto_sebelum)) {
+                                    $html .= '<div class="flex flex-wrap gap-2">';
+                                    $photos = is_array($activityReport->foto_sebelum) ? $activityReport->foto_sebelum : [$activityReport->foto_sebelum];
+                                    foreach ($photos as $photo) {
+                                        $imageUrl = Storage::disk('public')->url($photo);
+                                        $html .= '<img src="' . e($imageUrl) . '" alt="Foto Sebelum" class="h-40 rounded-lg shadow-md object-cover" />';
+                                    }
+                                    $html .= '</div>';
+                                } else {
+                                    $html .= '<p class="text-gray-400 text-sm">Tidak ada foto</p>';
+                                }
+                                $html .= '</div>';
 
-                        // Foto Sesudah
-                        if (!empty($activityReport->foto_sesudah)) {
-                            $components[] = Section::make('Foto Sesudah')
-                                ->schema([
-                                    ImageEntry::make('foto_sesudah_display')
-                                        ->hiddenLabel()
-                                        ->state($activityReport->foto_sesudah)
-                                        ->disk('public')
-                                        ->height(200)
-                                        ->stacked()
-                                        ->limit(5)
-                                        ->limitedRemainingText(),
-                                ])
-                                ->columnSpan(1);
-                        }
+                                // Foto Sesudah
+                                $html .= '<div class="space-y-2">';
+                                $html .= '<h4 class="font-medium text-gray-700">Foto Sesudah</h4>';
+                                if (!empty($activityReport->foto_sesudah)) {
+                                    $html .= '<div class="flex flex-wrap gap-2">';
+                                    $photos = is_array($activityReport->foto_sesudah) ? $activityReport->foto_sesudah : [$activityReport->foto_sesudah];
+                                    foreach ($photos as $photo) {
+                                        $imageUrl = Storage::disk('public')->url($photo);
+                                        $html .= '<img src="' . e($imageUrl) . '" alt="Foto Sesudah" class="h-40 rounded-lg shadow-md object-cover" />';
+                                    }
+                                    $html .= '</div>';
+                                } else {
+                                    $html .= '<p class="text-gray-400 text-sm">Tidak ada foto</p>';
+                                }
+                                $html .= '</div>';
 
-                        if (empty($components)) {
-                            return [
-                                TextEntry::make('no_photos')
-                                    ->hiddenLabel()
-                                    ->state('Tidak ada foto dalam laporan kebersihan')
-                                    ->columnSpanFull(),
-                            ];
-                        }
+                                $html .= '</div>';
 
-                        return [
-                            Grid::make(2)->schema($components),
-                        ];
-                    })
-                    ->visible(fn (GuestComplaint $record): bool => in_array($record->status, ['in_progress', 'resolved', 'rejected'])),
+                                return new HtmlString($html);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (GuestComplaint $record): bool => \in_array($record->status, ['in_progress', 'resolved', 'rejected'])),
             ]);
     }
 
