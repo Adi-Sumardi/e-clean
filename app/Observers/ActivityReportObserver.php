@@ -32,14 +32,16 @@ class ActivityReportObserver
      */
     public function creating(ActivityReport $report): void
     {
-        // Skip if already set (e.g., auto-generated expired reports)
-        if ($report->reporting_status && $report->reporting_status !== ActivityReport::REPORTING_STATUS_ONTIME) {
+        // Skip if already set to expired or late (e.g., auto-generated expired reports)
+        if ($report->reporting_status === ActivityReport::REPORTING_STATUS_EXPIRED ||
+            $report->reporting_status === ActivityReport::REPORTING_STATUS_LATE) {
             return;
         }
 
-        // Only calculate status if there's a jadwal linked
+        // If no jadwal linked, set to ontime (manual report without schedule)
         if (!$report->jadwal_id) {
             $report->reporting_status = ActivityReport::REPORTING_STATUS_ONTIME;
+            $report->late_minutes = null;
             return;
         }
 

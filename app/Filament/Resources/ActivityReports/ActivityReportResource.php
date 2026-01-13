@@ -514,21 +514,37 @@ class ActivityReportResource extends Resource
 
                 Section::make('Foto Dokumentasi')
                     ->schema([
-                        ImageEntry::make('foto_sebelum')
-                            ->label('Foto Sebelum')
-                            ->disk('public')
-                            ->columnSpan(1)
-                            ->height(200)
-                            ->visible(fn ($record) => $record->foto_sebelum),
+                        Grid::make(2)
+                            ->schema([
+                                Section::make('Foto Sebelum')
+                                    ->schema([
+                                        ImageEntry::make('foto_sebelum')
+                                            ->hiddenLabel()
+                                            ->disk('public')
+                                            ->height(200)
+                                            ->extraImgAttributes(['class' => 'rounded-lg shadow-md'])
+                                            ->stacked()
+                                            ->limit(5)
+                                            ->limitedRemainingText()
+                                            ->visible(fn ($record) => !empty($record->foto_sebelum)),
+                                    ])
+                                    ->compact(),
 
-                        ImageEntry::make('foto_sesudah')
-                            ->label('Foto Sesudah')
-                            ->disk('public')
-                            ->columnSpan(1)
-                            ->height(200)
-                            ->visible(fn ($record) => $record->foto_sesudah),
+                                Section::make('Foto Sesudah')
+                                    ->schema([
+                                        ImageEntry::make('foto_sesudah')
+                                            ->hiddenLabel()
+                                            ->disk('public')
+                                            ->height(200)
+                                            ->extraImgAttributes(['class' => 'rounded-lg shadow-md'])
+                                            ->stacked()
+                                            ->limit(5)
+                                            ->limitedRemainingText()
+                                            ->visible(fn ($record) => !empty($record->foto_sesudah)),
+                                    ])
+                                    ->compact(),
+                            ]),
                     ])
-                    ->columns(2)
                     ->collapsible(),
 
                 Section::make('Status & Penilaian')
