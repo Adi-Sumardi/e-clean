@@ -4,7 +4,8 @@ namespace App\Filament\Resources\GuestComplaints;
 
 use App\Filament\Resources\GuestComplaints\Pages\ManageGuestComplaints;
 use App\Models\GuestComplaint;
-use App\Models\Lokasi;
+use App\Models\JadwalKebersihan;
+use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -91,6 +92,46 @@ class GuestComplaintResource extends Resource
                             ->label('Status')
                             ->options(GuestComplaint::getStatusOptions())
                             ->required(),
+
+                        Select::make('assigned_to')
+                            ->label('Tugaskan ke Petugas')
+                            ->options(function ($get, $record) {
+                                $lokasiId = $record?->lokasi_id ?? $get('lokasi_id');
+
+                                if (!$lokasiId) {
+                                    return [];
+                                }
+
+                                // Get petugas IDs yang punya jadwal di lokasi ini (hari ini atau 7 hari ke depan)
+                                $petugasIds = JadwalKebersihan::where('lokasi_id', $lokasiId)
+                                    ->where('status', 'active')
+                                    ->whereBetween('tanggal', [today(), today()->addDays(7)])
+                                    ->pluck('petugas_id')
+                                    ->unique()
+                                    ->toArray();
+
+                                // Get petugas users
+                                $petugasOptions = User::whereIn('id', $petugasIds)
+                                    ->where('is_active', true)
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+
+                                // Jika tidak ada petugas terjadwal, tampilkan semua petugas aktif
+                                if (empty($petugasOptions)) {
+                                    $petugasOptions = User::role('petugas')
+                                        ->where('is_active', true)
+                                        ->orderBy('name')
+                                        ->pluck('name', 'id')
+                                        ->toArray();
+                                }
+
+                                return $petugasOptions;
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Pilih petugas...')
+                            ->helperText('Menampilkan petugas yang punya jadwal di lokasi ini'),
 
                         Textarea::make('catatan_penanganan')
                             ->label('Catatan Penanganan')
