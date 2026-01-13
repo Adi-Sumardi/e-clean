@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\ActivityReport;
+use App\Models\GuestComplaint;
 use App\Models\JadwalKebersihan;
 use App\Models\Setting;
 use App\Notifications\ReportApprovedNotification;
@@ -127,6 +128,11 @@ class ActivityReportObserver
      */
     public function updated(ActivityReport $report): void
     {
+        // === AUTO-UPDATE GUEST COMPLAINTS STATUS ===
+        if ($report->wasChanged('status') && $report->lokasi_id) {
+            $this->updateGuestComplaintsStatus($report);
+        }
+
         // === AUTO-UPDATE PENILAIAN WHEN APPROVED ===
         if ($report->wasChanged('status') && $report->status === 'approved') {
             try {
@@ -227,5 +233,53 @@ class ActivityReportObserver
     public function forceDeleted(ActivityReport $report): void
     {
         //
+    }
+
+    /**
+     * Update guest complaints status based on activity report status.
+     * - Report approved → Complaints resolved
+     * - Report rejected → Complaints rejected (back to pending for re-handling)
+     */
+    protected function updateGuestComplaintsStatus(ActivityReport $report): void
+    {
+        try {
+            // Get complaints at this location that are in_progress (being handled by this report)
+            $complaints = GuestComplaint::where('lokasi_id', $report->lokasi_id)
+                ->where('status', 'in_progress')
+                ->where('handled_by', $report->petugas_id)
+                ->get();
+
+            if ($complaints->isEmpty()) {
+                return;
+            }
+
+            $newStatus = match ($report->status) {
+                'approved' => 'resolved',
+                'rejected' => 'rejected',
+                default => null,
+            };
+
+            if (!$newStatus) {
+                return;
+            }
+
+            foreach ($complaints as $complaint) {
+                $complaint->update([
+                    'status' => $newStatus,
+                ]);
+
+                Log::info('Guest complaint status updated based on report', [
+                    'complaint_id' => $complaint->id,
+                    'report_id' => $report->id,
+                    'report_status' => $report->status,
+                    'complaint_new_status' => $newStatus,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to update guest complaints status', [
+                'report_id' => $report->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
