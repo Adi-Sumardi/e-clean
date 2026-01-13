@@ -5,11 +5,13 @@ namespace App\Filament\Resources\ActivityReports;
 use App\Filament\Forms\Components\WatermarkCameraField;
 use App\Filament\Resources\ActivityReports\Pages;
 use App\Models\ActivityReport;
+use App\Models\GuestComplaint;
 use App\Models\JadwalKebersihan;
 use App\Models\Lokasi;
 use App\Models\Unit;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -27,6 +29,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 class ActivityReportResource extends Resource
 {
@@ -124,7 +127,56 @@ class ActivityReportResource extends Resource
                     })
                     ->helperText($isPetugas ? 'Hanya menampilkan lokasi sesuai jadwal Anda hari ini' : null)
                     ->disabled(fn ($get) => $isPetugas && $get('jadwal_id'))
-                    ->dehydrated(),
+                    ->dehydrated()
+                    ->live(),
+
+                // Tampilkan keluhan tamu yang perlu ditangani di lokasi ini
+                Placeholder::make('keluhan_tamu')
+                    ->label('Keluhan Tamu di Lokasi Ini')
+                    ->content(function ($get) {
+                        $lokasiId = $get('lokasi_id');
+
+                        if (!$lokasiId) {
+                            return new HtmlString('<p class="text-gray-500 text-sm">Pilih lokasi untuk melihat keluhan tamu.</p>');
+                        }
+
+                        $complaints = GuestComplaint::where('lokasi_id', $lokasiId)
+                            ->unresolved()
+                            ->latest()
+                            ->limit(5)
+                            ->get();
+
+                        if ($complaints->isEmpty()) {
+                            return new HtmlString('<p class="text-green-600 text-sm font-medium">✓ Tidak ada keluhan tamu di lokasi ini.</p>');
+                        }
+
+                        $html = '<div class="space-y-2">';
+                        $html .= '<p class="text-amber-600 font-medium text-sm">⚠️ Ada ' . $complaints->count() . ' keluhan yang perlu ditangani:</p>';
+                        $html .= '<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">';
+
+                        foreach ($complaints as $complaint) {
+                            $jenisLabel = GuestComplaint::getJenisKeluhanOptions()[$complaint->jenis_keluhan] ?? $complaint->jenis_keluhan;
+                            $statusLabel = GuestComplaint::getStatusOptions()[$complaint->status] ?? $complaint->status;
+                            $statusColor = $complaint->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800';
+
+                            $html .= '<div class="flex items-start gap-2 text-sm">';
+                            $html .= '<span class="' . $statusColor . ' px-2 py-0.5 rounded text-xs font-medium">' . $statusLabel . '</span>';
+                            $html .= '<div class="flex-1">';
+                            $html .= '<span class="font-medium">' . $jenisLabel . '</span>';
+                            $html .= ' - ' . e(\Illuminate\Support\Str::limit($complaint->deskripsi_keluhan, 50));
+                            $html .= '<br><span class="text-gray-500 text-xs">' . $complaint->created_at->diffForHumans() . ' oleh ' . e($complaint->nama_pelapor) . '</span>';
+                            $html .= '</div>';
+                            $html .= '</div>';
+                        }
+
+                        $html .= '</div>';
+                        $html .= '<p class="text-xs text-gray-500 mt-1">Setelah selesai membersihkan, ubah status keluhan di menu Keluhan Tamu.</p>';
+                        $html .= '</div>';
+
+                        return new HtmlString($html);
+                    })
+                    ->columnSpanFull()
+                    ->visible(fn ($get) => $get('lokasi_id') !== null),
 
                 Select::make('jadwal_id')
                     ->label('Jadwal Terkait')
