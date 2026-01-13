@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\GuestComplaint;
+use App\Models\JadwalKebersihan;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -23,14 +24,32 @@ class GuestComplaintsWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $user = Auth::user();
+        $query = GuestComplaint::query()
+            ->with(['lokasi', 'lokasi.unit'])
+            ->unresolved()
+            ->latest();
+
+        // Filter keluhan untuk petugas: hanya tampilkan yang di-assign kepadanya
+        // atau keluhan di lokasi jadwalnya hari ini
+        if ($user->hasRole('petugas') && !$user->hasAnyRole(['admin', 'super_admin', 'supervisor'])) {
+            // Get lokasi IDs from today's schedule for this petugas
+            $todayLokasiIds = JadwalKebersihan::where('petugas_id', $user->id)
+                ->where('tanggal', today())
+                ->where('status', 'active')
+                ->pluck('lokasi_id')
+                ->toArray();
+
+            $query->where(function ($q) use ($user, $todayLokasiIds) {
+                // Keluhan yang di-assign kepadanya
+                $q->where('assigned_to', $user->id)
+                    // ATAU keluhan di lokasi jadwalnya hari ini
+                    ->orWhereIn('lokasi_id', $todayLokasiIds);
+            });
+        }
+
         return $table
-            ->query(
-                GuestComplaint::query()
-                    ->with(['lokasi', 'lokasi.unit'])
-                    ->unresolved()
-                    ->latest()
-                    ->limit(10)
-            )
+            ->query($query->limit(10))
             ->columns([
                 TextColumn::make('created_at')
                     ->label('Waktu')
