@@ -234,7 +234,7 @@ class ActivityReportResource extends Resource
                     })
                     ->placeholder($isPetugas ? 'Pilih jadwal hari ini' : 'Pilih Jadwal (Opsional)')
                     ->helperText($isPetugas ? 'Hanya menampilkan jadwal yang belum dilaporkan' : null)
-                    ->reactive()
+                    ->live()
                     ->afterStateUpdated(function ($state, callable $set) use ($isPetugas) {
                         // Auto-fill lokasi berdasarkan jadwal yang dipilih
                         if ($state && $isPetugas) {

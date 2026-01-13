@@ -61,9 +61,12 @@ class GuestComplaintResource extends Resource
                         FileUpload::make('foto_keluhan')
                             ->label('Foto Keluhan')
                             ->image()
+                            ->disk('public')
                             ->directory('complaints')
                             ->visibility('public')
                             ->disabled()
+                            ->openable()
+                            ->downloadable()
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
@@ -99,9 +102,12 @@ class GuestComplaintResource extends Resource
                         FileUpload::make('foto_penanganan')
                             ->label('Foto Penanganan')
                             ->image()
+                            ->disk('public')
                             ->directory('complaint-handling')
                             ->visibility('public')
-                            ->imageEditor(),
+                            ->imageEditor()
+                            ->openable()
+                            ->downloadable(),
                     ])
                     ->columns(2),
             ]);

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class GuestComplaintsWidget extends BaseWidget
 {
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 2; // Tampilkan di atas setelah stats overview
 
     protected int | string | array $columnSpan = 'full';
 
