@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\GuestComplaints;
 
 use App\Filament\Resources\GuestComplaints\Pages\ManageGuestComplaints;
+use App\Models\ActivityReport;
 use App\Models\GuestComplaint;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -13,10 +14,12 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -210,6 +213,171 @@ class GuestComplaintResource extends Resource
                     ->hidden(fn () => !Auth::user()->hasAnyRole(['admin', 'super_admin'])),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                Section::make('Informasi Keluhan')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Waktu Lapor')
+                                    ->dateTime('d M Y H:i'),
+
+                                TextEntry::make('lokasi.nama_lokasi')
+                                    ->label('Lokasi'),
+
+                                TextEntry::make('lokasi.unit.nama_unit')
+                                    ->label('Unit'),
+
+                                TextEntry::make('jenis_keluhan')
+                                    ->label('Jenis Keluhan')
+                                    ->badge()
+                                    ->formatStateUsing(fn (string $state): string => GuestComplaint::getJenisKeluhanOptions()[$state] ?? $state)
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'tumpahan' => 'danger',
+                                        'kotor' => 'warning',
+                                        'bau' => 'info',
+                                        'rusak' => 'gray',
+                                        default => 'primary',
+                                    }),
+                            ]),
+
+                        TextEntry::make('deskripsi_keluhan')
+                            ->label('Deskripsi Keluhan')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Informasi Pelapor')
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('nama_pelapor')
+                                    ->label('Nama Pelapor'),
+
+                                TextEntry::make('email_pelapor')
+                                    ->label('Email')
+                                    ->placeholder('-'),
+
+                                TextEntry::make('telepon_pelapor')
+                                    ->label('Telepon')
+                                    ->placeholder('-'),
+                            ]),
+                    ]),
+
+                Section::make('Foto Keluhan')
+                    ->schema([
+                        ImageEntry::make('foto_keluhan')
+                            ->hiddenLabel()
+                            ->disk('public')
+                            ->height(300)
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (GuestComplaint $record): bool => !empty($record->foto_keluhan)),
+
+                Section::make('Status Penanganan')
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('status')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->formatStateUsing(fn (string $state): string => GuestComplaint::getStatusOptions()[$state] ?? $state)
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'pending' => 'warning',
+                                        'in_progress' => 'info',
+                                        'resolved' => 'success',
+                                        'rejected' => 'danger',
+                                        default => 'gray',
+                                    }),
+
+                                TextEntry::make('handler.name')
+                                    ->label('Ditangani Oleh')
+                                    ->placeholder('-'),
+
+                                TextEntry::make('handled_at')
+                                    ->label('Waktu Penanganan')
+                                    ->dateTime('d M Y H:i')
+                                    ->placeholder('-'),
+                            ]),
+
+                        TextEntry::make('catatan_penanganan')
+                            ->label('Catatan Penanganan')
+                            ->placeholder('-')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Foto Penanganan')
+                    ->description('Foto sebelum dan sesudah dari laporan kebersihan')
+                    ->schema(function (GuestComplaint $record) {
+                        // Get related ActivityReport based on lokasi_id and handled_by
+                        $activityReport = ActivityReport::where('lokasi_id', $record->lokasi_id)
+                            ->where('petugas_id', $record->handled_by)
+                            ->where('created_at', '>=', $record->created_at)
+                            ->orderBy('created_at', 'asc')
+                            ->first();
+
+                        if (!$activityReport) {
+                            return [
+                                TextEntry::make('no_photos')
+                                    ->hiddenLabel()
+                                    ->state('Belum ada foto penanganan dari laporan kebersihan')
+                                    ->columnSpanFull(),
+                            ];
+                        }
+
+                        $components = [];
+
+                        // Foto Sebelum
+                        if (!empty($activityReport->foto_sebelum)) {
+                            $components[] = Section::make('Foto Sebelum')
+                                ->schema([
+                                    ImageEntry::make('foto_sebelum_display')
+                                        ->hiddenLabel()
+                                        ->state($activityReport->foto_sebelum)
+                                        ->disk('public')
+                                        ->height(200)
+                                        ->stacked()
+                                        ->limit(5)
+                                        ->limitedRemainingText(),
+                                ])
+                                ->columnSpan(1);
+                        }
+
+                        // Foto Sesudah
+                        if (!empty($activityReport->foto_sesudah)) {
+                            $components[] = Section::make('Foto Sesudah')
+                                ->schema([
+                                    ImageEntry::make('foto_sesudah_display')
+                                        ->hiddenLabel()
+                                        ->state($activityReport->foto_sesudah)
+                                        ->disk('public')
+                                        ->height(200)
+                                        ->stacked()
+                                        ->limit(5)
+                                        ->limitedRemainingText(),
+                                ])
+                                ->columnSpan(1);
+                        }
+
+                        if (empty($components)) {
+                            return [
+                                TextEntry::make('no_photos')
+                                    ->hiddenLabel()
+                                    ->state('Tidak ada foto dalam laporan kebersihan')
+                                    ->columnSpanFull(),
+                            ];
+                        }
+
+                        return [
+                            Grid::make(2)->schema($components),
+                        ];
+                    })
+                    ->visible(fn (GuestComplaint $record): bool => in_array($record->status, ['in_progress', 'resolved', 'rejected'])),
+            ]);
     }
 
     public static function getPages(): array
