@@ -284,6 +284,7 @@ class ActivityReportResource extends Resource
 
                 TimePicker::make('jam_selesai')
                     ->label('Jam Selesai')
+                    ->required()
                     ->seconds(false),
 
                 Textarea::make('kegiatan')
