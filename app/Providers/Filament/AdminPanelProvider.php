@@ -64,7 +64,6 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(FilamentShieldPlugin::make())
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
-            ->schemasAreRequired()
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
