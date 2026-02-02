@@ -52,6 +52,30 @@ class PDFExportService
     }
 
     /**
+     * Export Monthly Report to PDF (grouped by Unit & Petugas)
+     *
+     * @param \Illuminate\Support\Collection $grouped
+     * @param array $stats
+     * @param array $options
+     * @return \Barryvdh\DomPDF\PDF
+     */
+    public function exportMonthlyReport($grouped, array $stats, array $options = [])
+    {
+        $data = [
+            'title' => $options['title'] ?? 'Laporan Bulanan Kegiatan Cleaning Service',
+            'period' => $options['period'] ?? null,
+            'generatedAt' => now()->format('d/m/Y H:i'),
+            'grouped' => $grouped,
+            'stats' => $stats,
+        ];
+
+        $pdf = Pdf::loadView('pdf.monthly-report', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf;
+    }
+
+    /**
      * Export Performance Report to PDF
      *
      * @param Collection $petugasData
