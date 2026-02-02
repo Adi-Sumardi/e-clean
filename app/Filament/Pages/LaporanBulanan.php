@@ -96,12 +96,22 @@ class LaporanBulanan extends Page
         return Unit::where('is_active', true)->orderBy('nama_unit')->pluck('nama_unit', 'id')->toArray();
     }
 
+    public function updatedUnitFilter(): void
+    {
+        $this->petugasFilter = null;
+    }
+
     public function getPetugasOptions(): array
     {
-        return User::whereHas('roles', fn ($q) => $q->where('name', 'petugas'))
-            ->orderBy('name')
-            ->pluck('name', 'id')
-            ->toArray();
+        $query = User::whereHas('roles', fn ($q) => $q->where('name', 'petugas'));
+
+        if ($this->unitFilter) {
+            $query->whereHas('jadwalKebersihan', fn ($q) =>
+                $q->whereHas('lokasi', fn ($sub) => $sub->where('unit_id', $this->unitFilter))
+            );
+        }
+
+        return $query->orderBy('name')->pluck('name', 'id')->toArray();
     }
 
     public function downloadPdf()

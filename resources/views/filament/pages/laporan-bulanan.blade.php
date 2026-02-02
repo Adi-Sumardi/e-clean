@@ -91,33 +91,90 @@
 
                 {{-- Filter By Section --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                    {{-- Unit Searchable Select --}}
                     <div>
                         <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                            <div class="flex items-center justify-center w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/40">
-                                <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            <div class="flex items-center justify-center w-6 h-6 rounded" style="background-color: #dbeafe;">
+                                <svg class="w-3.5 h-3.5" style="color: #2563eb;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                             </div>
                             Unit
                         </label>
-                        <select wire:model.live="unitFilter" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm py-2 pl-3 pr-8 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Semua Unit</option>
-                            @foreach($this->getUnitOptions() as $id => $nama)
-                                <option value="{{ $id }}">{{ $nama }}</option>
-                            @endforeach
-                        </select>
+                        <div x-data="{ open: false, search: '' }" class="relative">
+                            <button @click="open = !open; $nextTick(() => { if(open) $refs.searchUnit.focus() })" type="button"
+                                class="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-left transition"
+                                style="color: #111827;">
+                                <span class="dark:text-white truncate">{{ $this->unitFilter ? ($this->getUnitOptions()[$this->unitFilter] ?? 'Semua Unit') : 'Semua Unit' }}</span>
+                                <svg class="w-4 h-4 shrink-0" style="color: #9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="open" @click.away="open = false; search = ''" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                                class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden" style="display: none;">
+                                <div class="p-2 border-b border-gray-100 dark:border-gray-600">
+                                    <input x-ref="searchUnit" x-model="search" type="text" placeholder="Cari unit..." class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm px-3 py-1.5" style="font-size: 13px;"/>
+                                </div>
+                                <div class="max-h-48 overflow-y-auto">
+                                    <button @click="$wire.set('unitFilter', ''); open = false; search = ''" type="button"
+                                        class="w-full text-left px-3 py-2 text-sm transition"
+                                        :style="!$wire.unitFilter ? 'background-color: #eef2ff; color: #4338ca; font-weight: 500;' : 'color: #374151;'"
+                                        x-show="!search || 'semua unit'.includes(search.toLowerCase())">
+                                        Semua Unit
+                                    </button>
+                                    @foreach($this->getUnitOptions() as $id => $nama)
+                                        <button @click="$wire.set('unitFilter', '{{ $id }}'); open = false; search = ''" type="button"
+                                            class="w-full text-left px-3 py-2 text-sm transition"
+                                            :style="$wire.unitFilter == '{{ $id }}' ? 'background-color: #eef2ff; color: #4338ca; font-weight: 500;' : 'color: #374151;'"
+                                            x-show="!search || '{{ strtolower($nama) }}'.includes(search.toLowerCase())">
+                                            {{ $nama }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    {{-- Petugas Searchable Select --}}
                     <div>
                         <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                            <div class="flex items-center justify-center w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/40">
-                                <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            <div class="flex items-center justify-center w-6 h-6 rounded" style="background-color: #d1fae5;">
+                                <svg class="w-3.5 h-3.5" style="color: #059669;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             </div>
                             Petugas
+                            @if($this->unitFilter)
+                                <span class="text-xs font-normal" style="color: #6b7280;">(berdasarkan unit terpilih)</span>
+                            @endif
                         </label>
-                        <select wire:model.live="petugasFilter" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm py-2 pl-3 pr-8 focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Semua Petugas</option>
-                            @foreach($this->getPetugasOptions() as $id => $nama)
-                                <option value="{{ $id }}">{{ $nama }}</option>
-                            @endforeach
-                        </select>
+                        <div x-data="{
+                            open: false,
+                            search: ''
+                        }" class="relative">
+                            <button @click="open = !open; $nextTick(() => { if(open) $refs.searchPetugas.focus() })" type="button"
+                                class="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-left transition"
+                                style="color: #111827;">
+                                <span class="dark:text-white truncate">{{ $this->petugasFilter ? ($this->getPetugasOptions()[$this->petugasFilter] ?? 'Semua Petugas') : 'Semua Petugas' }}</span>
+                                <svg class="w-4 h-4 shrink-0" style="color: #9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="open" @click.away="open = false; search = ''" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                                class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden" style="display: none;">
+                                <div class="p-2 border-b border-gray-100 dark:border-gray-600">
+                                    <input x-ref="searchPetugas" x-model="search" type="text" placeholder="Cari petugas..." class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm px-3 py-1.5" style="font-size: 13px;"/>
+                                </div>
+                                <div class="max-h-48 overflow-y-auto">
+                                    <button @click="$wire.set('petugasFilter', ''); open = false; search = ''" type="button"
+                                        class="w-full text-left px-3 py-2 text-sm transition"
+                                        :style="!$wire.petugasFilter ? 'background-color: #ecfdf5; color: #047857; font-weight: 500;' : 'color: #374151;'"
+                                        x-show="!search || 'semua petugas'.includes(search.toLowerCase())">
+                                        Semua Petugas
+                                    </button>
+                                    @foreach($this->getPetugasOptions() as $id => $nama)
+                                        <button @click="$wire.set('petugasFilter', '{{ $id }}'); open = false; search = ''" type="button"
+                                            class="w-full text-left px-3 py-2 text-sm transition"
+                                            :style="$wire.petugasFilter == '{{ $id }}' ? 'background-color: #ecfdf5; color: #047857; font-weight: 500;' : 'color: #374151;'"
+                                            x-show="!search || '{{ strtolower($nama) }}'.includes(search.toLowerCase())">
+                                            {{ $nama }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

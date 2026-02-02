@@ -62,7 +62,7 @@ class PDFExportService
     public function exportMonthlyReport($grouped, array $stats, array $options = [])
     {
         $data = [
-            'title' => $options['title'] ?? 'Laporan Bulanan Kegiatan Cleaning Service',
+            'title' => $options['title'] ?? 'Laporan Bulanan',
             'period' => $options['period'] ?? null,
             'generatedAt' => now()->format('d/m/Y H:i'),
             'grouped' => $grouped,
