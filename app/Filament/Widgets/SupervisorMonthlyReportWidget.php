@@ -12,7 +12,11 @@ class SupervisorMonthlyReportWidget extends StatsOverviewWidget
 {
     protected static ?int $sort = 3;
     protected int | string | array $columnSpan = 'full';
-    protected static ?string $heading = 'Rekap Laporan Bulanan';
+
+    protected function getHeading(): ?string
+    {
+        return 'Rekap Laporan Bulanan';
+    }
 
     public static function canView(): bool
     {
