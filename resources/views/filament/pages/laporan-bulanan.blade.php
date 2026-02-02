@@ -53,162 +53,83 @@
         </div>
 
         {{-- Filters --}}
-        <div class="no-print bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            {{-- Filter Header --}}
-            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-5 py-3">
-                <div class="flex items-center gap-2 text-white">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                    </svg>
-                    <h3 class="font-semibold text-sm">Filter Laporan</h3>
-                </div>
-            </div>
-
-            {{-- Filter Body --}}
-            <div class="p-5">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {{-- Bulan - Searchable Select --}}
-                    <div x-data="{
-                        open: false,
-                        search: '',
-                        selected: @entangle('bulan'),
-                        options: {1:'Januari',2:'Februari',3:'Maret',4:'April',5:'Mei',6:'Juni',7:'Juli',8:'Agustus',9:'September',10:'Oktober',11:'November',12:'Desember'},
-                        get filteredOptions() {
-                            if (!this.search) return this.options;
-                            return Object.fromEntries(Object.entries(this.options).filter(([k,v]) => v.toLowerCase().includes(this.search.toLowerCase())));
-                        },
-                        get selectedLabel() { return this.options[this.selected] || 'Pilih Bulan'; },
-                        select(val) { this.selected = parseInt(val); this.open = false; this.search = ''; }
-                    }" class="relative">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            <span class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                Bulan
-                            </span>
-                        </label>
-                        <button @click="open = !open" type="button" class="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <span x-text="selectedLabel"></span>
-                            <svg class="w-4 h-4 text-gray-400" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                            <div class="p-2">
-                                <input x-model="search" type="text" placeholder="Cari bulan..." class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm px-3 py-1.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/>
-                            </div>
-                            <div class="max-h-48 overflow-y-auto">
-                                <template x-for="[key, label] in Object.entries(filteredOptions)" :key="key">
-                                    <button @click="select(key)" type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition" :class="selected == key ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-200'" x-text="label"></button>
-                                </template>
-                            </div>
+        <div class="no-print">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                {{-- Period Section --}}
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+                    <div class="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40">
+                            <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         </div>
+                        <span class="font-semibold text-sm">Periode</span>
                     </div>
-
-                    {{-- Tahun - Searchable Select --}}
-                    @php $yearOptions = []; for($y = now()->year; $y >= now()->year - 2; $y--) { $yearOptions[$y] = (string)$y; } @endphp
-                    <div x-data="{
-                        open: false,
-                        selected: @entangle('tahun'),
-                        options: {{ json_encode($yearOptions) }},
-                        get selectedLabel() { return this.options[this.selected] || 'Pilih Tahun'; },
-                        select(val) { this.selected = parseInt(val); this.open = false; }
-                    }" class="relative">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            <span class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                Tahun
-                            </span>
-                        </label>
-                        <button @click="open = !open" type="button" class="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <span x-text="selectedLabel"></span>
-                            <svg class="w-4 h-4 text-gray-400" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                            <div class="max-h-48 overflow-y-auto">
-                                <template x-for="[key, label] in Object.entries(options)" :key="key">
-                                    <button @click="select(key)" type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition" :class="selected == key ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-200'" x-text="label"></button>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Unit - Searchable Select --}}
-                    <div x-data="{
-                        open: false,
-                        search: '',
-                        selected: @entangle('unitFilter'),
-                        options: {{ json_encode($this->getUnitOptions()) }},
-                        get filteredOptions() {
-                            if (!this.search) return this.options;
-                            return Object.fromEntries(Object.entries(this.options).filter(([k,v]) => v.toLowerCase().includes(this.search.toLowerCase())));
-                        },
-                        get selectedLabel() { return this.selected ? (this.options[this.selected] || 'Pilih Unit') : 'Semua Unit'; },
-                        select(val) { this.selected = val || null; this.open = false; this.search = ''; }
-                    }" class="relative">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            <span class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                Unit
-                            </span>
-                        </label>
-                        <button @click="open = !open" type="button" class="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <span x-text="selectedLabel" :class="!selected ? 'text-gray-400' : ''"></span>
-                            <svg class="w-4 h-4 text-gray-400" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                            <div class="p-2">
-                                <input x-model="search" type="text" placeholder="Cari unit..." class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm px-3 py-1.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/>
-                            </div>
-                            <div class="max-h-48 overflow-y-auto">
-                                <button @click="select('')" type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition" :class="!selected ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-200'">Semua Unit</button>
-                                <template x-for="[key, label] in Object.entries(filteredOptions)" :key="key">
-                                    <button @click="select(key)" type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition" :class="selected == key ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-200'" x-text="label"></button>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Petugas - Searchable Select --}}
-                    <div x-data="{
-                        open: false,
-                        search: '',
-                        selected: @entangle('petugasFilter'),
-                        options: {{ json_encode($this->getPetugasOptions()) }},
-                        get filteredOptions() {
-                            if (!this.search) return this.options;
-                            return Object.fromEntries(Object.entries(this.options).filter(([k,v]) => v.toLowerCase().includes(this.search.toLowerCase())));
-                        },
-                        get selectedLabel() { return this.selected ? (this.options[this.selected] || 'Pilih Petugas') : 'Semua Petugas'; },
-                        select(val) { this.selected = val || null; this.open = false; this.search = ''; }
-                    }" class="relative">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            <span class="flex items-center gap-1">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                Petugas
-                            </span>
-                        </label>
-                        <button @click="open = !open" type="button" class="w-full flex items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white hover:border-indigo-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                            <span x-text="selectedLabel" :class="!selected ? 'text-gray-400' : ''"></span>
-                            <svg class="w-4 h-4 text-gray-400" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                            <div class="p-2">
-                                <input x-model="search" type="text" placeholder="Cari petugas..." class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm px-3 py-1.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/>
-                            </div>
-                            <div class="max-h-48 overflow-y-auto">
-                                <button @click="select('')" type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition" :class="!selected ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-200'">Semua Petugas</button>
-                                <template x-for="[key, label] in Object.entries(filteredOptions)" :key="key">
-                                    <button @click="select(key)" type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition" :class="selected == key ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium' : 'text-gray-700 dark:text-gray-200'" x-text="label"></button>
-                                </template>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-2">
+                        <select wire:model.live="bulan" class="rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm py-2 pl-3 pr-8 focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                        <select wire:model.live="tahun" class="rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm py-2 pl-3 pr-8 focus:border-indigo-500 focus:ring-indigo-500">
+                            @for($y = now()->year; $y >= now()->year - 2; $y--)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
+                        </select>
                     </div>
                 </div>
+
+                {{-- Divider --}}
+                <div class="border-t border-gray-100 dark:border-gray-700 mb-5"></div>
+
+                {{-- Filter By Section --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                    <div>
+                        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            <div class="flex items-center justify-center w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/40">
+                                <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </div>
+                            Unit
+                        </label>
+                        <select wire:model.live="unitFilter" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm py-2 pl-3 pr-8 focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Semua Unit</option>
+                            @foreach($this->getUnitOptions() as $id => $nama)
+                                <option value="{{ $id }}">{{ $nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            <div class="flex items-center justify-center w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/40">
+                                <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </div>
+                            Petugas
+                        </label>
+                        <select wire:model.live="petugasFilter" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm py-2 pl-3 pr-8 focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Semua Petugas</option>
+                            @foreach($this->getPetugasOptions() as $id => $nama)
+                                <option value="{{ $id }}">{{ $nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Divider --}}
+                <div class="border-t border-gray-100 dark:border-gray-700 mb-4"></div>
 
                 {{-- Action Buttons --}}
-                <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex items-center gap-3">
                     <button
                         wire:click="downloadPdf"
                         wire:loading.attr="disabled"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow transition"
+                        class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition"
                     >
                         <svg wire:loading.remove wire:target="downloadPdf" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -223,7 +144,7 @@
 
                     <button
                         onclick="window.print()"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition"
+                        class="inline-flex items-center gap-2 px-5 py-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transition"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
