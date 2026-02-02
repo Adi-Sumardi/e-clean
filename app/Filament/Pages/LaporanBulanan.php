@@ -19,7 +19,9 @@ class LaporanBulanan extends Page
 
     protected static ?string $navigationLabel = 'Laporan Bulanan';
 
-    protected static ?int $navigationSort = 51;
+    protected static string|\UnitEnum|null $navigationGroup = 'Monitoring';
+
+    protected static ?int $navigationSort = 3;
 
     public int $bulan;
     public int $tahun;
