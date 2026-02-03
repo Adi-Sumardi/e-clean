@@ -20,35 +20,17 @@ class CameraPhotoController extends Controller
 
             $validated = $request->validate([
                 'photo_data' => 'required|string',
-                'gps_data' => 'required|array',
-                'gps_data.latitude' => 'required|numeric',
-                'gps_data.longitude' => 'required|numeric',
-                'gps_data.accuracy' => 'required|numeric',
+                'gps_data' => 'nullable|array',
+                'gps_data.latitude' => 'nullable|numeric',
+                'gps_data.longitude' => 'nullable|numeric',
+                'gps_data.accuracy' => 'nullable|numeric',
                 'device_data' => 'required|array',
                 'lokasi_id' => 'required|integer|exists:lokasis,id',
                 'photo_type' => 'required|in:before,after',
                 'activity_report_id' => 'nullable|integer|exists:activity_reports,id',
             ]);
 
-            Log::info('Validation passed, validating GPS...');
-
-            // Validate GPS
-            $validation = $cameraService->validateGPS(
-                $validated['gps_data']['latitude'],
-                $validated['gps_data']['longitude'],
-                $validated['lokasi_id'],
-                $validated['gps_data']['accuracy']
-            );
-
-            if (!$validation['valid']) {
-                Log::warning('GPS validation failed', $validation);
-                return response()->json([
-                    'success' => false,
-                    'error' => $validation['error']
-                ], 422);
-            }
-
-            Log::info('GPS validation passed, processing photo...');
+            Log::info('Validation passed, processing photo...');
 
             // Process photo
             $result = $cameraService->processPhoto([

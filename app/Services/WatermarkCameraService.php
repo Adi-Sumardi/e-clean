@@ -100,23 +100,26 @@ class WatermarkCameraService
             $photoHash = $this->generatePhotoHash($imageData, $data);
             $watermarkHash = hash('sha256', $path . $photoHash . now()->timestamp);
 
-            // Validate GPS
-            $gpsValidation = $this->validateGPS(
-                $data['gps_data']['latitude'],
-                $data['gps_data']['longitude'],
-                $data['lokasi_id'],
-                $data['gps_data']['accuracy']
-            );
+            // Validate GPS only if gps_data is provided
+            $gpsValidation = ['valid' => true, 'distance' => null];
+            if (!empty($data['gps_data']) && !empty($data['gps_data']['latitude'])) {
+                $gpsValidation = $this->validateGPS(
+                    $data['gps_data']['latitude'],
+                    $data['gps_data']['longitude'],
+                    $data['lokasi_id'],
+                    $data['gps_data']['accuracy']
+                );
+            }
 
             // Save metadata
             $metadata = PhotoMetadata::create([
                 'activity_report_id' => $data['activity_report_id'] ?? null,
                 'photo_path' => $path,
                 'photo_type' => $data['photo_type'],
-                // GPS Data
-                'latitude' => $data['gps_data']['latitude'],
-                'longitude' => $data['gps_data']['longitude'],
-                'gps_accuracy' => $data['gps_data']['accuracy'],
+                // GPS Data (nullable - GPS no longer required)
+                'latitude' => $data['gps_data']['latitude'] ?? null,
+                'longitude' => $data['gps_data']['longitude'] ?? null,
+                'gps_accuracy' => $data['gps_data']['accuracy'] ?? null,
                 'gps_address' => $data['gps_data']['address'] ?? null,
                 'gps_validated' => $gpsValidation['valid'],
                 'gps_distance_from_location' => $gpsValidation['distance'] ?? null,
@@ -200,8 +203,8 @@ class WatermarkCameraService
     private function generatePhotoHash(string $imageData, array $data): string
     {
         $hashString = $imageData
-            . $data['gps_data']['latitude']
-            . $data['gps_data']['longitude']
+            . ($data['gps_data']['latitude'] ?? '')
+            . ($data['gps_data']['longitude'] ?? '')
             . $data['petugas_id']
             . $data['lokasi_id']
             . now()->timestamp
