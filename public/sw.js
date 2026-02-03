@@ -1,4 +1,4 @@
-const CACHE_NAME = 'e-clean-v2';
+const CACHE_NAME = 'e-clean-v3';
 const urlsToCache = [
   '/pwa/icon-192x192.png',
   '/pwa/icon-512x512.png',
@@ -21,19 +21,21 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Skip caching for:
+  // Skip Service Worker entirely for:
   // 1. Non-GET requests (POST, PUT, DELETE, etc.)
-  // 2. Login/logout/auth routes
+  // 2. Login/logout/auth routes (including OAuth callbacks)
   // 3. Livewire requests
   // 4. API requests
+  // Using return (without event.respondWith) lets the browser handle these
+  // requests normally, avoiding Private Network Access (PNA) blocking.
   if (
     event.request.method !== 'GET' ||
     url.pathname.includes('/login') ||
     url.pathname.includes('/logout') ||
+    url.pathname.includes('/auth/') ||
     url.pathname.includes('/livewire') ||
     url.pathname.includes('/api/')
   ) {
-    event.respondWith(fetch(event.request));
     return;
   }
 
