@@ -214,7 +214,7 @@
                                     <div class="flex justify-center gap-4">
                                         <button
                                             @click="startCaptureWithTimer()"
-                                            :disabled="!cameraReady || !gpsReady || capturing || timerCountdown > 0 || !canAddMorePhotos()"
+                                            :disabled="!cameraReady || capturing || timerCountdown > 0 || !canAddMorePhotos()"
                                             class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                             style="background-color: #2563eb !important; color: white !important;"
                                         >
@@ -255,15 +255,11 @@ document.addEventListener('alpine:init', () => {
         capturedPhotos: [],
         stream: null,
         cameraReady: false,
-        gpsReady: false,
+        // gpsReady removed - GPS no longer required
         capturing: false,
         petugasName: '',
         lokasiName: '',
-        latitude: 0,
-        longitude: 0,
-        accuracy: 0,
         currentDateTime: '',
-        gpsWatcher: null,
         timeInterval: null,
         errorMessage: '',
         successMessage: '',
@@ -359,7 +355,7 @@ document.addEventListener('alpine:init', () => {
 
             await this.loadLokasiInfo();
             await this.startCamera();
-            await this.startGPS();
+            // GPS no longer required - location is selected from dropdown
         },
 
         async loadLokasiInfo() {
@@ -439,13 +435,12 @@ document.addEventListener('alpine:init', () => {
                         // Check conditions before capture
                         console.log('Timer done. Capturing... GPS:', this.gpsReady, 'Camera:', this.cameraReady, 'Capturing:', this.capturing);
 
-                        if (this.cameraReady && this.gpsReady && !this.capturing) {
+                        if (this.cameraReady && !this.capturing) {
                             this.capturePhoto();
                         } else {
-                            this.errorMessage = 'Gagal mengambil foto: Kamera atau GPS tidak siap';
+                            this.errorMessage = 'Gagal mengambil foto: Kamera tidak siap';
                             console.error('Capture conditions not met:', {
                                 cameraReady: this.cameraReady,
-                                gpsReady: this.gpsReady,
                                 capturing: this.capturing
                             });
                         }
@@ -456,43 +451,10 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        async startGPS() {
-            if (!navigator.geolocation) {
-                this.errorMessage = 'GPS tidak didukung oleh browser Anda';
-                return;
-            }
-
-            this.gpsWatcher = navigator.geolocation.watchPosition(
-                (position) => {
-                    this.latitude = position.coords.latitude;
-                    this.longitude = position.coords.longitude;
-                    this.accuracy = position.coords.accuracy;
-                    this.gpsReady = true;
-                    this.errorMessage = '';
-                },
-                (error) => {
-                    console.error('GPS error:', error);
-                    if (error.code === 3) {
-                        this.latitude = -6.200000;
-                        this.longitude = 106.816666;
-                        this.accuracy = 999;
-                        this.gpsReady = true;
-                    } else if (error.code === 1) {
-                        this.errorMessage = 'Izin GPS ditolak. Aktifkan izin lokasi di browser.';
-                    } else {
-                        this.errorMessage = 'Tidak bisa mendapatkan lokasi GPS: ' + error.message;
-                    }
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 30000,
-                    maximumAge: 15000
-                }
-            );
-        },
+        // startGPS removed - GPS no longer required, location is selected from dropdown
 
         async capturePhoto() {
-            if (!this.cameraReady || !this.gpsReady || this.capturing) return;
+            if (!this.cameraReady || this.capturing) return;
             if (!this.canAddMorePhotos()) {
                 this.errorMessage = 'Maksimal ' + this.maxPhotos + ' foto';
                 return;
@@ -547,11 +509,7 @@ document.addEventListener('alpine:init', () => {
                     },
                     body: JSON.stringify({
                         photo_data: photoData,
-                        gps_data: {
-                            latitude: this.latitude,
-                            longitude: this.longitude,
-                            accuracy: this.accuracy
-                        },
+                        gps_data: null, // GPS no longer required - location selected from dropdown
                         device_data: {
                             model: this.getDeviceModel(),
                             os: navigator.platform,
@@ -622,11 +580,6 @@ document.addEventListener('alpine:init', () => {
                 this.stream = null;
             }
 
-            if (this.gpsWatcher) {
-                navigator.geolocation.clearWatch(this.gpsWatcher);
-                this.gpsWatcher = null;
-            }
-
             // Clear timer if running
             if (this.timerInterval) {
                 clearInterval(this.timerInterval);
@@ -636,7 +589,6 @@ document.addEventListener('alpine:init', () => {
 
             this.showCamera = false;
             this.cameraReady = false;
-            this.gpsReady = false;
             this.errorMessage = '';
             this.successMessage = '';
         },
