@@ -39,11 +39,11 @@ class ActivityReportTest extends TestCase
     {
         $jadwal = JadwalKebersihan::factory()->create();
         $report = ActivityReport::factory()->create([
-            'jadwal_kebersihan_id' => $jadwal->id,
+            'jadwal_id' => $jadwal->id,
         ]);
 
-        $this->assertInstanceOf(JadwalKebersihan::class, $report->jadwalKebersihan);
-        $this->assertEquals($jadwal->id, $report->jadwalKebersihan->id);
+        $this->assertInstanceOf(JadwalKebersihan::class, $report->jadwal);
+        $this->assertEquals($jadwal->id, $report->jadwal->id);
     }
 
     public function test_activity_report_can_be_approved(): void

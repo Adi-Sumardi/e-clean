@@ -14,27 +14,19 @@ class ActivityReportFactory extends Factory
 
     public function definition(): array
     {
-        $shift = fake()->randomElement(['pagi', 'siang', 'sore']);
-        $tanggal = fake()->dateTimeBetween('-30 days', 'now');
-
         return [
-            'jadwal_kebersihan_id' => JadwalKebersihan::factory(),
+            'jadwal_id' => JadwalKebersihan::factory(),
             'petugas_id' => User::factory(),
             'lokasi_id' => Lokasi::factory(),
-            'tanggal' => $tanggal,
-            'shift' => $shift,
+            'tanggal' => fake()->dateTimeBetween('-30 days', 'now'),
             'jam_mulai' => fake()->time('H:i'),
             'jam_selesai' => fake()->time('H:i'),
-            'kegiatan' => fake()->sentence(),
-            'kondisi_awal' => fake()->randomElement(['Kotor', 'Cukup Bersih', 'Perlu Perhatian']),
-            'kondisi_akhir' => fake()->randomElement(['Bersih', 'Sangat Bersih', 'Rapi']),
-            'foto_sebelum' => 'photos/' . fake()->uuid() . '.jpg',
-            'foto_sesudah' => 'photos/' . fake()->uuid() . '.jpg',
-            'gps_latitude' => fake()->latitude(-7, -5),
-            'gps_longitude' => fake()->longitude(106, 108),
-            'gps_accuracy' => fake()->randomFloat(2, 5, 50),
+            'kegiatan' => fake()->sentence(10),
+            'foto_sebelum' => ['photos/' . fake()->uuid() . '.jpg'],
+            'foto_sesudah' => ['photos/' . fake()->uuid() . '.jpg'],
             'status' => fake()->randomElement(['draft', 'submitted', 'approved', 'rejected']),
             'rating' => fake()->optional(0.7)->numberBetween(3, 5),
+            'catatan_petugas' => fake()->optional()->sentence(),
             'catatan_supervisor' => fake()->optional()->sentence(),
             'rejected_reason' => null,
         ];

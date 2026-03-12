@@ -35,6 +35,7 @@ return new class extends Migration
             $table->enum('kategori', ['Sangat Baik', 'Baik', 'Cukup', 'Kurang']);
             $table->text('catatan')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes
             $table->unique(['petugas_id', 'periode_bulan', 'periode_tahun'], 'unique_petugas_period');

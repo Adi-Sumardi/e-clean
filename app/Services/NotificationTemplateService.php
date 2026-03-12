@@ -170,19 +170,26 @@ class NotificationTemplateService
      */
     public function evaluationGiven(Penilaian $penilaian): string
     {
-        $avgRating = $penilaian->rating_total;
-        $stars = str_repeat('⭐', (int)round($avgRating));
+        $avgRating = $penilaian->rata_rata;
+        $stars = str_repeat('⭐', (int)round((float)$avgRating));
+
+        $bulanNama = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+        $periode = ($bulanNama[$penilaian->periode_bulan] ?? '') . ' ' . $penilaian->periode_tahun;
 
         return "📊 *PENILAIAN KINERJA*\n\n" .
             "Halo {$penilaian->petugas->name},\n\n" .
             "Anda telah mendapat penilaian untuk periode:\n" .
-            "{$penilaian->periode_start->format('d/m/Y')} - {$penilaian->periode_end->format('d/m/Y')}\n\n" .
+            "{$periode}\n\n" .
             "📈 Hasil Penilaian:\n" .
-            "• Kebersihan: {$penilaian->aspek_kebersihan}/5\n" .
-            "• Kerapihan: {$penilaian->aspek_kerapihan}/5\n" .
-            "• Ketepatan Waktu: {$penilaian->aspek_ketepatan_waktu}/5\n" .
-            "• Kelengkapan Laporan: {$penilaian->aspek_kelengkapan_laporan}/5\n\n" .
-            "⭐ *Rating Total: {$avgRating}/5* {$stars}\n\n" .
+            "• Kebersihan: {$penilaian->skor_kebersihan}/5\n" .
+            "• Kualitas: {$penilaian->skor_kualitas}/5\n" .
+            "• Ketepatan Waktu: {$penilaian->skor_ketepatan_waktu}/5\n\n" .
+            "⭐ *Rating Rata-rata: {$avgRating}/5* {$stars}\n" .
+            "📋 Kategori: {$penilaian->kategori}\n\n" .
             ($penilaian->catatan ? "💬 Catatan:\n\"{$penilaian->catatan}\"\n\n" : "") .
             "Terus tingkatkan kinerja Anda! 💪\n\n" .
             "Terima kasih! 🙏";

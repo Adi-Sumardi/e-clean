@@ -13,21 +13,15 @@ class JadwalKebersihanFactory extends Factory
 
     public function definition(): array
     {
-        $shift = fake()->randomElement(['pagi', 'siang', 'sore']);
-
-        $shiftTimes = [
-            'pagi' => ['05:00', '08:00'],
-            'siang' => ['10:00', '14:00'],
-            'sore' => ['15:00', '18:00'],
-        ];
+        $shiftEnum = fake()->randomElement(\App\Enums\WorkShift::cases());
 
         return [
             'petugas_id' => User::factory(),
             'lokasi_id' => Lokasi::factory(),
             'tanggal' => fake()->dateTimeBetween('-30 days', '+30 days'),
-            'shift' => $shift,
-            'jam_mulai' => $shiftTimes[$shift][0],
-            'jam_selesai' => $shiftTimes[$shift][1],
+            'shift' => $shiftEnum->value,
+            'jam_mulai' => $shiftEnum->jamMulai(),
+            'jam_selesai' => $shiftEnum->jamSelesai(),
             'prioritas' => fake()->randomElement(['rendah', 'normal', 'tinggi']),
             'catatan' => fake()->optional()->sentence(),
             'status' => 'active',

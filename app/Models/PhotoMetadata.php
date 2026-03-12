@@ -153,12 +153,14 @@ class PhotoMetadata extends Model
         }
 
         // GPS accuracy (15 points)
-        if ($this->gps_accuracy <= 10) {
-            $score += 15;
-        } elseif ($this->gps_accuracy <= 20) {
-            $score += 10;
-        } elseif ($this->gps_accuracy <= 50) {
-            $score += 5;
+        if ($this->gps_accuracy !== null) {
+            if ($this->gps_accuracy <= 10) {
+                $score += 15;
+            } elseif ($this->gps_accuracy <= 20) {
+                $score += 10;
+            } elseif ($this->gps_accuracy <= 50) {
+                $score += 5;
+            }
         }
 
         // Timestamp validation (25 points)

@@ -26,8 +26,6 @@ class LokasiFactory extends Factory
             ]),
             'kategori' => fake()->randomElement(['ruang_kelas', 'toilet', 'kantor', 'aula', 'taman', 'koridor', 'lainnya']),
             'deskripsi' => fake()->sentence(),
-            'latitude' => fake()->latitude(-7, -5),
-            'longitude' => fake()->longitude(106, 108),
             'qr_code' => 'qrcodes/' . fake()->uuid() . '.svg',
             'is_active' => true,
         ];

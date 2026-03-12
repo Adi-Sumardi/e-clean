@@ -9,6 +9,7 @@ use App\Traits\ApiResponse;
 use App\Traits\SecureErrorHandling;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -128,7 +129,7 @@ class ActivityReportController extends Controller
 
             // Validate input with enhanced image validation
             $validator = Validator::make($request->all(), [
-                'jadwal_id' => 'required|exists:jadwal_kebersihans,id',
+                'jadwal_id' => 'required|exists:jadwal_kebersihanans,id',
                 'lokasi_id' => 'required|exists:lokasis,id',
                 'tanggal' => 'required|date|before_or_equal:today',
                 'jam_mulai' => 'required|date_format:H:i',
@@ -285,7 +286,7 @@ class ActivityReportController extends Controller
 
             // Validate input
             $validator = Validator::make($request->all(), [
-                'jadwal_id' => 'nullable|exists:jadwal_kebersihans,id',
+                'jadwal_id' => 'nullable|exists:jadwal_kebersihanans,id',
                 'lokasi_id' => 'nullable|exists:lokasis,id',
                 'tanggal' => 'nullable|date',
                 'jam_mulai' => 'nullable|date_format:H:i',
@@ -311,11 +312,20 @@ class ActivityReportController extends Controller
             $oldFotoSebelum = $report->foto_sebelum;
             $oldFotoSesudah = $report->foto_sesudah;
 
-            // Handle foto_sebelum upload
+            // Use ImageService for compression (consistent with store method)
+            $imageService = app(\App\Services\ImageService::class);
+
+            // Handle foto_sebelum upload with compression
             if ($request->hasFile('foto_sebelum')) {
                 $fotoSebelumPaths = [];
                 foreach ($request->file('foto_sebelum') as $foto) {
-                    $path = $foto->store('activity-reports/before', 'public');
+                    $path = $imageService->compressAndStore(
+                        $foto,
+                        'activity-reports/before',
+                        quality: 85,
+                        maxWidth: 1920,
+                        maxHeight: 1920
+                    );
                     $fotoSebelumPaths[] = $path;
                 }
                 $validated['foto_sebelum'] = $fotoSebelumPaths;
@@ -328,11 +338,17 @@ class ActivityReportController extends Controller
                 }
             }
 
-            // Handle foto_sesudah upload
+            // Handle foto_sesudah upload with compression
             if ($request->hasFile('foto_sesudah')) {
                 $fotoSesudahPaths = [];
                 foreach ($request->file('foto_sesudah') as $foto) {
-                    $path = $foto->store('activity-reports/after', 'public');
+                    $path = $imageService->compressAndStore(
+                        $foto,
+                        'activity-reports/after',
+                        quality: 85,
+                        maxWidth: 1920,
+                        maxHeight: 1920
+                    );
                     $fotoSesudahPaths[] = $path;
                 }
                 $validated['foto_sesudah'] = $fotoSesudahPaths;

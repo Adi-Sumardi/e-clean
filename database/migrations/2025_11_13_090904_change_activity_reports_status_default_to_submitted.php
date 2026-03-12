@@ -12,7 +12,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // PostgreSQL: Change default value only (enum constraint already exists)
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            // SQLite doesn't support ALTER COLUMN; default is handled in model boot
+            return;
+        }
+
         DB::statement("ALTER TABLE activity_reports ALTER COLUMN status SET DEFAULT 'submitted'");
     }
 
@@ -21,7 +27,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Revert back to 'draft' as default
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return;
+        }
+
         DB::statement("ALTER TABLE activity_reports ALTER COLUMN status SET DEFAULT 'draft'");
     }
 };

@@ -83,15 +83,28 @@ class LaporanKeterlambatan extends Model
     // Helper methods
     public static function getShiftTimeRanges(): array
     {
-        return [
-            'pagi' => ['start' => '05:00', 'end' => '08:00'],
-            'siang' => ['start' => '10:00', 'end' => '14:00'],
-            'sore' => ['start' => '15:00', 'end' => '18:00'],
-        ];
+        // Gunakan WorkShift enum sebagai single source of truth
+        $ranges = [];
+        foreach (\App\Enums\WorkShift::cases() as $shift) {
+            $ranges[$shift->value] = [
+                'start' => $shift->jamMulai(),
+                'end' => $shift->jamSelesai(),
+            ];
+        }
+        return $ranges;
     }
 
     public static function getShiftTimeRange(string $shift): array
     {
-        return self::getShiftTimeRanges()[$shift] ?? ['start' => '00:00', 'end' => '00:00'];
+        // Lookup dari WorkShift enum langsung
+        $workShift = \App\Enums\WorkShift::tryFrom($shift);
+        if ($workShift) {
+            return [
+                'start' => $workShift->jamMulai(),
+                'end' => $workShift->jamSelesai(),
+            ];
+        }
+
+        return ['start' => '00:00', 'end' => '00:00'];
     }
 }
