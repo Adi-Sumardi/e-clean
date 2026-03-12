@@ -16,9 +16,10 @@ return new class extends Migration
     {
         $driver = Schema::getConnection()->getDriverName();
 
+        $newValues = "'pagi','standby','siang','sweeping','sore'";
+
         // === jadwal_kebersihanans.shift ===
         if ($driver === 'sqlite') {
-            // SQLite: drop index first, then recreate column
             try {
                 Schema::table('jadwal_kebersihanans', function (Blueprint $table) {
                     $table->dropIndex('idx_jadwal_shift');
@@ -35,9 +36,11 @@ return new class extends Migration
                     ->after('tanggal');
                 $table->index('shift', 'idx_jadwal_shift');
             });
+        } elseif ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE jadwal_kebersihanans DROP CONSTRAINT IF EXISTS jadwal_kebersihanans_shift_check");
+            DB::statement("ALTER TABLE jadwal_kebersihanans ADD CONSTRAINT jadwal_kebersihanans_shift_check CHECK (shift::text = ANY (ARRAY[{$newValues}]::text[]))");
         } else {
-            // MySQL/PostgreSQL: alter enum
-            DB::statement("ALTER TABLE jadwal_kebersihanans MODIFY COLUMN shift ENUM('pagi','standby','siang','sweeping','sore') NOT NULL DEFAULT 'pagi'");
+            DB::statement("ALTER TABLE jadwal_kebersihanans MODIFY COLUMN shift ENUM({$newValues}) NOT NULL DEFAULT 'pagi'");
         }
 
         // === laporan_keterlambatan.shift ===
@@ -50,8 +53,11 @@ return new class extends Migration
                     ->default('pagi')
                     ->after('tanggal');
             });
+        } elseif ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE laporan_keterlambatan DROP CONSTRAINT IF EXISTS laporan_keterlambatan_shift_check");
+            DB::statement("ALTER TABLE laporan_keterlambatan ADD CONSTRAINT laporan_keterlambatan_shift_check CHECK (shift::text = ANY (ARRAY[{$newValues}]::text[]))");
         } else {
-            DB::statement("ALTER TABLE laporan_keterlambatan MODIFY COLUMN shift ENUM('pagi','standby','siang','sweeping','sore') NOT NULL DEFAULT 'pagi'");
+            DB::statement("ALTER TABLE laporan_keterlambatan MODIFY COLUMN shift ENUM({$newValues}) NOT NULL DEFAULT 'pagi'");
         }
     }
 
@@ -61,6 +67,8 @@ return new class extends Migration
     public function down(): void
     {
         $driver = Schema::getConnection()->getDriverName();
+
+        $oldValues = "'pagi','siang','sore'";
 
         if ($driver === 'sqlite') {
             Schema::table('jadwal_kebersihanans', function (Blueprint $table) {
@@ -76,9 +84,14 @@ return new class extends Migration
             Schema::table('laporan_keterlambatan', function (Blueprint $table) {
                 $table->enum('shift', ['pagi', 'siang', 'sore'])->default('pagi')->after('tanggal');
             });
+        } elseif ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE jadwal_kebersihanans DROP CONSTRAINT IF EXISTS jadwal_kebersihanans_shift_check");
+            DB::statement("ALTER TABLE jadwal_kebersihanans ADD CONSTRAINT jadwal_kebersihanans_shift_check CHECK (shift::text = ANY (ARRAY[{$oldValues}]::text[]))");
+            DB::statement("ALTER TABLE laporan_keterlambatan DROP CONSTRAINT IF EXISTS laporan_keterlambatan_shift_check");
+            DB::statement("ALTER TABLE laporan_keterlambatan ADD CONSTRAINT laporan_keterlambatan_shift_check CHECK (shift::text = ANY (ARRAY[{$oldValues}]::text[]))");
         } else {
-            DB::statement("ALTER TABLE jadwal_kebersihanans MODIFY COLUMN shift ENUM('pagi','siang','sore') NOT NULL DEFAULT 'pagi'");
-            DB::statement("ALTER TABLE laporan_keterlambatan MODIFY COLUMN shift ENUM('pagi','siang','sore') NOT NULL DEFAULT 'pagi'");
+            DB::statement("ALTER TABLE jadwal_kebersihanans MODIFY COLUMN shift ENUM({$oldValues}) NOT NULL DEFAULT 'pagi'");
+            DB::statement("ALTER TABLE laporan_keterlambatan MODIFY COLUMN shift ENUM({$oldValues}) NOT NULL DEFAULT 'pagi'");
         }
     }
 };
