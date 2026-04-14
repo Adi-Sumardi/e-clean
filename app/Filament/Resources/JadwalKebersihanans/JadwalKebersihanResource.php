@@ -240,6 +240,18 @@ class JadwalKebersihanResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('unit_id')
+                    ->label('Unit')
+                    ->options(Unit::where('is_active', true)->pluck('nama_unit', 'id'))
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['value'],
+                            fn (Builder $query, $value): Builder => $query->whereHas(
+                                'lokasi',
+                                fn (Builder $q) => $q->where('unit_id', $value)
+                            )
+                        );
+                    }),
                 SelectFilter::make('shift')
                     ->options(WorkShift::options()),
                 SelectFilter::make('prioritas')

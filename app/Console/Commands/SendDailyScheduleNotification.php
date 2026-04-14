@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\JadwalKebersihan;
 use App\Models\User;
-use App\Services\WatZapService;
+use App\Services\WhatsAppService;
 use Carbon\Carbon;
 
 class SendDailyScheduleNotification extends Command
@@ -29,12 +29,12 @@ class SendDailyScheduleNotification extends Command
      */
     public function handle()
     {
-        $watzap = new WatZapService();
+        $watzap = new WhatsAppService();
         $today = Carbon::today();
         $isTest = $this->option('test');
 
         if (!$watzap->isConfigured() && !$isTest) {
-            $this->error('WatZap is not configured. Please set WATZAP_API_KEY and WATZAP_NUMBER_KEY in .env');
+            $this->error('WhatsApp is not configured. Please check your WHATSAPP_PROVIDER settings in .env');
             return Command::FAILURE;
         }
 

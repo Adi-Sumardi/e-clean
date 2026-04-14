@@ -6,7 +6,7 @@ use App\Models\ActivityReport;
 use App\Models\JadwalKebersihan;
 use App\Models\Setting;
 use App\Models\User;
-use App\Services\WatZapService;
+use App\Services\WhatsAppService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -124,7 +124,7 @@ class GenerateExpiredReports extends Command
             return;
         }
 
-        $watzapService = new WatZapService();
+        $watzapService = new WhatsAppService();
 
         if (!$watzapService->isConfigured()) {
             $this->warn('WatZap not configured, skipping notifications');

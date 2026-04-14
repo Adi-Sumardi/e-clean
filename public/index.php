@@ -5,6 +5,9 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Suppress PHP 8.5 deprecation warnings from vendor code (PDO constants)
+error_reporting(E_ALL & ~E_DEPRECATED);
+
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;

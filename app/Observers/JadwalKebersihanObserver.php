@@ -3,24 +3,24 @@
 namespace App\Observers;
 
 use App\Models\JadwalKebersihan;
-use App\Services\WatZapService;
+use App\Services\WhatsAppService;
 use App\Services\NotificationTemplateService;
 use Illuminate\Support\Facades\Log;
 
 class JadwalKebersihanObserver
 {
-    protected ?WatZapService $watzap = null;
+    protected ?WhatsAppService $watzap = null;
     protected NotificationTemplateService $templates;
 
     public function __construct()
     {
-        // Initialize services, skip WatZap if not configured
-        if (config('services.watzap.api_key') && config('services.watzap.number_key')) {
-            try {
-                $this->watzap = new WatZapService();
-            } catch (\Exception $e) {
-                Log::warning('WatZap service not available: ' . $e->getMessage());
+        try {
+            $wa = new WhatsAppService();
+            if ($wa->isConfigured()) {
+                $this->watzap = $wa;
             }
+        } catch (\Exception $e) {
+            Log::warning('WhatsApp service not available: ' . $e->getMessage());
         }
         $this->templates = new NotificationTemplateService();
     }

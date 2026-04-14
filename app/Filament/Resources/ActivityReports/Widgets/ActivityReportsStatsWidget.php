@@ -20,6 +20,9 @@ class ActivityReportsStatsWidget extends BaseWidget
             $query->where('petugas_id', $user->id);
         }
 
+        // Batasi ke 1 bulan terakhir agar tidak membebani aplikasi
+        $query->where('tanggal', '>=', Carbon::now()->subDays(30));
+
         $today = Carbon::today();
 
         $totalReports = (clone $query)->count();
@@ -29,7 +32,7 @@ class ActivityReportsStatsWidget extends BaseWidget
         $submittedReports = (clone $query)->where('status', 'submitted')->count();
 
         return [
-            Stat::make('Total Laporan', $totalReports)
+            Stat::make('Laporan 30 Hari Terakhir', $totalReports)
                 ->color('primary')
                 ->chart([7, 12, 15, 18, 20, 22, $totalReports]),
 

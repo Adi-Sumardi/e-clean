@@ -6,7 +6,7 @@ use App\Models\GuestComplaint;
 use App\Models\JadwalKebersihan;
 use App\Models\Lokasi;
 use App\Models\User;
-use App\Services\WatZapService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -140,7 +140,7 @@ class GuestComplaintController extends Controller
     protected function sendNotificationToPetugas(GuestComplaint $complaint, Lokasi $lokasi): void
     {
         try {
-            $watzapService = new WatZapService();
+            $watzapService = new WhatsAppService();
 
             if (!$watzapService->isConfigured()) {
                 Log::warning('WatZap not configured, skipping complaint notification');

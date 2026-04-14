@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\ActivityReport;
+use Carbon\Carbon;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -18,10 +19,11 @@ class AdminRecentActivityWidget extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Laporan Kegiatan Terbaru')
+            ->heading('Laporan Kegiatan Terbaru (30 Hari Terakhir)')
             ->query(
                 ActivityReport::query()
                     ->with(['petugas', 'lokasi'])
+                    ->where('tanggal', '>=', Carbon::now()->subDays(30))
                     ->latest()
                     ->limit(10)
             )

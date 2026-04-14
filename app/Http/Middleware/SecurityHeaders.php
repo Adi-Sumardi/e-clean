@@ -42,12 +42,14 @@ class SecurityHeaders
         // Note: Filament/Alpine.js requires 'unsafe-eval' for dynamic expressions
         // Leaflet map requires unpkg.com for JS/CSS and tile.openstreetmap.org for map tiles
         // Nominatim API for geocoding search
+        $vite = config('app.debug') ? 'http://localhost:5173 http://127.0.0.1:5173 ' : '';
+
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; " .
-               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; " .
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval' {$vite}https://unpkg.com; " .
+               "style-src 'self' 'unsafe-inline' {$vite}https://fonts.googleapis.com https://unpkg.com; " .
                "img-src 'self' data: https: blob:; " .
                "font-src 'self' data: https://fonts.gstatic.com; " .
-               "connect-src 'self' ws: wss: https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org; " .
+               "connect-src 'self' ws: wss: {$vite}https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org; " .
                "frame-ancestors 'none'; " .
                "base-uri 'self'; " .
                "form-action 'self';";

@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\GuestComplaint;
-use App\Services\WatZapService;
+use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -40,7 +40,7 @@ class GuestComplaintObserver
     protected function sendStatusUpdateToGuest(GuestComplaint $complaint): void
     {
         try {
-            $watzapService = new WatZapService();
+            $watzapService = new WhatsAppService();
 
             if (!$watzapService->isConfigured()) {
                 Log::warning('WatZap not configured, skipping status update notification');

@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\ActivityReport;
+use Carbon\Carbon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -22,10 +23,11 @@ class PengurusRecentActivityWidget extends BaseWidget
     {
         return $table
             ->heading('📋 Aktivitas Terbaru')
-            ->description('10 laporan terakhir yang disubmit')
+            ->description('10 laporan terakhir dalam 30 hari terakhir')
             ->query(
                 ActivityReport::query()
                     ->with(['petugas', 'lokasi'])
+                    ->where('tanggal', '>=', Carbon::now()->subDays(30))
                     ->latest('tanggal')
                     ->latest('created_at')
                     ->limit(10)

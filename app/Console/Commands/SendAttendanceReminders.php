@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use App\Services\WatZapService;
+use App\Services\WhatsAppService;
 use App\Services\NotificationTemplateService;
 
 class SendAttendanceReminders extends Command
@@ -28,7 +28,7 @@ class SendAttendanceReminders extends Command
      */
     public function handle()
     {
-        $watzap = new WatZapService();
+        $watzap = new WhatsAppService();
         $templates = new NotificationTemplateService();
 
         $type = $this->argument('type');
@@ -39,7 +39,7 @@ class SendAttendanceReminders extends Command
         }
 
         if (!$watzap->isConfigured()) {
-            $this->error('WatZap is not configured. Please set WATZAP_API_KEY and WATZAP_NUMBER_KEY in .env');
+            $this->error('WhatsApp is not configured. Please check your WHATSAPP_PROVIDER settings in .env');
             return Command::FAILURE;
         }
 

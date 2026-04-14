@@ -8,7 +8,7 @@ use App\Models\JadwalKebersihan;
 use App\Models\Setting;
 use App\Notifications\ReportApprovedNotification;
 use App\Notifications\ReportRejectedNotification;
-use App\Services\WatZapService;
+use App\Services\WhatsAppService;
 use App\Services\NotificationTemplateService;
 use App\Services\PenilaianService;
 use Carbon\Carbon;
@@ -16,13 +16,13 @@ use Illuminate\Support\Facades\Log;
 
 class ActivityReportObserver
 {
-    protected WatZapService $watzap;
+    protected WhatsAppService $watzap;
     protected NotificationTemplateService $templates;
     protected PenilaianService $penilaianService;
 
     public function __construct()
     {
-        $this->watzap = new WatZapService();
+        $this->watzap = new WhatsAppService();
         $this->templates = new NotificationTemplateService();
         $this->penilaianService = new PenilaianService();
     }
