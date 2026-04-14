@@ -269,10 +269,15 @@ class PenilaianResource extends Resource
 
         // Petugas hanya bisa lihat penilaian sendiri
         if ($user->hasRole('petugas')) {
-            return $query->where('petugas_id', $user->id);
+            $query->where('petugas_id', $user->id);
         }
 
-        // Role lain bisa lihat semua penilaian
+        // Super admin & admin lihat semua data tanpa batasan
+        // Supervisor, petugas, pengurus hanya lihat 30 hari terakhir
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+            $query->where('created_at', '>=', \Carbon\Carbon::now()->subDays(30));
+        }
+
         return $query;
     }
 

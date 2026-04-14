@@ -48,6 +48,7 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
             ->query(
                 ActivityReport::query()
                     ->where('status', 'submitted')
+                    ->where('tanggal', '>=', \Carbon\Carbon::now()->subDays(30))
                     ->with(['petugas', 'lokasi.unit'])
                     ->orderBy('tanggal', 'desc')
             )

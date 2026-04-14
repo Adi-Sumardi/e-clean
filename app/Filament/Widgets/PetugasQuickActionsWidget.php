@@ -29,6 +29,7 @@ class PetugasQuickActionsWidget extends Widget
 
         $pendingReports = ActivityReport::where('petugas_id', $userId)
             ->where('status', 'draft')
+            ->where('tanggal', '>=', Carbon::now()->subDays(30))
             ->count();
 
         return [

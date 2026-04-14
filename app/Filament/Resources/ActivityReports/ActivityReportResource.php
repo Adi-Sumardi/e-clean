@@ -645,10 +645,15 @@ class ActivityReportResource extends Resource
 
         // Petugas hanya bisa lihat laporan sendiri
         if ($user->hasRole('petugas')) {
-            return $query->where('petugas_id', $user->id);
+            $query->where('petugas_id', $user->id);
         }
 
-        // Role lain (admin, supervisor, pengurus) bisa lihat semua
+        // Super admin & admin lihat semua data tanpa batasan
+        // Supervisor, petugas, pengurus hanya lihat 30 hari terakhir
+        if (!$user->hasAnyRole(['super_admin', 'admin'])) {
+            $query->where('tanggal', '>=', \Carbon\Carbon::now()->subDays(30));
+        }
+
         return $query;
     }
 

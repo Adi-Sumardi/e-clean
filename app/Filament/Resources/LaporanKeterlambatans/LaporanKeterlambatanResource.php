@@ -11,10 +11,12 @@ use App\Filament\Resources\LaporanKeterlambatans\Schemas\LaporanKeterlambatanInf
 use App\Filament\Resources\LaporanKeterlambatans\Tables\LaporanKeterlambatansTable;
 use App\Models\LaporanKeterlambatan;
 use BackedEnum;
+use Carbon\Carbon;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,6 +38,19 @@ class LaporanKeterlambatanResource extends Resource
     public static function getPluralModelLabel(): string
     {
         return 'Laporan Keterlambatan';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        // Super admin & admin lihat semua data tanpa batasan
+        // Supervisor hanya lihat 30 hari terakhir
+        if (!Auth::user()->hasAnyRole(['super_admin', 'admin'])) {
+            $query->where('tanggal', '>=', Carbon::now()->subDays(30));
+        }
+
+        return $query;
     }
 
     public static function canCreate(): bool
