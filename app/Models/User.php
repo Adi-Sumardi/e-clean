@@ -87,6 +87,7 @@ class User extends Authenticatable implements FilamentUser
         'phone',
         'is_active',
         'avatar',
+        'expo_push_token',
     ];
 
     /**

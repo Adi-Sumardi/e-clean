@@ -9,6 +9,7 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
         "bezhansalleh/filament-shield": "*",
+        "dedoc/scramble": "^0.13.26",
         "filament/filament": "^4.0",
         "flowframe/laravel-trend": "*",
         "intervention/image-laravel": "^1.5",

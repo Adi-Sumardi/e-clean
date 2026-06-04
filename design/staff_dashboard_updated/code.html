@@ -1,0 +1,275 @@
+<!DOCTYPE html><html class="light" lang="id"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>E-Cleaning Manager - Staff Dashboard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Atkinson Hyperlegible Font -->
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-secondary": "#ffffff",
+            "outline-variant": "#c1c6d6",
+            "tertiary": "#9e4300",
+            "primary-container": "#1a73e8",
+            "inverse-primary": "#adc7ff",
+            "on-primary-fixed": "#001a41",
+            "on-secondary-container": "#00722f",
+            "secondary": "#006e2c",
+            "primary": "#005bbf",
+            "inverse-surface": "#2e3132",
+            "on-error-container": "#93000a",
+            "on-surface-variant": "#414754",
+            "on-primary-fixed-variant": "#004493",
+            "tertiary-container": "#c55500",
+            "tertiary-fixed": "#ffdbcb",
+            "error": "#ba1a1a",
+            "surface-variant": "#e1e3e4",
+            "surface-dim": "#d9dadb",
+            "on-primary-container": "#ffffff",
+            "tertiary-fixed-dim": "#ffb691",
+            "on-secondary-fixed-variant": "#005320",
+            "surface-container-high": "#e7e8e9",
+            "on-tertiary": "#ffffff",
+            "on-tertiary-fixed": "#341100",
+            "background": "#f8f9fa",
+            "outline": "#727785",
+            "inverse-on-surface": "#f0f1f2",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#783100",
+            "on-secondary-fixed": "#002108",
+            "secondary-fixed-dim": "#6ddd81",
+            "primary-fixed": "#d8e2ff",
+            "on-primary": "#ffffff",
+            "secondary-container": "#86f898",
+            "surface-tint": "#005bc0",
+            "on-surface": "#191c1d",
+            "surface-container-low": "#f3f4f5",
+            "error-container": "#ffdad6",
+            "surface-container": "#edeeef",
+            "on-tertiary-container": "#0e0200",
+            "surface-container-highest": "#e1e3e4",
+            "surface": "#f8f9fa",
+            "on-background": "#191c1d",
+            "on-error": "#ffffff",
+            "surface-bright": "#f8f9fa",
+            "primary-fixed-dim": "#adc7ff",
+            "secondary-fixed": "#89fa9b"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "touch-target-min": "3rem",
+            "stack-md": "1.5rem",
+            "container-padding": "1.25rem",
+            "stack-sm": "1rem",
+            "stack-lg": "2.5rem",
+            "gutter": "1rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Atkinson Hyperlegible Next"],
+            "label-lg": ["Atkinson Hyperlegible Next"],
+            "headline-sm": ["Atkinson Hyperlegible Next"],
+            "body-md": ["Atkinson Hyperlegible Next"],
+            "body-lg": ["Atkinson Hyperlegible Next"],
+            "headline-lg": ["Atkinson Hyperlegible Next"],
+            "headline-lg-mobile": ["Atkinson Hyperlegible Next"]
+          },
+          "fontSize": {
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+            "label-lg": ["18px", { "lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body { font-family: 'Atkinson Hyperlegible Next', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-[100px]">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim docked full-width top-0 border-b border-surface-variant dark:border-outline-variant flex justify-between items-center px-container-padding h-touch-target-min w-full z-50 sticky">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary dark:text-inverse-primary" data-icon="person_pin">person_pin</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">Office Kopkar YAPI</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-100" data-icon="notifications">notifications</button>
+</div>
+</header>
+<main class="max-w-md mx-auto px-container-padding py-stack-md space-y-stack-lg">
+<!-- Welcome Section & Status -->
+<section class="space-y-4">
+<div class="space-y-1">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Halo, Sarah</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Ini jadwal Anda hari ini.</p>
+</div>
+<!-- Status Card -->
+<div class="bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl shadow-sm flex items-center justify-between">
+<div class="space-y-1">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Progres Hari Ini</p>
+<p class="font-headline-sm text-headline-sm text-primary">1 dari 5 tugas selesai</p>
+</div>
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-secondary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.9" stroke-dashoffset="140.7" stroke-width="6"></circle>
+</svg>
+<span class="absolute font-label-lg text-label-lg">20%</span>
+</div>
+</div>
+</section>
+<!-- Job Reporting Feature -->
+<section class="space-y-stack-md">
+<div class="bg-primary-container text-on-primary-container p-stack-md rounded-xl shadow-md space-y-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[32px]" data-icon="assignment_turned_in">assignment_turned_in</span>
+<h3 class="font-headline-sm text-headline-sm">Pelaporan Pekerjaan</h3>
+</div>
+<p class="font-body-md text-body-md opacity-90">Selesaikan tugas dan kirim bukti foto sekarang.</p>
+<div class="flex flex-col gap-3">
+<button class="w-full h-touch-target-min bg-surface-container-lowest text-primary font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="add_a_photo">add_a_photo</span>
+            Lampirkan Foto
+          </button>
+<button class="w-full h-touch-target-min bg-on-primary-container text-primary-container font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-transform">
+            Kirim Laporan
+          </button>
+</div>
+</div>
+</section>
+<!-- Schedule List -->
+<section class="space-y-stack-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm">Jadwal Hari Ini</h3>
+<span class="font-label-lg text-label-lg text-secondary bg-secondary-container px-3 py-1 rounded-full">Sen, 23 Okt</span>
+</div>
+<div class="space-y-stack-sm">
+<!-- Task Card 1 (In Progress/Next) -->
+<div class="bg-surface-container-lowest border-2 border-primary p-stack-md rounded-xl space-y-4">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<h4 class="font-headline-sm text-headline-sm">Lobi Utama</h4>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="schedule">schedule</span>
+<span class="font-body-md text-body-md">08:00 AM - 09:30 AM</span>
+</div>
+</div>
+<span class="bg-primary-fixed text-on-primary-fixed font-label-lg text-label-lg px-3 py-1 rounded-lg">Berikutnya</span>
+</div>
+<button class="w-full h-touch-target-min bg-primary text-on-primary font-label-lg text-label-lg rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+            Mulai Tugas
+          </button>
+</div>
+<!-- Task Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl space-y-4">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<h4 class="font-headline-sm text-headline-sm">Ruang Rapat A</h4>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="schedule">schedule</span>
+<span class="font-body-md text-body-md">10:00 AM - 11:00 AM</span>
+</div>
+</div>
+</div>
+<button class="w-full h-touch-target-min border-2 border-primary bg-transparent text-primary font-label-lg text-label-lg rounded-xl hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-2">
+            Mulai Tugas
+          </button>
+</div>
+<!-- Task Card 3 (Completed) -->
+<div class="bg-surface-container-low border border-outline-variant p-stack-md rounded-xl space-y-4 opacity-75">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<h4 class="font-headline-sm text-headline-sm line-through text-on-surface-variant">Lounge Karyawan</h4>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="check_circle" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">check_circle</span>
+<span class="font-body-md text-body-md">Selesai jam 07:45 AM</span>
+</div>
+</div>
+<span class="bg-secondary-container text-on-secondary-container font-label-lg text-label-lg px-3 py-1 rounded-lg">Selesai</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Additional Help/Info -->
+<section class="pb-10">
+<div class="bg-tertiary-fixed text-on-tertiary-fixed p-stack-md rounded-xl flex items-center gap-4">
+<span class="material-symbols-outlined text-[32px]" data-icon="info">info</span>
+<p class="font-body-md text-body-md">Butuh peralatan tambahan? Beritahu supervisor melalui tab profil.</p>
+</div>
+</section>
+</main>
+<!-- Emergency FAB -->
+<button class="fixed bottom-28 right-6 w-16 h-16 bg-error text-on-error rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform z-40 border-4 border-white">
+<span class="material-symbols-outlined text-4xl" data-icon="report">report</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-container-padding bg-surface dark:bg-inverse-surface border-t border-surface-variant dark:border-outline-variant h-[90px] z-50">
+<!-- Beranda (Active) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">home</span>
+<span class="font-label-lg text-label-lg">Beranda</span>
+</a>
+<!-- Jadwal -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high rounded-xl min-w-[70px]" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-label-lg text-label-lg">Jadwal</span>
+</a>
+<!-- Laporan -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high rounded-xl min-w-[70px]" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-lg text-label-lg">Laporan</span>
+</a>
+<!-- Profil -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high rounded-xl min-w-[70px]" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-label-lg text-label-lg">Profil</span>
+</a>
+</nav>
+<script>
+    // Micro-interactions for buttons
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', function(e) {
+        if (this.innerText.includes('Mulai Tugas')) {
+          const originalText = this.innerHTML;
+          this.innerHTML = '<span class="material-symbols-outlined animate-spin" data-icon="sync">sync</span> Memulai...';
+          this.classList.add('opacity-70', 'pointer-events-none');
+          
+          setTimeout(() => {
+            this.innerHTML = '<span class="material-symbols-outlined" data-icon="check">check</span> Aktif';
+            this.className = "w-full h-touch-target-min bg-secondary text-on-secondary font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2";
+          }, 1000);
+        }
+      });
+    });
+  </script>
+
+
+
+
+</body></html>

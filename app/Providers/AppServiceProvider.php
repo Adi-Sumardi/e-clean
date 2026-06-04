@@ -15,6 +15,9 @@ use App\Observers\ActivityReportObserver;
 use App\Observers\GuestComplaintObserver;
 use App\Policies\RolePolicy;
 use Spatie\Permission\Models\Role;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -41,6 +44,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Role policy to hide Shield menu from non-admins
         Gate::policy(Role::class, RolePolicy::class);
+
+        // Scramble API docs: register Bearer (Sanctum token) security scheme
+        // so the "Authorize" button works at /docs/api.
+        Scramble::configure()->withDocumentTransformers(function (OpenApi $openApi) {
+            $openApi->secure(
+                SecurityScheme::http('bearer', 'JWT')
+            );
+        });
     }
 
     /**

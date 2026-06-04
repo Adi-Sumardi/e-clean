@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
 class ActivityReportController extends Controller
@@ -27,11 +28,18 @@ class ActivityReportController extends Controller
     {
         try {
             $user = $request->user();
-            $query = ActivityReport::with(['petugas', 'lokasi', 'jadwal', 'approver']);
+            $query = ActivityReport::with(['petugas', 'lokasi.unit', 'jadwal', 'approver']);
 
             // Role-based filtering - Petugas only sees their own reports
             if ($user->hasRole('petugas')) {
                 $query->where('petugas_id', $user->id);
+            }
+
+            // Filter by unit (supervisor/admin) — reports whose location belongs
+            // to the given unit. Drives the per-unit approval filter on mobile.
+            if ($request->filled('unit_id') && !$user->hasRole('petugas')) {
+                $unitId = $request->unit_id;
+                $query->whereHas('lokasi', fn ($q) => $q->where('unit_id', $unitId));
             }
 
             // Filter by date range
@@ -527,6 +535,105 @@ class ActivityReportController extends Controller
 
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to submit reports: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Approve a submitted cleaning report (supervisor/admin only).
+     */
+    public function approve(Request $request, $id): JsonResponse
+    {
+        try {
+            if ($request->user()->hasRole('petugas')) {
+                return $this->forbiddenResponse('You are not allowed to review reports.');
+            }
+
+            $report = ActivityReport::find($id);
+            if (! $report) {
+                return $this->notFoundResponse('Activity report not found');
+            }
+
+            $validated = $request->validate([
+                'rating' => 'nullable|integer|min:1|max:5',
+                'catatan_supervisor' => 'nullable|string|max:1000',
+            ]);
+
+            $report->update([
+                'status' => 'approved',
+                'rating' => $validated['rating'] ?? $report->rating,
+                'catatan_supervisor' => $validated['catatan_supervisor'] ?? $report->catatan_supervisor,
+                'rejected_reason' => null,
+                'approved_by' => $request->user()->id,
+                'approved_at' => now(),
+            ]);
+
+            $report->load(['petugas', 'lokasi.unit', 'jadwal', 'approver']);
+
+            if ($report->petugas) {
+                app(\App\Services\ExpoPushService::class)->sendToUser(
+                    $report->petugas,
+                    'Laporan Disetujui',
+                    'Laporan kegiatan Anda telah disetujui supervisor.',
+                    ['type' => 'report_approved', 'report_id' => $report->id]
+                );
+            }
+
+            return $this->successResponse(
+                new ActivityReportResource($report),
+                'Report approved'
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to approve report: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Reject a submitted cleaning report (supervisor/admin only).
+     */
+    public function reject(Request $request, $id): JsonResponse
+    {
+        try {
+            if ($request->user()->hasRole('petugas')) {
+                return $this->forbiddenResponse('You are not allowed to review reports.');
+            }
+
+            $report = ActivityReport::find($id);
+            if (! $report) {
+                return $this->notFoundResponse('Activity report not found');
+            }
+
+            $validated = $request->validate([
+                'rejected_reason' => 'required|string|max:500',
+            ]);
+
+            $report->update([
+                'status' => 'rejected',
+                'rejected_reason' => $validated['rejected_reason'],
+                'approved_by' => $request->user()->id,
+                'approved_at' => now(),
+            ]);
+
+            $report->load(['petugas', 'lokasi.unit', 'jadwal', 'approver']);
+
+            if ($report->petugas) {
+                app(\App\Services\ExpoPushService::class)->sendToUser(
+                    $report->petugas,
+                    'Laporan Ditolak',
+                    'Laporan kegiatan Anda ditolak: ' . \Illuminate\Support\Str::limit($report->rejected_reason, 80),
+                    ['type' => 'report_rejected', 'report_id' => $report->id]
+                );
+            }
+
+            return $this->successResponse(
+                new ActivityReportResource($report),
+                'Report rejected'
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to reject report: ' . $e->getMessage(), 500);
         }
     }
 }

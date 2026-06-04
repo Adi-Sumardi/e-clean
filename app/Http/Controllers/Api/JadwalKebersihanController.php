@@ -8,11 +8,37 @@ use App\Models\JadwalKebersihan;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
 class JadwalKebersihanController extends Controller
 {
     use ApiResponse;
+
+    /** Roles allowed to create/update/delete schedules. */
+    private const MANAGER_ROLES = ['super_admin', 'admin', 'supervisor'];
+
+    private function canManage(Request $request): bool
+    {
+        return $request->user()->hasAnyRole(self::MANAGER_ROLES);
+    }
+
+    private function scheduleRules(bool $partial = false): array
+    {
+        $req = $partial ? 'sometimes' : 'required';
+
+        return [
+            'petugas_id' => [$req, 'exists:users,id'],
+            'lokasi_id' => [$req, 'exists:lokasis,id'],
+            'tanggal' => [$req, 'date'],
+            'shift' => [$req, 'in:pagi,standby,siang,sweeping,sore'],
+            'jam_mulai' => [$req, 'date_format:H:i'],
+            'jam_selesai' => [$req, 'date_format:H:i', 'after:jam_mulai'],
+            'prioritas' => ['nullable', 'string', 'max:50'],
+            'catatan' => ['nullable', 'string', 'max:1000'],
+            'status' => ['nullable', 'in:active,inactive'],
+        ];
+    }
 
     /**
      * Get schedules for authenticated petugas
@@ -149,6 +175,81 @@ class JadwalKebersihanController extends Controller
 
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve upcoming schedules: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Create a cleaning schedule (supervisor/admin only).
+     */
+    public function store(Request $request): JsonResponse
+    {
+        try {
+            if (! $this->canManage($request)) {
+                return $this->forbiddenResponse('You are not allowed to manage schedules.');
+            }
+
+            $validated = $request->validate($this->scheduleRules());
+            $validated['status'] = $validated['status'] ?? 'active';
+            $validated['created_by'] = $request->user()->id;
+
+            $jadwal = JadwalKebersihan::create($validated);
+            $jadwal->load(['lokasi', 'petugas']);
+
+            return $this->successResponse(
+                new JadwalKebersihanResource($jadwal),
+                'Schedule created successfully',
+                201
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to create schedule: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function update(Request $request, $id): JsonResponse
+    {
+        try {
+            if (! $this->canManage($request)) {
+                return $this->forbiddenResponse('You are not allowed to manage schedules.');
+            }
+
+            $jadwal = JadwalKebersihan::find($id);
+            if (! $jadwal) {
+                return $this->notFoundResponse('Schedule not found');
+            }
+
+            $validated = $request->validate($this->scheduleRules(partial: true));
+            $jadwal->update($validated);
+
+            return $this->successResponse(
+                new JadwalKebersihanResource($jadwal->fresh(['lokasi', 'petugas'])),
+                'Schedule updated successfully'
+            );
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to update schedule: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        try {
+            if (! $this->canManage($request)) {
+                return $this->forbiddenResponse('You are not allowed to manage schedules.');
+            }
+
+            $jadwal = JadwalKebersihan::find($id);
+            if (! $jadwal) {
+                return $this->notFoundResponse('Schedule not found');
+            }
+
+            $jadwal->delete();
+
+            return $this->successResponse(null, 'Schedule deleted successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to delete schedule: ' . $e->getMessage(), 500);
         }
     }
 }

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>E-Cleaning Manager - Stakeholder Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c1c6d6",
+                        "tertiary": "#9e4300",
+                        "primary-container": "#1a73e8",
+                        "inverse-primary": "#adc7ff",
+                        "on-primary-fixed": "#001a41",
+                        "on-secondary-container": "#00722f",
+                        "secondary": "#006e2c",
+                        "primary": "#005bbf",
+                        "inverse-surface": "#2e3132",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#414754",
+                        "on-primary-fixed-variant": "#004493",
+                        "tertiary-container": "#c55500",
+                        "tertiary-fixed": "#ffdbcb",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e1e3e4",
+                        "surface-dim": "#d9dadb",
+                        "on-primary-container": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "on-secondary-fixed-variant": "#005320",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "background": "#f8f9fa",
+                        "outline": "#727785",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#783100",
+                        "on-secondary-fixed": "#002108",
+                        "secondary-fixed-dim": "#6ddd81",
+                        "primary-fixed": "#d8e2ff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#86f898",
+                        "surface-tint": "#005bc0",
+                        "on-surface": "#191c1d",
+                        "surface-container-low": "#f3f4f5",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#edeeef",
+                        "on-tertiary-container": "#0e0200",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9fa",
+                        "primary-fixed-dim": "#adc7ff",
+                        "secondary-fixed": "#89fa9b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "touch-target-min": "3rem",
+                        "stack-md": "1.5rem",
+                        "container-padding": "1.25rem",
+                        "stack-sm": "1rem",
+                        "stack-lg": "2.5rem",
+                        "gutter": "1rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Atkinson Hyperlegible Next"],
+                        "label-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-sm": ["Atkinson Hyperlegible Next"],
+                        "body-md": ["Atkinson Hyperlegible Next"],
+                        "body-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-lg-mobile": ["Atkinson Hyperlegible Next"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-lg": ["18px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Atkinson Hyperlegible Next', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+        @media (max-width: 1024px) {
+            .bento-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+            .bento-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-container-padding h-touch-target-min w-full z-50 fixed top-0 bg-surface dark:bg-surface-dim border-b border-surface-variant dark:border-outline-variant">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary dark:text-inverse-primary" style="font-size: 28px;">person_pin</span>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">E-Cleaning Manager</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center w-12 h-12 rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+</div>
+</header>
+<main class="flex-grow pt-20 px-container-padding max-w-7xl mx-auto w-full">
+<!-- Hero Header -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-gutter mb-stack-lg mt-stack-md">
+<div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Stakeholder Overview</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Comprehensive performance metrics for the current quarter.</p>
+</div>
+<button class="bg-primary text-on-primary font-label-lg text-label-lg px-8 py-3 rounded-xl flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md">
+<span class="material-symbols-outlined">download</span>
+                Export report
+            </button>
+</section>
+<!-- Bento Grid Analytics -->
+<div class="bento-grid mb-stack-lg">
+<!-- Overall Performance Card -->
+<div class="col-span-1 md:col-span-2 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl flex flex-col justify-between min-h-[220px]">
+<div>
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary">verified</span>
+<h3 class="font-label-lg text-label-lg text-on-surface-variant">Cleaning Compliance</h3>
+</div>
+<div class="flex items-end gap-4">
+<span class="font-headline-lg text-headline-lg text-primary">98.4%</span>
+<span class="text-secondary font-label-lg text-label-lg flex items-center mb-2">
+<span class="material-symbols-outlined text-sm mr-1">arrow_upward</span> 2.1%
+                        </span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-4 rounded-full mt-6 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 98.4%"></div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-3">Target: 95.0% for Q3</p>
+</div>
+<!-- Resource Efficiency Card -->
+<div class="col-span-1 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl min-h-[220px]">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-tertiary">inventory_2</span>
+<h3 class="font-label-lg text-label-lg text-on-surface-variant">Supply Usage</h3>
+</div>
+<div class="flex flex-col gap-4 mt-2">
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md">Sanitizers</span>
+<span class="font-label-lg text-label-lg">72%</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 72%"></div>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-body-md text-body-md">Textiles</span>
+<span class="font-label-lg text-label-lg">45%</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 45%"></div>
+</div>
+</div>
+</div>
+<!-- Team Feedback Card -->
+<div class="col-span-1 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl min-h-[220px]">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">star</span>
+<h3 class="font-label-lg text-label-lg text-on-surface-variant">Customer Rating</h3>
+</div>
+<div class="flex items-baseline gap-1 mt-2">
+<span class="font-headline-lg text-headline-lg">4.9</span>
+<span class="font-body-lg text-body-lg text-on-surface-variant">/ 5.0</span>
+</div>
+<div class="flex gap-1 mt-2 text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star_half</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-4">Based on 1,240 reviews</p>
+</div>
+<!-- Weekly Trend Graph Area -->
+<div class="col-span-1 md:col-span-4 bg-surface-container-lowest border border-outline-variant p-6 rounded-xl">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Weekly Service Volume</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Comparison between actual vs projected performance</p>
+</div>
+<div class="flex items-center gap-4 hidden md:flex">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="font-label-lg text-label-lg">Actual</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-surface-variant"></span>
+<span class="font-label-lg text-label-lg">Projected</span>
+</div>
+</div>
+</div>
+<div class="h-64 flex items-end justify-between gap-2 md:gap-4 px-2">
+<!-- Monday -->
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full flex items-end justify-center gap-1 h-full">
+<div class="w-1/2 bg-surface-variant rounded-t-lg h-[60%]"></div>
+<div class="w-1/2 bg-primary rounded-t-lg h-[75%]"></div>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Mon</span>
+</div>
+<!-- Tuesday -->
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full flex items-end justify-center gap-1 h-full">
+<div class="w-1/2 bg-surface-variant rounded-t-lg h-[70%]"></div>
+<div class="w-1/2 bg-primary rounded-t-lg h-[85%]"></div>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Tue</span>
+</div>
+<!-- Wednesday -->
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full flex items-end justify-center gap-1 h-full">
+<div class="w-1/2 bg-surface-variant rounded-t-lg h-[65%]"></div>
+<div class="w-1/2 bg-primary rounded-t-lg h-[95%]"></div>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Wed</span>
+</div>
+<!-- Thursday -->
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full flex items-end justify-center gap-1 h-full">
+<div class="w-1/2 bg-surface-variant rounded-t-lg h-[80%]"></div>
+<div class="w-1/2 bg-primary rounded-t-lg h-[82%]"></div>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Thu</span>
+</div>
+<!-- Friday -->
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full flex items-end justify-center gap-1 h-full">
+<div class="w-1/2 bg-surface-variant rounded-t-lg h-[90%]"></div>
+<div class="w-1/2 bg-primary rounded-t-lg h-[98%]"></div>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Fri</span>
+</div>
+<!-- Saturday -->
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full flex items-end justify-center gap-1 h-full">
+<div class="w-1/2 bg-surface-variant rounded-t-lg h-[40%]"></div>
+<div class="w-1/2 bg-primary rounded-t-lg h-[35%]"></div>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Sat</span>
+</div>
+</div>
+</div>
+<!-- Recent Facility Insights -->
+<div class="col-span-1 md:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="p-6 border-b border-outline-variant">
+<h3 class="font-headline-sm text-headline-sm">Top Facilities</h3>
+</div>
+<div class="divide-y divide-outline-variant">
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">apartment</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg">Corporate Plaza A</p>
+<p class="font-body-md text-body-md text-on-surface-variant">12,400 sq. ft cleaned</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary">trending_up</span>
+</div>
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-secondary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">medical_services</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg">City Health Clinic</p>
+<p class="font-body-md text-body-md text-on-surface-variant">5,800 sq. ft cleaned</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary">trending_up</span>
+</div>
+</div>
+</div>
+<!-- Visual Media Report -->
+<div class="col-span-1 md:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden group">
+<div class="relative h-48 overflow-hidden">
+<img alt="Professional Cleaning Service" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A brightly lit, modern office lobby featuring reflective polished floors and minimalist architectural design. A professional cleaning crew wearing navy blue uniforms is visible in the background using high-end industrial equipment. The atmosphere is clinical, sterile, and professional, dominated by a clean blue and white color palette that conveys corporate reliability and transparency." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAABYnE2njPv5uiDzha773hGdOfrOv0T6BTQ6-vOnI9TMk4DE9IEvqaC5oIzH6x4SHWpHjb8MKVc3UQjtKSyWGpdyegls9usZj-vt967iTvl16GNsyInK0HRga4zUX-HbXPvpdIyf2Nw_aSfFLi9UMEy6izjXuJEMJVo7dIUXOAeOEJnAwfWYJXH0_Ib8Fhy6M2_S30bot_wTcmOxwXjHjui9d9Nvf97Qm5KCN0AayY4-RbwdLxMOgN7i1jIZwg-k6gT4DDfNFZn3M"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-4 left-6">
+<span class="bg-primary text-on-primary text-[12px] font-bold px-2 py-1 rounded mb-2 inline-block">FEATURED REPORT</span>
+<h4 class="text-white font-headline-sm text-headline-sm">Hygiene Audit: North Wing</h4>
+</div>
+</div>
+<div class="p-6">
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">Latest visual inspection report for the sanitation audit conducted on October 24th.</p>
+<a class="text-primary font-label-lg text-label-lg flex items-center gap-1 hover:underline" href="#">
+                        View Audit Details <span class="material-symbols-outlined">chevron_right</span>
+</a>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-container-padding bg-surface dark:bg-inverse-surface border-t border-surface-variant dark:border-outline-variant h-[80px] z-50 md:hidden">
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-6 py-2 scale-95 transition-transform">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-lg text-label-lg">Schedule</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</button>
+</nav>
+<!-- Desktop Sidebar/Nav (Hidden on Mobile) -->
+<div class="hidden md:flex fixed left-0 top-0 h-full w-20 flex-col items-center py-8 bg-surface border-r border-outline-variant z-40 mt-12">
+<div class="flex flex-col gap-8">
+<button class="w-12 h-12 flex items-center justify-center rounded-xl bg-primary-container text-on-primary-container shadow-sm">
+<span class="material-symbols-outlined">dashboard</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">monitoring</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.bento-grid > div').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.classList.add('shadow-lg');
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.classList.remove('shadow-lg');
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Floating button logic if needed (Contextual Suppression based on task)
+        // User asked for "Export report button", which is in the header, so no extra FAB needed for this screen.
+    </script>
+</body></html>

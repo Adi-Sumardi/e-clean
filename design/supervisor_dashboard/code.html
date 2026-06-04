@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>E-Cleaning Manager - Supervisor Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Atkinson Hyperlegible Next -->
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#c1c6d6",
+                    "tertiary": "#9e4300",
+                    "primary-container": "#1a73e8",
+                    "inverse-primary": "#adc7ff",
+                    "on-primary-fixed": "#001a41",
+                    "on-secondary-container": "#00722f",
+                    "secondary": "#006e2c",
+                    "primary": "#005bbf",
+                    "inverse-surface": "#2e3132",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#414754",
+                    "on-primary-fixed-variant": "#004493",
+                    "tertiary-container": "#c55500",
+                    "tertiary-fixed": "#ffdbcb",
+                    "error": "#ba1a1a",
+                    "surface-variant": "#e1e3e4",
+                    "surface-dim": "#d9dadb",
+                    "on-primary-container": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "on-secondary-fixed-variant": "#005320",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#341100",
+                    "background": "#f8f9fa",
+                    "outline": "#727785",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#783100",
+                    "on-secondary-fixed": "#002108",
+                    "secondary-fixed-dim": "#6ddd81",
+                    "primary-fixed": "#d8e2ff",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#86f898",
+                    "surface-tint": "#005bc0",
+                    "on-surface": "#191c1d",
+                    "surface-container-low": "#f3f4f5",
+                    "error-container": "#ffdad6",
+                    "surface-container": "#edeeef",
+                    "on-tertiary-container": "#0e0200",
+                    "surface-container-highest": "#e1e3e4",
+                    "surface": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#f8f9fa",
+                    "primary-fixed-dim": "#adc7ff",
+                    "secondary-fixed": "#89fa9b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "touch-target-min": "3rem",
+                    "stack-md": "1.5rem",
+                    "container-padding": "1.25rem",
+                    "stack-sm": "1rem",
+                    "stack-lg": "2.5rem",
+                    "gutter": "1rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Atkinson Hyperlegible Next"],
+                    "label-lg": ["Atkinson Hyperlegible Next"],
+                    "headline-sm": ["Atkinson Hyperlegible Next"],
+                    "body-md": ["Atkinson Hyperlegible Next"],
+                    "body-lg": ["Atkinson Hyperlegible Next"],
+                    "headline-lg": ["Atkinson Hyperlegible Next"],
+                    "headline-lg-mobile": ["Atkinson Hyperlegible Next"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "label-lg": ["18px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Atkinson Hyperlegible Next', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-[80px]">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim border-b border-surface-variant dark:border-outline-variant docked full-width top-0 z-50 flex justify-between items-center px-container-padding h-touch-target-min w-full sticky">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary dark:text-inverse-primary" style="font-size: 24px;">person_pin</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">E-Cleaning Manager</h1>
+</div>
+<button class="flex items-center justify-center w-10 h-10 hover:bg-surface-container-high transition-colors rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+</header>
+<main class="max-w-7xl mx-auto px-container-padding py-stack-md space-y-stack-lg">
+<!-- Summary Dashboard (Staff Monitoring) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Active Staff Status -->
+<div class="bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl shadow-sm flex flex-col justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface-variant mb-2">Staff Status</h2>
+<div class="flex items-end gap-2">
+<span class="text-4xl font-bold text-primary">10</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant mb-1">Staff Online</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-md text-body-md">All current shifts active</span>
+</div>
+</div>
+<!-- Pending Approvals Status -->
+<div class="bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl shadow-sm flex flex-col justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface-variant mb-2">Needs Review</h2>
+<div class="flex items-end gap-2">
+<span class="text-4xl font-bold text-tertiary">2</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant mb-1">Pending Approvals</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined">priority_high</span>
+<span class="font-body-md text-body-md">Action required for payroll</span>
+</div>
+</div>
+<!-- Productivity Metric (Asymmetric Bento Element) -->
+<div class="bg-primary-container text-on-primary-container p-stack-md rounded-xl shadow-sm col-span-1 md:col-span-2 lg:col-span-1">
+<h2 class="font-headline-sm text-headline-sm mb-4">Daily Progress</h2>
+<div class="w-full bg-white/20 h-4 rounded-full overflow-hidden mb-2">
+<div class="bg-white h-full" style="width: 78%;"></div>
+</div>
+<p class="font-label-lg text-label-lg">78% of scheduled tasks completed</p>
+<div class="mt-4 flex justify-between items-center">
+<span class="font-body-md text-body-md opacity-90">142/180 units cleaned</span>
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+</div>
+</section>
+<!-- Approval Queue -->
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">Approval Queue</h2>
+<button class="font-label-lg text-label-lg text-primary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors">View All History</button>
+</div>
+<div class="space-y-gutter">
+<!-- Approval Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm transition-all hover:border-primary">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container border border-outline-variant flex-shrink-0">
+<img alt="Employee Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a female cleaning supervisor with a kind smile, set against a neutral, bright office background. She is wearing a professional blue uniform. The lighting is soft and even, highlighting her approachable and reliable persona in a high-quality, professional photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpu4KbV6N2nKM-sWQNOe70UHD9q3zt79jST3GYZ-VVorIS1brT6HkbbN_hRkkaMMM4-TRGKOrdKYa8bUnWQJSzoKY7odFrDois7onuDGqjY8tt1gOHL1fRzXDdqOzRjR5j8j_w4KqwXPiPThzyy3dH-1aOfna9OapfOrUNeNhk5heNoe9ZGldXDa4BluJK-T7NNvsP-lJPePDXGsLwc_FcpRneIwoH8gY7JbJPiR-t_seO73US73-c67rqbyClgsnFWYuWqzzgINg"/>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Elena Rodriguez</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Deep Clean Completion: Suite 402</p>
+<div class="mt-2 flex items-center gap-4 text-outline">
+<span class="flex items-center gap-1 font-body-md text-body-md"><span class="material-symbols-outlined text-[18px]">schedule</span> 14:30 - 17:15</span>
+<span class="flex items-center gap-1 font-body-md text-body-md"><span class="material-symbols-outlined text-[18px]">photo_library</span> 4 photos attached</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-gutter">
+<button class="flex-1 md:flex-none px-6 h-touch-target-min border-2 border-error text-error font-label-lg text-label-lg rounded-xl hover:bg-error-container/10 transition-colors active:scale-95 duration-100" onclick="this.closest('.bg-surface-container-lowest').style.opacity='0.5'; this.closest('.bg-surface-container-lowest').style.pointerEvents='none';">
+                                Reject
+                            </button>
+<button class="flex-1 md:flex-none px-8 h-touch-target-min bg-primary text-on-primary font-label-lg text-label-lg rounded-xl hover:bg-primary/90 shadow-md transition-all active:scale-95 duration-100" onclick="this.closest('.bg-surface-container-lowest').style.display='none';">
+                                Approve
+                            </button>
+</div>
+</div>
+</div>
+<!-- Approval Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant p-6 rounded-xl shadow-sm transition-all hover:border-primary">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container border border-outline-variant flex-shrink-0">
+<img alt="Employee Avatar" class="w-full h-full object-cover" data-alt="A clean-shaven male professional in a smart service uniform. He has a friendly and trustworthy expression. The background is a brightly lit, sterile modern hallway, emphasizing cleanliness and professional environments. High-definition portrait with clinical, sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBabSsl_3GgLQHXkd9SAuecBDkPfr5OaQeU-oe3ew3SoTvH_GUJf3Y2dppL1infWhaZub63Oo38VTVBVWpaDfDr1ciLuwcebSmAMbwzSA1zW6ZcToHdBJOl8-HO7iDmggP7IrrQTBnXd6-zWXgXtgtvBWfuCE2ajZT9gcnV_ONi5PjdDYRa4PFv-P61_Ur57ChXKLMUvu9Vo7YSbX5j9WIfF8SnYBlA6G3_QzaK1XRXNom-wHwMN1yGv14qdtnFg3GFL3crhrb7Kmc"/>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Marcus Chen</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Overtime Request: Lobby Sanitization</p>
+<div class="mt-2 flex items-center gap-4 text-outline">
+<span class="flex items-center gap-1 font-body-md text-body-md text-tertiary font-bold"><span class="material-symbols-outlined text-[18px]">more_time</span> +2.0 Hours</span>
+<span class="flex items-center gap-1 font-body-md text-body-md"><span class="material-symbols-outlined text-[18px]">description</span> Emergency spill response</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-gutter">
+<button class="flex-1 md:flex-none px-6 h-touch-target-min border-2 border-error text-error font-label-lg text-label-lg rounded-xl hover:bg-error-container/10 transition-colors active:scale-95 duration-100" onclick="this.closest('.bg-surface-container-lowest').style.opacity='0.5'; this.closest('.bg-surface-container-lowest').style.pointerEvents='none';">
+                                Reject
+                            </button>
+<button class="flex-1 md:flex-none px-8 h-touch-target-min bg-primary text-on-primary font-label-lg text-label-lg rounded-xl hover:bg-primary/90 shadow-md transition-all active:scale-95 duration-100" onclick="this.closest('.bg-surface-container-lowest').style.display='none';">
+                                Approve
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Manage Schedules Quick Access -->
+<section class="bg-surface-container-low p-container-padding rounded-2xl border border-outline-variant">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Weekly Schedule Control</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md mt-1">Review and adjust staff shift assignments for the upcoming week starting Monday, Oct 23.</p>
+</div>
+<button class="w-full md:w-auto h-touch-target-min px-8 bg-surface-container-lowest border-2 border-primary text-primary font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2 hover:bg-primary-fixed transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined">calendar_month</span>
+                    Open Schedule Manager
+                </button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-container-padding bg-surface dark:bg-inverse-surface border-t border-surface-variant dark:border-outline-variant h-[80px] z-50">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-6 py-2 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<!-- Schedule -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-lg text-label-lg">Schedule</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+<!-- Floating Action Button (FAB) - Contextual for Supervisor on Home to add quick assignment -->
+<button class="fixed bottom-[100px] right-container-padding w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-lg flex items-center justify-center hover:bg-primary-container transition-all active:scale-90 z-40">
+<span class="material-symbols-outlined" style="font-size: 28px;">add_task</span>
+</button>
+<script>
+        // Simple micro-interaction for active nav states and rejection/approval
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                // This is a mockup; in a real app this would handle navigation
+                console.log('Navigation clicked:', link.innerText);
+            });
+        });
+
+        // Atmosphere effect: Pulse for "Needs Review" card
+        const reviewCard = document.querySelector('.bg-surface-container-lowest:has(.text-tertiary)');
+        if (reviewCard) {
+            setInterval(() => {
+                reviewCard.classList.add('ring-2', 'ring-tertiary/20');
+                setTimeout(() => {
+                    reviewCard.classList.remove('ring-2', 'ring-tertiary/20');
+                }, 1000);
+            }, 3000);
+        }
+    </script>
+</body></html>

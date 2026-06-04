@@ -23,6 +23,11 @@ class LokasiResource extends JsonResource
             'deskripsi' => $this->deskripsi,
             'foto' => $this->foto ? url('storage/' . $this->foto) : null,
             'is_active' => $this->is_active,
+            'unit' => $this->whenLoaded('unit', fn () => $this->unit ? [
+                'id' => $this->unit->id,
+                'kode_unit' => $this->unit->kode_unit,
+                'nama_unit' => $this->unit->nama_unit,
+            ] : null),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

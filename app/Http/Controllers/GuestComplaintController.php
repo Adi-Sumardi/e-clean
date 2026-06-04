@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityReport;
 use App\Models\GuestComplaint;
 use App\Models\JadwalKebersihan;
 use App\Models\Lokasi;
@@ -40,7 +41,38 @@ class GuestComplaintController extends Controller
         return view('guest-complaint.form', [
             'lokasi' => $lokasi,
             'jenisKeluhanOptions' => GuestComplaint::getJenisKeluhanOptions(),
+            'lastCleaning' => $this->getLastCleaning($lokasi),
         ]);
+    }
+
+    /**
+     * Get the most recent cleaning info for a location, so the guest can see
+     * the room was already cleaned by {petugas} at {jam} before reporting.
+     *
+     * @return array{petugas:string, jam:?string, tanggal:\Illuminate\Support\Carbon, is_today:bool}|null
+     */
+    protected function getLastCleaning(Lokasi $lokasi): ?array
+    {
+        $report = ActivityReport::with('petugas')
+            ->where('lokasi_id', $lokasi->id)
+            ->whereIn('status', ['submitted', 'approved'])
+            ->orderByDesc('tanggal')
+            ->orderByDesc('jam_selesai')
+            ->orderByDesc('created_at')
+            ->first();
+
+        if (! $report) {
+            return null;
+        }
+
+        $jam = $report->jam_selesai ?? $report->jam_mulai;
+
+        return [
+            'petugas' => $report->petugas?->name ?? 'Petugas',
+            'jam' => $jam ? $jam->format('H:i') : null,
+            'tanggal' => $report->tanggal,
+            'is_today' => $report->tanggal?->isToday() ?? false,
+        ];
     }
 
     /**
@@ -186,6 +218,19 @@ class GuestComplaintController extends Controller
                 'sent' => $result['sent'],
                 'failed' => $result['failed'],
             ]);
+
+            // Also push to the petugas' mobile app (guests report on web,
+            // but the notification reaches the relevant petugas on mobile).
+            app(\App\Services\ExpoPushService::class)->sendToUsers(
+                $petugasUsers,
+                'Keluhan Tamu Baru',
+                "{$lokasi->nama_lokasi}: " . \Illuminate\Support\Str::limit($complaint->deskripsi_keluhan, 80),
+                [
+                    'type' => 'guest_complaint',
+                    'complaint_id' => $complaint->id,
+                    'lokasi_id' => $lokasi->id,
+                ]
+            );
 
         } catch (\Exception $e) {
             Log::error('Failed to send complaint notification: ' . $e->getMessage(), [

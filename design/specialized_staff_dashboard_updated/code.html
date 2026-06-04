@@ -1,0 +1,462 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>E-Cleaning Manager Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c1c6d6",
+                        "tertiary": "#9e4300",
+                        "primary-container": "#1a73e8",
+                        "inverse-primary": "#adc7ff",
+                        "on-primary-fixed": "#001a41",
+                        "on-secondary-container": "#00722f",
+                        "secondary": "#006e2c",
+                        "primary": "#005bbf",
+                        "inverse-surface": "#2e3132",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#414754",
+                        "on-primary-fixed-variant": "#004493",
+                        "tertiary-container": "#c55500",
+                        "tertiary-fixed": "#ffdbcb",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e1e3e4",
+                        "surface-dim": "#d9dadb",
+                        "on-primary-container": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "on-secondary-fixed-variant": "#005320",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "background": "#f8f9fa",
+                        "outline": "#727785",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#783100",
+                        "on-secondary-fixed": "#002108",
+                        "secondary-fixed-dim": "#6ddd81",
+                        "primary-fixed": "#d8e2ff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#86f898",
+                        "surface-tint": "#005bc0",
+                        "on-surface": "#191c1d",
+                        "surface-container-low": "#f3f4f5",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#edeeef",
+                        "on-tertiary-container": "#0e0200",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9fa",
+                        "primary-fixed-dim": "#adc7ff",
+                        "secondary-fixed": "#89fa9b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "touch-target-min": "3rem",
+                        "stack-md": "1.5rem",
+                        "container-padding": "1.25rem",
+                        "stack-sm": "1rem",
+                        "stack-lg": "2.5rem",
+                        "gutter": "1rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Atkinson Hyperlegible Next"],
+                        "label-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-sm": ["Atkinson Hyperlegible Next"],
+                        "body-md": ["Atkinson Hyperlegible Next"],
+                        "body-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-lg-mobile": ["Atkinson Hyperlegible Next"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-lg": ["18px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            font-family: 'Atkinson Hyperlegible Next', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .task-card {
+            transition: transform 0.1s ease;
+        }
+        .task-card:active {
+            transform: scale(0.98);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="bg-surface border-b border-surface-variant flex justify-between items-center px-container-padding h-touch-target-min w-full z-50 fixed top-0 left-0">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[28px]">person_pin</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Office Kopkar YAPI</h1>
+</div>
+<button class="w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+</header>
+<main class="mt-20 px-container-padding max-w-4xl mx-auto">
+<!-- Role Selector -->
+<section class="mb-stack-lg">
+<h2 class="font-headline-sm text-headline-sm mb-stack-sm text-on-surface-variant">Select Your Role</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<button class="role-btn border-2 p-stack-md rounded-xl text-left flex flex-col gap-2 transition-all active:scale-95 border-primary shadow-sm" id="role-ob" onclick="switchRole('ob')">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant text-primary">cleaning_services</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant text-primary">Office Boy</span>
+<p class="text-xs text-on-surface-variant">HQ Building Maintenance</p>
+</button>
+<button class="role-btn border border-outline-variant p-stack-md rounded-xl text-left flex flex-col gap-2 transition-all active:scale-95" id="role-security" onclick="switchRole('security')">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">security</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Security</span>
+<p class="text-xs text-on-surface-variant">Gate &amp; Perimeter Hygiene</p>
+</button>
+<button class="role-btn border border-outline-variant p-stack-md rounded-xl text-left flex flex-col gap-2 transition-all active:scale-95" id="role-staff" onclick="switchRole('staff')">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">storefront</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Shop Staff</span>
+<p class="text-xs text-on-surface-variant">Retail Floor &amp; Shelves</p>
+</button>
+</div>
+</section>
+<!-- Content Area -->
+<div id="dynamic-content">
+<!-- Progress Summary -->
+<section class="mb-stack-lg bg-primary-container text-on-primary-container p-stack-md rounded-xl flex justify-between items-center shadow-md">
+<div>
+<p class="font-label-lg text-label-lg opacity-90">Today's Progress</p>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile" id="progress-text">1 of 4 Tasks Done</h3>
+</div>
+<div class="w-16 h-16 rounded-full border-4 border-white/20 flex items-center justify-center relative">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-white/20" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle cx="32" cy="32" fill="transparent" id="progress-circle" r="28" stroke="white" stroke-dasharray="175" stroke-dashoffset="175" stroke-width="4" style="stroke-dashoffset: 131.947;"></circle>
+</svg>
+<span class="absolute text-xs font-bold" id="progress-percent">25%</span>
+</div>
+</section>
+<!-- Reporting Actions (New Section) -->
+<section class="mb-stack-lg" id="reporting-section">
+<h2 class="font-headline-sm text-headline-sm mb-stack-sm" id="reporting-title">Job Reporting</h2>
+<div class="grid grid-cols-2 gap-gutter">
+<button class="flex flex-col items-center justify-center gap-2 p-4 bg-surface-container-high rounded-xl border border-outline-variant hover:bg-surface-variant transition-colors" onclick="openReportingModal()">
+<span class="material-symbols-outlined text-primary text-3xl">add_a_photo</span>
+<span class="font-label-lg text-label-lg text-on-surface" id="reporting-btn-text">Report Task</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-2 p-4 bg-surface-container-high rounded-xl border border-outline-variant hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-secondary text-3xl">analytics</span>
+<span class="font-label-lg text-label-lg text-on-surface">Reports</span>
+</button>
+</div>
+</section>
+<!-- Task List Area -->
+<section class="mb-stack-lg">
+<div class="flex justify-between items-end mb-stack-sm">
+<h2 class="font-headline-sm text-headline-sm" id="task-title">Office Cleaning Tasks</h2>
+<span class="font-label-lg text-label-lg text-primary px-3 py-1 bg-primary/10 rounded-full" id="role-badge">Office Boy</span>
+</div>
+<div class="space-y-gutter" id="task-container"><div class="task-card bg-surface-container-lowest border-2 border-outline-variant p-stack-md rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-start gap-stack-sm">
+                    <div class="w-12 h-12 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined">mop</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline-sm text-headline-sm">Meeting Room A Mopping</h4>
+                        <p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">location_on</span> Level 2, Wing North
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="openReportingModal()" class="flex-1 md:flex-none px-4 h-touch-target-min bg-surface-container-highest rounded-xl text-on-surface-variant transition-all active:scale-95"><span class="material-symbols-outlined">photo_camera</span></button>
+                    <button onclick="toggleTask(1)" class="flex-[3] md:flex-none px-10 h-touch-target-min rounded-xl font-bold transition-all active:scale-95 bg-primary text-white shadow-lg">
+                        Finish
+                    </button>
+                </div>
+            </div><div class="task-card bg-surface-container-lowest border-2 border-outline-variant p-stack-md rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-start gap-stack-sm">
+                    <div class="w-12 h-12 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined">coffee</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline-sm text-headline-sm">Restock Pantry Coffee</h4>
+                        <p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">location_on</span> Level 1, East Side
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="openReportingModal()" class="flex-1 md:flex-none px-4 h-touch-target-min bg-surface-container-highest rounded-xl text-on-surface-variant transition-all active:scale-95"><span class="material-symbols-outlined">photo_camera</span></button>
+                    <button onclick="toggleTask(2)" class="flex-[3] md:flex-none px-10 h-touch-target-min rounded-xl font-bold transition-all active:scale-95 bg-primary text-white shadow-lg">
+                        Finish
+                    </button>
+                </div>
+            </div><div class="task-card bg-surface-container-lowest border-2 border-secondary/20 bg-secondary/5 p-stack-md rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-start gap-stack-sm">
+                    <div class="w-12 h-12 rounded-full bg-secondary text-white flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">check_circle</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline-sm text-headline-sm line-through opacity-50">Empty Trash Bins</h4>
+                        <p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">location_on</span> All Floors
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    
+                    <button onclick="toggleTask(3)" class="flex-[3] md:flex-none px-10 h-touch-target-min rounded-xl font-bold transition-all active:scale-95 bg-secondary text-white">
+                        Completed
+                    </button>
+                </div>
+            </div><div class="task-card bg-surface-container-lowest border-2 border-outline-variant p-stack-md rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-start gap-stack-sm">
+                    <div class="w-12 h-12 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined">sanitizer</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline-sm text-headline-sm">Disinfect Door Handles</h4>
+                        <p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">location_on</span> Executive Suite
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="openReportingModal()" class="flex-1 md:flex-none px-4 h-touch-target-min bg-surface-container-highest rounded-xl text-on-surface-variant transition-all active:scale-95"><span class="material-symbols-outlined">photo_camera</span></button>
+                    <button onclick="toggleTask(4)" class="flex-[3] md:flex-none px-10 h-touch-target-min rounded-xl font-bold transition-all active:scale-95 bg-primary text-white shadow-lg">
+                        Finish
+                    </button>
+                </div>
+            </div></div>
+</section>
+</div>
+</main>
+<!-- Reporting Modal -->
+<div class="fixed inset-0 bg-black/60 z-[60] hidden flex items-end justify-center sm:items-center" id="reporting-modal">
+<div class="bg-surface w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom duration-300">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md" id="modal-title">Job Reporting</h3>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-highest" onclick="closeReportingModal()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<form class="space-y-4" onsubmit="event.preventDefault(); closeReportingModal();">
+<div>
+<label class="block font-label-lg text-label-lg mb-2">Description</label>
+<textarea class="w-full bg-surface-container-low border-outline-variant rounded-xl p-3 focus:ring-2 focus:ring-primary h-24" placeholder="Briefly describe the work completed..."></textarea>
+</div>
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-8 flex flex-col items-center justify-center gap-2 bg-surface-container-lowest">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">add_photo_alternate</span>
+<p class="text-on-surface-variant font-body-md">Attach Photo Evidence</p>
+<input accept="image/*" class="hidden" id="photo-upload" type="file">
+<button class="mt-2 px-4 py-2 bg-primary text-white rounded-lg font-bold" onclick="document.getElementById('photo-upload').click()" type="button">Choose File</button>
+</div>
+<button class="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform" type="submit">
+                Submit Report
+            </button>
+</form>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-container-padding bg-surface border-t border-surface-variant h-[80px] z-50">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-6 py-2 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-lg text-label-lg">Schedule</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+<script>
+    const taskData = {
+        ob: {
+            title: "Office Cleaning Tasks",
+            badge: "Office Boy",
+            reportingTitle: "Job Reporting",
+            reportingBtn: "Report Task",
+            tasks: [
+                { id: 1, title: "Meeting Room A Mopping", location: "Level 2, Wing North", icon: "mop", status: "pending" },
+                { id: 2, title: "Restock Pantry Coffee", location: "Level 1, East Side", icon: "coffee", status: "pending" },
+                { id: 3, title: "Empty Trash Bins", location: "All Floors", icon: "delete", status: "done" },
+                { id: 4, title: "Disinfect Door Handles", location: "Executive Suite", icon: "sanitizer", status: "pending" }
+            ]
+        },
+        security: {
+            title: "Security Hygiene Logs",
+            badge: "Security",
+            reportingTitle: "Pelaporan Tugas Jaga",
+            reportingBtn: "Lapor Tugas",
+            tasks: [
+                { id: 5, title: "Sanitize Main Entrance Gate", location: "South Gate", icon: "door_front", status: "pending" },
+                { id: 6, title: "Clear Guard Post Clutter", location: "Post 1 & 2", icon: "cleaning_services", status: "done" },
+                { id: 7, title: "Visitor Screen Cleaning", location: "Lobby Desk", icon: "monitor", status: "pending" }
+            ]
+        },
+        staff: {
+            title: "Retail Floor Maintenance",
+            badge: "Shop Staff",
+            reportingTitle: "Pelaporan Tugas Jaga",
+            reportingBtn: "Lapor Tugas",
+            tasks: [
+                { id: 8, title: "Dust Electronics Shelf", location: "Aisle 4", icon: "layers", status: "pending" },
+                { id: 9, title: "Glass Showcase Wiping", location: "Premium Section", icon: "window", status: "pending" },
+                { id: 10, title: "Spill Check - Frozen Food", location: "Back Wing", icon: "warning", status: "done" },
+                { id: 11, title: "Price Tag Realignment", location: "All Aisles", icon: "label", status: "pending" }
+            ]
+        }
+    };
+
+    let currentRoleKey = 'ob';
+
+    function switchRole(roleKey) {
+        currentRoleKey = roleKey;
+        
+        // UI Button states
+        document.querySelectorAll('.role-btn').forEach(btn => {
+            btn.classList.remove('border-primary', 'bg-surface-container-lowest', 'shadow-sm');
+            btn.classList.add('border-outline-variant');
+            const icon = btn.querySelector('.material-symbols-outlined');
+            icon.classList.remove('text-primary');
+            icon.classList.add('text-on-surface-variant');
+            const label = btn.querySelector('span:nth-child(2)');
+            label.classList.remove('text-primary');
+            label.classList.add('text-on-surface-variant');
+        });
+
+        const activeBtn = document.getElementById(`role-${roleKey}`);
+        activeBtn.classList.add('border-primary', 'shadow-sm');
+        activeBtn.classList.remove('border-outline-variant');
+        activeBtn.querySelector('.material-symbols-outlined').classList.add('text-primary');
+        activeBtn.querySelector('span:nth-child(2)').classList.add('text-primary');
+
+        // Update content
+        const data = taskData[roleKey];
+        document.getElementById('task-title').innerText = data.title;
+        document.getElementById('role-badge').innerText = data.badge;
+        document.getElementById('reporting-title').innerText = data.reportingTitle;
+        document.getElementById('reporting-btn-text').innerText = data.reportingBtn;
+        document.getElementById('modal-title').innerText = data.reportingTitle;
+        
+        renderTasks(data.tasks);
+        updateProgress(data.tasks);
+    }
+
+    function renderTasks(tasks) {
+        const container = document.getElementById('task-container');
+        container.innerHTML = '';
+
+        tasks.forEach(task => {
+            const isDone = task.status === 'done';
+            const card = document.createElement('div');
+            card.className = `task-card bg-surface-container-lowest border-2 ${isDone ? 'border-secondary/20 bg-secondary/5' : 'border-outline-variant'} p-stack-md rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm`;
+            
+            card.innerHTML = `
+                <div class="flex items-start gap-stack-sm">
+                    <div class="w-12 h-12 rounded-full ${isDone ? 'bg-secondary text-white' : 'bg-surface-container text-on-surface-variant'} flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined" ${isDone ? 'style="font-variation-settings: \'FILL\' 1;"' : ''}>${isDone ? 'check_circle' : task.icon}</span>
+                    </div>
+                    <div>
+                        <h4 class="font-headline-sm text-headline-sm ${isDone ? 'line-through opacity-50' : ''}">${task.title}</h4>
+                        <p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">location_on</span> ${task.location}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    ${isDone ? '' : `<button onclick="openReportingModal()" class="flex-1 md:flex-none px-4 h-touch-target-min bg-surface-container-highest rounded-xl text-on-surface-variant transition-all active:scale-95"><span class="material-symbols-outlined">photo_camera</span></button>`}
+                    <button onclick="toggleTask(${task.id})" class="flex-[3] md:flex-none px-10 h-touch-target-min rounded-xl font-bold transition-all active:scale-95 ${isDone ? 'bg-secondary text-white' : 'bg-primary text-white shadow-lg'}">
+                        ${isDone ? 'Completed' : 'Finish'}
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function toggleTask(taskId) {
+        for (let role in taskData) {
+            const task = taskData[role].tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = task.status === 'done' ? 'pending' : 'done';
+                renderTasks(taskData[currentRoleKey].tasks);
+                updateProgress(taskData[currentRoleKey].tasks);
+                break;
+            }
+        }
+    }
+
+    function updateProgress(tasks) {
+        const doneCount = tasks.filter(t => t.status === 'done').length;
+        const total = tasks.length;
+        const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+        
+        document.getElementById('progress-text').innerText = `${doneCount} of ${total} Tasks Done`;
+        
+        const circle = document.getElementById('progress-circle');
+        const circumference = 2 * Math.PI * 28;
+        const offset = circumference - (percentage / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+        document.getElementById('progress-percent').innerText = `${percentage}%`;
+    }
+
+    function openReportingModal() {
+        document.getElementById('reporting-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeReportingModal() {
+        document.getElementById('reporting-modal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Init
+    switchRole('ob');
+</script>
+
+
+
+
+</body></html>

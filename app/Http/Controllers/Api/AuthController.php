@@ -187,4 +187,38 @@ class AuthController extends Controller
             return $this->errorResponse('Failed to update profile: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * Register/refresh the caller's Expo push token (mobile device).
+     */
+    public function registerPushToken(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'expo_push_token' => ['required', 'string', 'max:255'],
+            ]);
+
+            $request->user()->update(['expo_push_token' => $validated['expo_push_token']]);
+
+            return $this->successResponse(null, 'Push token registered');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to register push token: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Clear the caller's Expo push token (e.g. on logout).
+     */
+    public function unregisterPushToken(Request $request): JsonResponse
+    {
+        try {
+            $request->user()->update(['expo_push_token' => null]);
+
+            return $this->successResponse(null, 'Push token cleared');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to clear push token: ' . $e->getMessage(), 500);
+        }
+    }
 }

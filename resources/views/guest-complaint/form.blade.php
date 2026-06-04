@@ -339,6 +339,35 @@
             </div>
         </div>
 
+        <!-- Cleaning Info: shows who last cleaned this room and when -->
+        @if($lastCleaning)
+        <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;gap:0.85rem;align-items:flex-start;">
+            <div style="flex-shrink:0;width:2.5rem;height:2.5rem;border-radius:9999px;background:#10b981;display:flex;align-items:center;justify-content:center;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.5" style="width:1.4rem;height:1.4rem;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <p style="font-weight:700;color:#065f46;font-size:0.95rem;line-height:1.35;margin:0;">
+                    Ruangan ini sudah dibersihkan oleh {{ $lastCleaning['petugas'] }}
+                </p>
+                <p style="color:#047857;font-size:0.85rem;margin:0.25rem 0 0;">
+                    @if($lastCleaning['jam'])
+                        Pukul <strong>{{ $lastCleaning['jam'] }}</strong>
+                    @endif
+                    @if($lastCleaning['is_today'])
+                        &bull; Hari ini
+                    @else
+                        &bull; {{ $lastCleaning['tanggal']->format('d M Y') }}
+                    @endif
+                </p>
+                <p style="color:#6b7280;font-size:0.78rem;margin:0.5rem 0 0;">
+                    Jika menurut Anda ruangan masih perlu perhatian, silakan laporkan melalui form di bawah.
+                </p>
+            </div>
+        </div>
+        @endif
+
         <!-- Error Alert -->
         @if($errors->any())
         <div class="error-box">

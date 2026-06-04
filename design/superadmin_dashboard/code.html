@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>E-Cleaning Manager - Superadmin Dashboard</title>
+<!-- Tailwind CSS with essential plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Atkinson Hyperlegible Next -->
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c1c6d6",
+                        "tertiary": "#9e4300",
+                        "primary-container": "#1a73e8",
+                        "inverse-primary": "#adc7ff",
+                        "on-primary-fixed": "#001a41",
+                        "on-secondary-container": "#00722f",
+                        "secondary": "#006e2c",
+                        "primary": "#005bbf",
+                        "inverse-surface": "#2e3132",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#414754",
+                        "on-primary-fixed-variant": "#004493",
+                        "tertiary-container": "#c55500",
+                        "tertiary-fixed": "#ffdbcb",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e1e3e4",
+                        "surface-dim": "#d9dadb",
+                        "on-primary-container": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "on-secondary-fixed-variant": "#005320",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#341100",
+                        "background": "#f8f9fa",
+                        "outline": "#727785",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#783100",
+                        "on-secondary-fixed": "#002108",
+                        "secondary-fixed-dim": "#6ddd81",
+                        "primary-fixed": "#d8e2ff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#86f898",
+                        "surface-tint": "#005bc0",
+                        "on-surface": "#191c1d",
+                        "surface-container-low": "#f3f4f5",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#edeeef",
+                        "on-tertiary-container": "#0e0200",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9fa",
+                        "primary-fixed-dim": "#adc7ff",
+                        "secondary-fixed": "#89fa9b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "touch-target-min": "3rem",
+                        "stack-md": "1.5rem",
+                        "container-padding": "1.25rem",
+                        "stack-sm": "1rem",
+                        "stack-lg": "2.5rem",
+                        "gutter": "1rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Atkinson Hyperlegible Next"],
+                        "label-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-sm": ["Atkinson Hyperlegible Next"],
+                        "body-md": ["Atkinson Hyperlegible Next"],
+                        "body-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-lg": ["Atkinson Hyperlegible Next"],
+                        "headline-lg-mobile": ["Atkinson Hyperlegible Next"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-lg": ["18px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Atkinson Hyperlegible Next', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim border-b border-surface-variant dark:border-outline-variant docked full-width top-0 flex justify-between items-center px-container-padding h-touch-target-min w-full z-50 sticky">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary dark:text-inverse-primary" style="font-size: 24px;">person_pin</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">E-Cleaning Manager</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-100">notifications</button>
+</div>
+</header>
+<main class="px-container-padding pt-stack-lg max-w-7xl mx-auto">
+<!-- Hero Section / Greeting -->
+<section class="mb-stack-lg">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg mb-2">Welcome, Superadmin</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">System oversight and operational performance summary.</p>
+</section>
+<!-- Statistics Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+<!-- Total Staff Card -->
+<div class="bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl flex flex-col justify-between hover:bg-surface-container-low transition-colors group">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary p-3 bg-primary-fixed rounded-lg" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-label-lg text-label-lg text-secondary">+12% this month</span>
+</div>
+<div class="mt-4">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Total Staff</p>
+<p class="font-headline-lg text-headline-lg text-primary">142</p>
+</div>
+</div>
+<!-- Total Areas Card -->
+<div class="bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl flex flex-col justify-between hover:bg-surface-container-low transition-colors group">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary p-3 bg-primary-fixed rounded-lg" style="font-variation-settings: 'FILL' 1;">domain</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">8 sites</span>
+</div>
+<div class="mt-4">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Total Areas</p>
+<p class="font-headline-lg text-headline-lg text-primary">2,840</p>
+</div>
+</div>
+<!-- Completion Rate Card -->
+<div class="bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl flex flex-col justify-between hover:bg-surface-container-low transition-colors group">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary p-3 bg-primary-fixed rounded-lg" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+<div class="flex items-center text-on-secondary-container">
+<span class="material-symbols-outlined" style="font-size: 16px;">trending_up</span>
+<span class="font-label-lg text-label-lg ml-1">Excellent</span>
+</div>
+</div>
+<div class="mt-4">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Completion Rate</p>
+<p class="font-headline-lg text-headline-lg text-primary">98.4%</p>
+</div>
+</div>
+</section>
+<!-- Quick Actions & Management -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-stack-lg">
+<!-- User Management Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-stack-md border-b border-surface-variant flex justify-between items-center bg-surface-container-low">
+<h3 class="font-headline-sm text-headline-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">manage_accounts</span>
+                        User Management
+                    </h3>
+<button class="font-label-lg text-label-lg text-primary hover:underline">View All</button>
+</div>
+<div class="p-gutter space-y-4">
+<div class="flex items-center justify-between p-3 border-b border-surface-variant">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center font-bold text-on-secondary-container">JS</div>
+<div>
+<p class="font-label-lg text-label-lg">Jane Smith</p>
+<p class="text-on-surface-variant text-sm">Site Manager - North Wing</p>
+</div>
+</div>
+<button class="p-2 hover:bg-surface-container-high rounded-full material-symbols-outlined text-on-surface-variant">more_vert</button>
+</div>
+<div class="flex items-center justify-between p-3 border-b border-surface-variant">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center font-bold text-on-tertiary-container">RK</div>
+<div>
+<p class="font-label-lg text-label-lg">Robert King</p>
+<p class="text-on-surface-variant text-sm">Head of Compliance</p>
+</div>
+</div>
+<button class="p-2 hover:bg-surface-container-high rounded-full material-symbols-outlined text-on-surface-variant">more_vert</button>
+</div>
+<button class="w-full h-touch-target-min flex items-center justify-center gap-2 bg-primary text-on-primary rounded-lg font-label-lg text-label-lg active:scale-[0.98] transition-transform shadow-md mt-2">
+<span class="material-symbols-outlined">person_add</span>
+                        Create New User
+                    </button>
+</div>
+</div>
+<!-- System Settings & Activity -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="p-stack-md border-b border-surface-variant flex justify-between items-center bg-surface-container-low">
+<h3 class="font-headline-sm text-headline-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">settings</span>
+                        System Controls
+                    </h3>
+</div>
+<div class="p-gutter space-y-3">
+<div class="p-4 bg-surface-container-lowest border border-outline-variant rounded-lg flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">security</span>
+<div>
+<p class="font-label-lg text-label-lg">Security Protocols</p>
+<p class="text-sm text-on-surface-variant">Manage encryption and access levels</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<div class="p-4 bg-surface-container-lowest border border-outline-variant rounded-lg flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">analytics</span>
+<div>
+<p class="font-label-lg text-label-lg">Report Exports</p>
+<p class="text-sm text-on-surface-variant">Configure automated monthly summaries</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<div class="p-4 bg-surface-container-lowest border border-outline-variant rounded-lg flex items-center justify-between cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">hub</span>
+<div>
+<p class="font-label-lg text-label-lg">Integrations</p>
+<p class="text-sm text-on-surface-variant">API keys and third-party connections</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Regional Overview / Visual Map Style -->
+<section class="mt-stack-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-stack-md flex justify-between items-center">
+<h3 class="font-headline-sm text-headline-sm">Operational Geography</h3>
+<div class="flex gap-2">
+<button class="px-4 py-2 border border-outline rounded-full font-label-lg text-label-lg hover:bg-surface-container-high transition-colors">Satellite</button>
+<button class="px-4 py-2 bg-primary text-on-primary rounded-full font-label-lg text-label-lg">Active Zones</button>
+</div>
+</div>
+<div class="relative h-80 bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="Map overview" class="w-full h-full object-cover grayscale opacity-50 contrast-125" data-alt="A clean, minimalist high-angle satellite-style view of an urban district layout with subtle digital overlays highlighting various operational sectors in a soft blue glow. The visual style is professional and clinical, with high-contrast lines defining streets and building footprints. Soft white lighting covers the scene, emphasizing clarity and technological sophistication, matching a corporate dashboard aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJNMWKAi4nhFU2H-IyaCHGxCScXCkMOLwmm69kkcNGtsV0VQ_U_hBY0gGLn0PxDQSqDq_KvafdfGCNct7dPzgnhtWOfOqQaRDXCI6D0CTQkZiki1mMVYfcGBOmQgQTKT6mB7aFZIMk6Y1uRXpfPCUn_Qu3E-AkTxAXLvz34hWhEnjdl_baI4ws03qnJ55vGo1elv0sMoj-t-LXvKOCGgDhsPDOrOZ8RvHRlgB_ulPVUnrSdlvxzkxI_mUIWeMnFMrFZrsQWEOwKjE"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<!-- Simulated interactive markers -->
+<div class="absolute top-1/4 left-1/3 flex flex-col items-center group cursor-pointer">
+<div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg group-hover:scale-125 transition-transform">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">cleaning_services</span>
+</div>
+<div class="mt-2 bg-white px-3 py-1 rounded shadow-md border border-outline-variant font-label-lg text-sm text-primary">North Sector</div>
+</div>
+<div class="absolute bottom-1/3 right-1/4 flex flex-col items-center group cursor-pointer">
+<div class="w-8 h-8 bg-secondary rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg group-hover:scale-125 transition-transform">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">cleaning_services</span>
+</div>
+<div class="mt-2 bg-white px-3 py-1 rounded shadow-md border border-outline-variant font-label-lg text-sm text-secondary">Central HQ</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-container-padding bg-surface dark:bg-inverse-surface border-t border-surface-variant dark:border-outline-variant z-50 h-[80px]">
+<!-- Active Home -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-6 py-2 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<!-- Inactive Schedule -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="font-label-lg text-label-lg">Schedule</span>
+</a>
+<!-- Inactive Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+<!-- Floating Action Button (FAB) - Suppressed per instructions as this is a Dashboard summary, 
+         but technically could be used for "Emergency Report" if needed. Choosing to adhere strictly to suppression rules 
+         for Detail/Setting context, and keeping the dashboard clean. -->
+<script>
+        // Micro-interaction for cards
+        document.querySelectorAll('.group').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'scale(0.98)';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = 'scale(1)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body></html>

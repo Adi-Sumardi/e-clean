@@ -42,6 +42,12 @@ class RolePermissionSeeder extends Seeder
         $supervisor = Role::firstOrCreate(['name' => 'supervisor', 'guard_name' => 'web']);
         $pengurus = Role::firstOrCreate(['name' => 'pengurus', 'guard_name' => 'web']);
         $petugas = Role::firstOrCreate(['name' => 'petugas', 'guard_name' => 'web']);
+        // Field-staff roles for the separate satpam / office boy / store domains.
+        // Their data lives in dedicated tables and is consumed via the mobile API,
+        // so they share the same baseline permissions as petugas.
+        $satpam = Role::firstOrCreate(['name' => 'satpam', 'guard_name' => 'web']);
+        $officeBoy = Role::firstOrCreate(['name' => 'office_boy', 'guard_name' => 'web']);
+        $petugasToko = Role::firstOrCreate(['name' => 'petugas_toko', 'guard_name' => 'web']);
 
         // Super Admin - Full Access to Everything
         $superAdmin->syncPermissions(Permission::all());
@@ -127,6 +133,13 @@ class RolePermissionSeeder extends Seeder
             $permissions['Penilaian']['view_any'],
         ];
         $petugas->syncPermissions($petugasPermissions);
+
+        // Satpam / Office Boy / Petugas Toko share the petugas baseline. Their
+        // domain-specific data is gated in the API controllers by role, not by
+        // Filament permissions, so the same Filament permission set is fine.
+        $satpam->syncPermissions($petugasPermissions);
+        $officeBoy->syncPermissions($petugasPermissions);
+        $petugasToko->syncPermissions($petugasPermissions);
 
         $this->command->info('Roles and permissions created successfully!');
     }
