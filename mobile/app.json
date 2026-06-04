@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "ServiceGO",
+    "slug": "servicego",
+    "description": "One App for All Services",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "eclean",
+    "icon": "./assets/icons/app_icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/icons/app_icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yapi.eclean",
+      "icon": "./assets/icons/app_icon.png"
+    },
+    "android": {
+      "package": "com.yapi.eclean",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/app_icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Aplikasi memerlukan akses foto untuk melampirkan bukti laporan.",
+          "cameraPermission": "Aplikasi memerlukan akses kamera untuk mengambil foto bukti laporan."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#005bbf"
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "http://localhost:8000",
+      "router": {},
+      "eas": {
+        "projectId": "8a36b483-556a-4dfc-8eae-5937ea1d39d8"
+      }
+    },
+    "owner": "adilabs"
+  }
+}
