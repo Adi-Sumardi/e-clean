@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { FormSelect, type SelectOption } from "@/components/FormSelect";
 import { FormField } from "@/components/FormField";
+import { FormTimeField } from "@/components/FormTimeField";
 import { PhotoUpload, type PhotoItem } from "@/components/PhotoUpload";
 import { useIsTablet } from "@/lib/useIsTablet";
 import { useLokasi, useJadwalToday, useCreateActivityReport } from "@/lib/hooks";
@@ -55,6 +56,13 @@ export function PetugasLaporanForm() {
       })),
     [jadwalQuery.data]
   );
+
+  // Selecting a schedule auto-fills the location it belongs to.
+  const onJadwalChange = (val: number | string) => {
+    setJadwalId(val);
+    const j = (jadwalQuery.data ?? []).find((x) => x.id === val);
+    if (j?.lokasi?.id) setLokasiId(j.lokasi.id);
+  };
 
   const canSubmit =
     !!lokasiId &&
@@ -120,29 +128,30 @@ export function PetugasLaporanForm() {
         Informasi Kegiatan
       </Text>
       <FormSelect
-        label="Lokasi"
-        required
-        icon="location-outline"
-        value={lokasiId}
-        options={lokasiOptions}
-        onChange={setLokasiId}
-        placeholder={
-          lokasiQuery.isLoading ? "Memuat lokasi..." : "Pilih lokasi..."
-        }
-      />
-      <FormSelect
         label="Jadwal Terkait"
         required
         icon="calendar-outline"
         value={jadwalId}
         options={jadwalOptions}
-        onChange={setJadwalId}
+        onChange={onJadwalChange}
         placeholder={
           jadwalQuery.isLoading
             ? "Memuat jadwal..."
             : jadwalOptions.length === 0
               ? "Tidak ada jadwal hari ini"
               : "Pilih jadwal..."
+        }
+      />
+      <FormSelect
+        label="Lokasi"
+        required
+        icon="location-outline"
+        value={lokasiId}
+        options={lokasiOptions}
+        onChange={setLokasiId}
+        disabled={!!jadwalId}
+        placeholder={
+          jadwalId ? "Otomatis dari jadwal" : "Pilih jadwal dulu"
         }
       />
       <FormField
@@ -156,23 +165,19 @@ export function PetugasLaporanForm() {
       />
       <View className="flex-row gap-3">
         <View className="flex-1">
-          <FormField
+          <FormTimeField
             label="Jam Mulai"
             required
-            icon="time-outline"
             value={jamMulai}
-            onChangeText={setJamMulai}
-            placeholder="HH:MM"
+            onChange={setJamMulai}
           />
         </View>
         <View className="flex-1">
-          <FormField
+          <FormTimeField
             label="Jam Selesai"
             required
-            icon="time-outline"
             value={jamSelesai}
-            onChangeText={setJamSelesai}
-            placeholder="HH:MM"
+            onChange={setJamSelesai}
           />
         </View>
       </View>

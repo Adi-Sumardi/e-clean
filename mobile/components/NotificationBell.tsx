@@ -2,10 +2,11 @@ import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNotifications } from "@/lib/hooks";
+import { useNotifStore } from "@/stores/notif-store";
 
 /**
- * Bell icon used on every dashboard header. Shows a live unread count badge
- * and opens the notifications screen on tap.
+ * Bell icon used on every dashboard header. Shows a live UNREAD count badge
+ * (notifications not yet opened) and opens the notifications screen on tap.
  */
 export function NotificationBell({
   size = 22,
@@ -16,7 +17,9 @@ export function NotificationBell({
 }) {
   const router = useRouter();
   const { data } = useNotifications();
-  const count = data?.count ?? 0;
+  const seen = useNotifStore((s) => s.seen);
+  const items = data?.items ?? [];
+  const count = items.reduce((n, i) => (seen[i.id] ? n : n + 1), 0);
 
   return (
     <Pressable

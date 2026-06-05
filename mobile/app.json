@@ -22,8 +22,8 @@
     "android": {
       "package": "com.yapi.eclean",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icons/app_icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icons/adaptive_foreground.png",
+        "backgroundColor": "#128df5"
       },
       "permissions": [
         "android.permission.CAMERA",
@@ -52,7 +52,31 @@
           "color": "#005bbf"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/ionicons.ttf",
+            "./assets/fonts/material-community.ttf",
+            "./assets/fonts/FontAwesome.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "36.0.0",
+            "ndkVersion": "27.1.12297006",
+            "kotlinVersion": "2.1.20"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

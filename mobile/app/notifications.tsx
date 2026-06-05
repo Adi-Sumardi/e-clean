@@ -7,9 +7,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useEffect } from "react";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNotifications } from "@/lib/hooks";
+import { useNotifStore } from "@/stores/notif-store";
 import type { NotificationItem } from "@/lib/types";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -37,6 +39,12 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const { data, isLoading, isError, refetch, isFetching } = useNotifications();
   const items = data?.items ?? [];
+  const markSeen = useNotifStore((s) => s.markSeen);
+
+  // Opening this screen marks everything as read → bell badge clears.
+  useEffect(() => {
+    if (items.length > 0) markSeen(items.map((i) => i.id));
+  }, [items, markSeen]);
 
   const onPressItem = (n: NotificationItem) => {
     // Approvals / complaints route the supervisor to the dashboard approval area.

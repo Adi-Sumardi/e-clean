@@ -1,11 +1,11 @@
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/stores/auth-store";
 import { ROLE_LABEL } from "@/constants/role";
 import { useIsTablet } from "@/lib/useIsTablet";
-import { sendTestNotification } from "@/lib/push";
 
 function InfoRow({
   icon,
@@ -76,6 +76,7 @@ function MenuItem({
 
 export default function ProfileScreen() {
   const isTablet = useIsTablet();
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
@@ -111,22 +112,26 @@ export default function ProfileScreen() {
 
   const MenuList = (
     <View className="gap-3">
-      <MenuItem icon="person-outline" label="Ubah Profil" />
-      <MenuItem icon="lock-closed-outline" label="Ubah Kata Sandi" />
       <MenuItem
-        icon="notifications-outline"
-        label="Test Push Notifikasi"
-        onPress={async () => {
-          try {
-            await sendTestNotification();
-            Alert.alert("Sukses", "Notifikasi test dikirim! Tunggu 2 detik.");
-          } catch (e: any) {
-            Alert.alert("Error", e.message || "Gagal mengirim notifikasi test");
-          }
-        }}
+        icon="person-outline"
+        label="Ubah Profil"
+        onPress={() => router.push("/settings/edit-profile")}
       />
-      <MenuItem icon="help-circle-outline" label="Bantuan & FAQ" />
-      <MenuItem icon="information-circle-outline" label="Tentang Aplikasi" />
+      <MenuItem
+        icon="lock-closed-outline"
+        label="Ubah Kata Sandi"
+        onPress={() => router.push("/settings/change-password")}
+      />
+      <MenuItem
+        icon="help-circle-outline"
+        label="Bantuan & FAQ"
+        onPress={() => router.push("/settings/help")}
+      />
+      <MenuItem
+        icon="information-circle-outline"
+        label="Tentang Aplikasi"
+        onPress={() => router.push("/settings/about")}
+      />
       <MenuItem
         icon="log-out-outline"
         label="Keluar"

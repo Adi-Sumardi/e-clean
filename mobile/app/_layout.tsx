@@ -12,6 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
+import { useNotifStore } from "@/stores/notif-store";
 import { syncQueue } from "@/lib/offline-queue";
 import { useFonts } from "expo-font";
 import { Ionicons, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
@@ -59,6 +60,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     hydrate();
+    useNotifStore.getState().hydrate();
   }, [hydrate]);
 
   // Log font error if any

@@ -143,8 +143,8 @@ export function SatpamDashboard() {
     <View className="flex-1 bg-background">
       <DashboardHeader
         colors={["#0a5fd6", "#0a3aa0"]}
-        title={user?.unit?.name ?? "e-Office Kopkaryapi"}
-        subtitle="Satpam / Security"
+        title={`Halo, ${user?.name ?? "Satpam"} 👋`}
+        subtitle={user ? ROLE_LABEL[user.role] : "Satpam"}
         icon={
           <MaterialCommunityIcons name="shield-account" size={22} color="#fff" />
         }
@@ -155,25 +155,12 @@ export function SatpamDashboard() {
         contentContainerStyle={{ padding: contentPad, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Greeting */}
-        <View className="mb-5">
-          <Text className="text-on-surface-variant">Selamat bertugas,</Text>
-          <Text
-            className={`font-bold text-on-surface ${isTablet ? "text-4xl" : "text-2xl"}`}
-          >
-            {user?.name ?? "Satpam"}
-          </Text>
-          <View className="self-start mt-2 px-3 py-1 rounded-full bg-primary/10 flex-row items-center gap-1">
-            <MaterialCommunityIcons name="shield" size={12} color="#005bbf" />
-            <Text className="text-primary text-xs font-bold">
-              {user ? ROLE_LABEL[user.role] : "Satpam"}
-            </Text>
-          </View>
-        </View>
-
         {/* Incident urgent banner */}
         {stats.openIncidents > 0 && (
-          <Pressable className="bg-error/10 border border-error/30 rounded-2xl p-4 flex-row items-center gap-3 mb-5 active:opacity-80">
+          <Pressable
+            onPress={() => router.push("/(tabs)/laporan")}
+            className="bg-error/10 border border-error/30 rounded-2xl p-4 flex-row items-center gap-3 mb-5 active:opacity-80"
+          >
             <View className="w-11 h-11 rounded-xl bg-error/15 items-center justify-center">
               <Ionicons name="warning" size={22} color="#d62828" />
             </View>
@@ -281,37 +268,21 @@ export function SatpamDashboard() {
               </Text>
             </Pressable>
           </View>
-          <View className="flex-row gap-3">
-            <Pressable
-              onPress={() => router.push("/buku-tamu")}
-              className={`flex-1 rounded-2xl bg-secondary items-center gap-2 active:opacity-90 ${
-                isTablet ? "p-6" : "p-4"
-              }`}
-            >
-              <MaterialCommunityIcons
-                name="book-open-page-variant"
-                size={isTablet ? 36 : 28}
-                color="#ffffff"
-              />
-              <Text className="font-bold text-white text-center">
-                Buku Tamu
-              </Text>
-            </Pressable>
-            <Pressable
-              className={`flex-1 rounded-2xl border border-outline-variant bg-surface-container-lowest items-center gap-2 active:opacity-80 ${
-                isTablet ? "p-6" : "p-4"
-              }`}
-            >
-              <Ionicons
-                name="qr-code"
-                size={isTablet ? 36 : 28}
-                color="#7e5a17"
-              />
-              <Text className="font-bold text-on-surface text-center">
-                Scan Pos QR
-              </Text>
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={() => router.push("/buku-tamu")}
+            className={`rounded-2xl bg-secondary items-center justify-center flex-row gap-2 active:opacity-90 ${
+              isTablet ? "p-6" : "p-4"
+            }`}
+          >
+            <MaterialCommunityIcons
+              name="book-open-page-variant"
+              size={isTablet ? 28 : 22}
+              color="#ffffff"
+            />
+            <Text className="font-bold text-white text-center text-base">
+              Buku Tamu
+            </Text>
+          </Pressable>
         </View>
 
         {/* Two-column on tablet */}

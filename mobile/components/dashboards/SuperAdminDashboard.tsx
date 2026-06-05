@@ -122,8 +122,8 @@ export function SuperAdminDashboard() {
     <View className="flex-1 bg-background">
       <DashboardHeader
         colors={["#005bbf", "#003a80"]}
-        title="e-Office Kopkaryapi"
-        subtitle="Admin Panel"
+        title={`Halo, ${user?.name ?? "Admin"} 👋`}
+        subtitle={user ? ROLE_LABEL[user.role] : "Admin Panel"}
         icon={
           <MaterialCommunityIcons name="shield-crown" size={22} color="#fff" />
         }

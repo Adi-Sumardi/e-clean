@@ -12,6 +12,8 @@ interface Props {
   keyboardType?: "default" | "email-address" | "phone-pad" | "numeric";
   icon?: React.ComponentProps<typeof Ionicons>["name"];
   hint?: string;
+  secureTextEntry?: boolean;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
 }
 
 export function FormField({
@@ -25,6 +27,8 @@ export function FormField({
   keyboardType = "default",
   icon,
   hint,
+  secureTextEntry,
+  autoCapitalize,
 }: Props) {
   return (
     <View className="mb-4">
@@ -43,6 +47,8 @@ export function FormField({
         multiline={multiline}
         numberOfLines={multiline ? rows : undefined}
         keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize}
         className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 text-on-surface"
         style={
           multiline

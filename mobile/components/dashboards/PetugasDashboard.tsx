@@ -66,8 +66,8 @@ export function PetugasDashboard() {
     <View className="flex-1 bg-background">
       <DashboardHeader
         colors={["#0a7e3e", "#075c2d"]}
-        title={user?.unit?.name ?? "e-Office Kopkaryapi"}
-        subtitle="Petugas Kebersihan"
+        title={`Halo, ${user?.name ?? "Petugas"} 👋`}
+        subtitle={user ? ROLE_LABEL[user.role] : "Petugas Kebersihan"}
         icon={<MaterialCommunityIcons name="broom" size={22} color="#fff" />}
         right={<NotificationBell size={22} color="#fff" />}
       />
@@ -76,22 +76,6 @@ export function PetugasDashboard() {
         contentContainerStyle={{ padding: contentPad, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Greeting */}
-        <View className="mb-5">
-          <Text className="text-on-surface-variant">Selamat bekerja,</Text>
-          <Text
-            className={`font-bold text-on-surface ${isTablet ? "text-4xl" : "text-2xl"}`}
-          >
-            {user?.name ?? "Petugas"}
-          </Text>
-          <View className="self-start mt-2 px-3 py-1 rounded-full bg-secondary/10 flex-row items-center gap-1">
-            <MaterialCommunityIcons name="broom" size={12} color="#0a7e3e" />
-            <Text className="text-secondary text-xs font-bold">
-              {user ? ROLE_LABEL[user.role] : "Petugas Kebersihan"}
-            </Text>
-          </View>
-        </View>
-
         {/* Guest complaint banner */}
         {ASSIGNED_COMPLAINTS.length > 0 && (
           <View className="bg-error/10 border border-error/30 rounded-2xl p-4 mb-5">
@@ -111,6 +95,7 @@ export function PetugasDashboard() {
             {ASSIGNED_COMPLAINTS.map((c) => (
               <Pressable
                 key={c.id}
+                onPress={() => router.push("/(tabs)/laporan")}
                 className="flex-row items-center gap-3 p-3 mt-2 rounded-xl bg-surface active:opacity-80"
               >
                 <View className="px-2 py-1 rounded-full bg-error/15">
@@ -209,20 +194,6 @@ export function PetugasDashboard() {
             />
             <Text className="font-bold text-white text-center">
               Buat Laporan
-            </Text>
-          </Pressable>
-          <Pressable
-            className={`flex-1 rounded-2xl bg-primary items-center gap-2 active:opacity-90 ${
-              isTablet ? "p-6" : "p-4"
-            }`}
-          >
-            <Ionicons
-              name="qr-code"
-              size={isTablet ? 36 : 28}
-              color="#ffffff"
-            />
-            <Text className="font-bold text-white text-center">
-              Scan QR Code
             </Text>
           </Pressable>
           <Pressable

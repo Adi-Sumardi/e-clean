@@ -147,8 +147,8 @@ export function PetugasTokoDashboard() {
     <View className="flex-1 bg-background">
       <DashboardHeader
         colors={["#0891b2", "#075f7a"]}
-        title={user?.unit?.name ?? "Toko Kopkar YAPI"}
-        subtitle="Petugas Toko"
+        title={`Halo, ${user?.name ?? "Petugas Toko"} 👋`}
+        subtitle={user ? ROLE_LABEL[user.role] : "Petugas Toko"}
         icon={
           <MaterialCommunityIcons name="storefront-outline" size={22} color="#fff" />
         }
@@ -159,45 +159,6 @@ export function PetugasTokoDashboard() {
         contentContainerStyle={{ padding: contentPad, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Greeting */}
-        <View className="mb-5">
-          <Text className="text-on-surface-variant">Selamat bertugas,</Text>
-          <Text
-            className={`font-bold text-on-surface ${isTablet ? "text-4xl" : "text-2xl"}`}
-          >
-            {user?.name ?? "Petugas Toko"}
-          </Text>
-          <View className="flex-row items-center gap-2 mt-2">
-            <View className="px-3 py-1 rounded-full bg-tertiary/10 flex-row items-center gap-1">
-              <MaterialCommunityIcons
-                name="storefront"
-                size={12}
-                color="#7e5a17"
-              />
-              <Text className="text-tertiary text-xs font-bold">
-                {user ? ROLE_LABEL[user.role] : "Petugas Toko"}
-              </Text>
-            </View>
-            <View
-              className={`px-3 py-1 rounded-full flex-row items-center gap-1 ${
-                shiftStarted ? "bg-secondary/10" : "bg-error/10"
-              }`}
-            >
-              <View
-                className={`w-2 h-2 rounded-full ${
-                  shiftStarted ? "bg-secondary" : "bg-error"
-                }`}
-              />
-              <Text
-                className={`text-xs font-bold ${
-                  shiftStarted ? "text-secondary" : "text-error"
-                }`}
-              >
-                {shiftStarted ? "Shift Aktif" : "Shift Berakhir"}
-              </Text>
-            </View>
-          </View>
-        </View>
 
         {/* Shift card */}
         <View className="bg-tertiary rounded-2xl p-5 mb-5 shadow-md">
@@ -462,9 +423,10 @@ export function PetugasTokoDashboard() {
                 {COMPLAINTS.map((c) => {
                   const isOpen = c.status === "open";
                   return (
-                    <View
+                    <Pressable
                       key={c.id}
-                      className="p-3 rounded-xl border border-outline-variant bg-surface"
+                      onPress={() => router.push("/(tabs)/laporan")}
+                      className="p-3 rounded-xl border border-outline-variant bg-surface active:opacity-80"
                     >
                       <View className="flex-row items-start gap-3">
                         <View
@@ -515,7 +477,7 @@ export function PetugasTokoDashboard() {
                           </Text>
                         </View>
                       </View>
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>

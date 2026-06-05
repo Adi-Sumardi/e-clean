@@ -189,8 +189,8 @@ export function OfficeBoyDashboard() {
     <View className="flex-1 bg-background">
       <DashboardHeader
         colors={["#a06a1e", "#6e4912"]}
-        title={user?.unit?.name ?? "e-Office Kopkaryapi"}
-        subtitle="Office Boy"
+        title={`Halo, ${user?.name ?? "Office Boy"} 👋`}
+        subtitle={user ? ROLE_LABEL[user.role] : "Office Boy"}
         icon={
           <MaterialCommunityIcons name="coffee-outline" size={22} color="#fff" />
         }
@@ -201,29 +201,12 @@ export function OfficeBoyDashboard() {
         contentContainerStyle={{ padding: contentPad, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Greeting */}
-        <View className="mb-5">
-          <Text className="text-on-surface-variant">Selamat bertugas,</Text>
-          <Text
-            className={`font-bold text-on-surface ${isTablet ? "text-4xl" : "text-2xl"}`}
-          >
-            {user?.name ?? "Office Boy"}
-          </Text>
-          <View className="self-start mt-2 px-3 py-1 rounded-full bg-tertiary/10 flex-row items-center gap-1">
-            <MaterialCommunityIcons
-              name="coffee-outline"
-              size={12}
-              color="#7e5a17"
-            />
-            <Text className="text-tertiary text-xs font-bold">
-              {user ? ROLE_LABEL[user.role] : "Office Boy"}
-            </Text>
-          </View>
-        </View>
-
         {/* Urgent request banner */}
         {ROOM_REQUESTS.some((r) => r.prioritas === "tinggi") && (
-          <View className="bg-error/10 border border-error/30 rounded-2xl p-4 mb-5">
+          <Pressable
+            onPress={() => router.push("/(tabs)/laporan")}
+            className="bg-error/10 border border-error/30 rounded-2xl p-4 mb-5 active:opacity-80"
+          >
             <View className="flex-row items-center gap-3">
               <View className="w-10 h-10 rounded-xl bg-error/15 items-center justify-center">
                 <Ionicons name="flash" size={20} color="#d62828" />
@@ -238,7 +221,7 @@ export function OfficeBoyDashboard() {
               </View>
               <Ionicons name="chevron-forward" size={20} color="#d62828" />
             </View>
-          </View>
+          </Pressable>
         )}
 
         {/* Progress card */}
@@ -334,36 +317,20 @@ export function OfficeBoyDashboard() {
               </Text>
             </Pressable>
           </View>
-          <View className="flex-row gap-3">
-            <Pressable
-              className={`flex-1 rounded-2xl border border-outline-variant bg-surface-container-lowest items-center gap-2 active:opacity-80 ${
-                isTablet ? "p-6" : "p-4"
-              }`}
-            >
-              <Ionicons
-                name="document"
-                size={isTablet ? 36 : 28}
-                color="#005bbf"
-              />
-              <Text className="font-bold text-on-surface text-center">
-                Antar Dokumen
-              </Text>
-            </Pressable>
-            <Pressable
-              className={`flex-1 rounded-2xl border border-outline-variant bg-surface-container-lowest items-center gap-2 active:opacity-80 ${
-                isTablet ? "p-6" : "p-4"
-              }`}
-            >
-              <Ionicons
-                name="qr-code"
-                size={isTablet ? 36 : 28}
-                color="#0a7e3e"
-              />
-              <Text className="font-bold text-on-surface text-center">
-                Scan QR Area
-              </Text>
-            </Pressable>
-          </View>
+          <Pressable
+            className={`rounded-2xl border border-outline-variant bg-surface-container-lowest items-center justify-center flex-row gap-2 active:opacity-80 ${
+              isTablet ? "p-6" : "p-4"
+            }`}
+          >
+            <Ionicons
+              name="document"
+              size={isTablet ? 28 : 22}
+              color="#005bbf"
+            />
+            <Text className="font-bold text-on-surface text-center text-base">
+              Antar Dokumen
+            </Text>
+          </Pressable>
         </View>
 
         {/* Tablet: 2 columns | Mobile: stacked */}

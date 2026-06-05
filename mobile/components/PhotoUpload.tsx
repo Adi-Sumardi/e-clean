@@ -34,29 +34,54 @@ export function PhotoUpload({
   const thumb = SIZE_CLASS[thumbSize];
 
   const pickFromCamera = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Izin ditolak", "Aplikasi memerlukan akses kamera.");
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.7,
-      allowsEditing: false,
-    });
-    if (!result.canceled) {
-      onChange([...photos, { uri: result.assets[0].uri }]);
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          "Izin Kamera Diperlukan",
+          "Aktifkan izin kamera di Pengaturan aplikasi untuk mengambil foto."
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        quality: 0.6,
+        allowsEditing: false,
+      });
+      if (!result.canceled && result.assets?.length) {
+        onChange([...photos, ...result.assets.map((a) => ({ uri: a.uri }))]);
+      }
+    } catch (e) {
+      Alert.alert(
+        "Gagal Membuka Kamera",
+        e instanceof Error ? e.message : "Terjadi kesalahan saat membuka kamera."
+      );
     }
   };
 
   const pickFromGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-      allowsMultipleSelection: max > 1,
-      selectionLimit: max - photos.length,
-    });
-    if (!result.canceled) {
-      onChange([...photos, ...result.assets.map((a) => ({ uri: a.uri }))]);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          "Izin Galeri Diperlukan",
+          "Aktifkan izin galeri/foto di Pengaturan aplikasi untuk memilih foto."
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 0.6,
+        allowsMultipleSelection: max > 1,
+        selectionLimit: Math.max(1, max - photos.length),
+      });
+      if (!result.canceled && result.assets?.length) {
+        onChange([...photos, ...result.assets.map((a) => ({ uri: a.uri }))]);
+      }
+    } catch (e) {
+      Alert.alert(
+        "Gagal Membuka Galeri",
+        e instanceof Error ? e.message : "Terjadi kesalahan saat membuka galeri."
+      );
     }
   };
 
