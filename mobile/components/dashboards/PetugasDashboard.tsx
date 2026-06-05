@@ -9,26 +9,20 @@ import { TaskCard } from "@/components/TaskCard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { useIsTablet } from "@/lib/useIsTablet";
-import { useJadwalToday } from "@/lib/hooks";
+import { useJadwalToday, useNotifications } from "@/lib/hooks";
 import { jadwalToTask } from "@/lib/mappers";
 
-interface GuestComplaintItem {
-  id: number;
-  jenis: string;
-  lokasi: string;
-  deskripsi: string;
-  waktu: string;
+function timeAgo(iso?: string): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "Baru saja";
+  if (m < 60) return `${m} mnt lalu`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} jam lalu`;
+  const d = Math.floor(h / 24);
+  return `${d} hari lalu`;
 }
-
-const ASSIGNED_COMPLAINTS: GuestComplaintItem[] = [
-  {
-    id: 1,
-    jenis: "Tumpahan",
-    lokasi: "Toilet Lt.1 - Gedung A",
-    deskripsi: "Tumpahan air di area wastafel",
-    waktu: "15 menit lalu",
-  },
-];
 
 export function PetugasDashboard() {
   const router = useRouter();
@@ -36,6 +30,13 @@ export function PetugasDashboard() {
   const user = useAuthStore((s) => s.user);
 
   const jadwalQuery = useJadwalToday();
+  const notificationsQuery = useNotifications();
+
+  const complaints = useMemo(() => {
+    const items = notificationsQuery.data?.items ?? [];
+    return items.filter((n) => n.type === "guest_complaint");
+  }, [notificationsQuery.data]);
+
   const todayTasks = useMemo(
     () => (jadwalQuery.data ?? []).map(jadwalToTask),
     [jadwalQuery.data]
@@ -77,7 +78,7 @@ export function PetugasDashboard() {
         showsVerticalScrollIndicator={false}
       >
         {/* Guest complaint banner */}
-        {ASSIGNED_COMPLAINTS.length > 0 && (
+        {complaints.length > 0 && (
           <View className="bg-error/10 border border-error/30 rounded-2xl p-4 mb-5">
             <View className="flex-row items-center gap-3 mb-2">
               <View className="w-10 h-10 rounded-xl bg-error/15 items-center justify-center">
@@ -85,41 +86,46 @@ export function PetugasDashboard() {
               </View>
               <View className="flex-1">
                 <Text className="font-bold text-error">
-                  {ASSIGNED_COMPLAINTS.length} keluhan tamu untuk Anda
+                  {complaints.length} keluhan tamu untuk Anda
                 </Text>
                 <Text className="text-error/80 text-xs">
                   Segera tangani keluhan berikut
                 </Text>
               </View>
             </View>
-            {ASSIGNED_COMPLAINTS.map((c) => (
-              <Pressable
-                key={c.id}
-                onPress={() => router.push("/(tabs)/laporan")}
-                className="flex-row items-center gap-3 p-3 mt-2 rounded-xl bg-surface active:opacity-80"
-              >
-                <View className="px-2 py-1 rounded-full bg-error/15">
-                  <Text className="text-error text-[10px] font-bold">
-                    {c.jenis}
+            {complaints.map((c) => {
+              const parts = c.body.split(": ");
+              const lokasi = parts[0] || "Keluhan";
+              const deskripsi = parts.slice(1).join(": ") || c.title;
+              return (
+                <Pressable
+                  key={c.id}
+                  onPress={() => router.push("/(tabs)/laporan")}
+                  className="flex-row items-center gap-3 p-3 mt-2 rounded-xl bg-surface active:opacity-80"
+                >
+                  <View className="px-2 py-1 rounded-full bg-error/15">
+                    <Text className="text-error text-[10px] font-bold">
+                      Keluhan
+                    </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-on-surface text-sm font-semibold" numberOfLines={1}>
+                      {lokasi}
+                    </Text>
+                    <Text
+                      className="text-on-surface-variant text-xs"
+                      numberOfLines={1}
+                    >
+                      {deskripsi}
+                    </Text>
+                  </View>
+                  <Text className="text-on-surface-variant text-[10px]">
+                    {timeAgo(c.time)}
                   </Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-on-surface text-sm font-semibold" numberOfLines={1}>
-                    {c.lokasi}
-                  </Text>
-                  <Text
-                    className="text-on-surface-variant text-xs"
-                    numberOfLines={1}
-                  >
-                    {c.deskripsi}
-                  </Text>
-                </View>
-                <Text className="text-on-surface-variant text-[10px]">
-                  {c.waktu}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color="#d62828" />
-              </Pressable>
-            ))}
+                  <Ionicons name="chevron-forward" size={16} color="#d62828" />
+                </Pressable>
+              );
+            })}
           </View>
         )}
 
