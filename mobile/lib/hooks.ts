@@ -95,7 +95,12 @@ export const useCreateActivityReport = () => {
 /* ----------------------------------------------------------------- lokasi */
 
 export const useLokasi = () =>
-  useQuery({ queryKey: qk.lokasi, queryFn: () => lokasiService.list() });
+  useQuery({
+    queryKey: qk.lokasi,
+    queryFn: () => lokasiService.list(),
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 30 * 60 * 1000,    // 30 minutes
+  });
 
 /* -------------------------------------------------------------- penilaian */
 
@@ -125,7 +130,12 @@ export const useLeaderboard = () =>
 /* ------------------------------------------------------------------ units */
 
 export const useUnits = () =>
-  useQuery({ queryKey: qk.units, queryFn: unitService.list });
+  useQuery({
+    queryKey: qk.units,
+    queryFn: unitService.list,
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 30 * 60 * 1000,    // 30 minutes
+  });
 
 /* -------------------------------------------------------------- approvals */
 
@@ -274,6 +284,8 @@ export const useManagedLokasi = (params?: {
   useQuery({
     queryKey: [...masterKeys.lokasi, params ?? {}],
     queryFn: () => lokasiService.list({ include_inactive: true, ...params }),
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 30 * 60 * 1000,    // 30 minutes
   });
 
 export const useCreateLokasi = () => {
@@ -339,7 +351,12 @@ export const useUsers = (params?: {
   });
 
 export const useUserRoles = () =>
-  useQuery({ queryKey: masterKeys.userRoles, queryFn: userService.roles });
+  useQuery({
+    queryKey: masterKeys.userRoles,
+    queryFn: userService.roles,
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 30 * 60 * 1000,    // 30 minutes
+  });
 
 export const useCreateUser = () => {
   const qc = useQueryClient();

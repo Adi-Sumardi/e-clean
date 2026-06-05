@@ -20,7 +20,12 @@ import AnimatedSplash from "@/components/AnimatedSplash";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, staleTime: 30_000 },
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000,    // 10 minutes cache time
+      refetchOnWindowFocus: false,
+    },
   },
 });
 

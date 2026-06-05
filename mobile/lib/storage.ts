@@ -4,17 +4,44 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const isSecureAvailable = Platform.OS === "ios" || Platform.OS === "android";
 
+// Simple in-memory cache dictionary to avoid slow SecureStore calls on repeated reads.
+const cache: Record<string, string | null> = {};
+const cacheLoaded: Record<string, boolean> = {};
+
 export const storage = {
   async getItem(key: string): Promise<string | null> {
-    if (isSecureAvailable) return SecureStore.getItemAsync(key);
-    return AsyncStorage.getItem(key);
+    if (cacheLoaded[key]) {
+      return cache[key];
+    }
+    let value: string | null = null;
+    if (isSecureAvailable) {
+      value = await SecureStore.getItemAsync(key);
+    } else {
+      value = await AsyncStorage.getItem(key);
+    }
+    cache[key] = value;
+    cacheLoaded[key] = true;
+    return value;
   },
+
   async setItem(key: string, value: string): Promise<void> {
-    if (isSecureAvailable) return SecureStore.setItemAsync(key, value);
-    return AsyncStorage.setItem(key, value);
+    cache[key] = value;
+    cacheLoaded[key] = true;
+    if (isSecureAvailable) {
+      await SecureStore.setItemAsync(key, value);
+    } else {
+      await AsyncStorage.setItem(key, value);
+    }
   },
+
   async removeItem(key: string): Promise<void> {
-    if (isSecureAvailable) return SecureStore.deleteItemAsync(key);
-    return AsyncStorage.removeItem(key);
+    cache[key] = null;
+    cacheLoaded[key] = true;
+    if (isSecureAvailable) {
+      await SecureStore.deleteItemAsync(key);
+    } else {
+      await AsyncStorage.removeItem(key);
+    }
   },
 };
+
