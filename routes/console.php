@@ -20,4 +20,5 @@ Schedule::command('schedule:check-missed')->dailyAt('18:30'); // Check after Sor
 
 // Schedule to generate expired reports for jadwal that weren't reported
 // Run every 5 minutes to check for expired jadwal and auto-generate reports
-Schedule::command('reports:generate-expired')->everyFiveMinutes();
+// DISABLED: Handled by mobile app's offline queue and auto-synchronization feature.
+// Schedule::command('reports:generate-expired')->everyFiveMinutes();
