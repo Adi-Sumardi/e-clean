@@ -406,6 +406,13 @@ export const approvalService = {
       .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
   },
 
+  show(scope: ApprovalScope, id: number) {
+    return request<any>({
+      method: "GET",
+      url: `${APPROVAL_ENDPOINTS[scope].base}/${id}`,
+    });
+  },
+
   approve(
     scope: ApprovalScope,
     id: number,

@@ -139,6 +139,16 @@ export const usePendingApprovals = (
     queryFn: () => approvalService.list(scope, { unitId }),
   });
 
+export const useApprovalReportDetail = (
+  scope: ApprovalScope | undefined,
+  id: number
+) =>
+  useQuery({
+    queryKey: [...qk.approvals, scope, "detail", id],
+    queryFn: () => approvalService.show(scope!, id),
+    enabled: !!scope && Number.isFinite(id) && id > 0,
+  });
+
 export const useApproveReport = () => {
   const qc = useQueryClient();
   return useMutation({

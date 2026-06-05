@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Pressable,
@@ -12,7 +13,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { AdminScreen } from "@/components/admin/AdminScreen";
 import { useIsTablet } from "@/lib/useIsTablet";
-import { useApproveReport, useRejectReport } from "@/lib/hooks";
+import { useApproveReport, useRejectReport, useApprovalReportDetail } from "@/lib/hooks";
 import { ApiError } from "@/lib/api";
 import type { ApprovalScope } from "@/lib/types";
 
@@ -32,6 +33,7 @@ interface LaporanDetail {
   lateMinutes?: number;
   fotoSebelum: string[];
   fotoSesudah: string[];
+  foto?: string[];
   rating: number | null;
   catatanSupervisor?: string;
 }
@@ -71,18 +73,10 @@ export default function LaporanDetailScreen() {
     status?: string;
   }>();
 
-  // Use the report data passed via params (real data from the approval list);
-  // fall back to mock fields for things not carried in the list item (photos).
-  const report: LaporanDetail = {
-    ...MOCK,
-    id: params.id ? Number(params.id) : MOCK.id,
-    petugas: params.petugas || MOCK.petugas,
-    lokasi: params.lokasi || MOCK.lokasi,
-    unit: params.unit || MOCK.unit,
-    tanggal: params.tanggal || MOCK.tanggal,
-    kegiatan: params.summary || MOCK.kegiatan,
-    status: (params.status as LaporanDetail["status"]) || MOCK.status,
-  };
+  const scope = params.scope as ApprovalScope | undefined;
+  const reportId = params.id ? Number(params.id) : 0;
+
+  const { data: detailData, isLoading } = useApprovalReportDetail(scope, reportId);
 
   const [rating, setRating] = useState<number>(0);
   const [catatan, setCatatan] = useState("");
@@ -90,14 +84,50 @@ export default function LaporanDetailScreen() {
 
   const approveMutation = useApproveReport();
   const rejectMutation = useRejectReport();
-  const scope = params.scope as ApprovalScope | undefined;
-  const reportId = params.id ? Number(params.id) : 0;
   const busy = approveMutation.isPending || rejectMutation.isPending;
-
-  const isPending = report.status === "submitted";
 
   const apiError = (e: unknown, fallback: string) =>
     Alert.alert("Gagal", e instanceof ApiError ? e.message : fallback);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#f8f9fa", justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#005bbf" />
+        <Text style={{ marginTop: 12, color: "#5a6072", fontSize: 14 }}>Memuat detail laporan...</Text>
+      </View>
+    );
+  }
+
+  const data = detailData || {};
+  const report: LaporanDetail = {
+    id: reportId || data.id || 0,
+    tanggal: data.tanggal || params.tanggal || "-",
+    petugas: data.petugas?.name || params.petugas || "-",
+    petugasEmail: data.petugas?.email || data.petugas?.phone || "-",
+    lokasi: data.lokasi?.nama_lokasi || params.lokasi || "-",
+    unit: data.unit?.nama_unit || params.unit || "-",
+    jamMulai: data.jam_mulai || "-",
+    jamSelesai: data.jam_selesai || "-",
+    catatanPetugas: data.catatan_petugas || "",
+    status: (data.status || params.status || "submitted") as LaporanDetail["status"],
+    reportingStatus: "ontime",
+    fotoSebelum: data.foto_sebelum || [],
+    fotoSesudah: data.foto_sesudah || [],
+    foto: data.foto || [],
+    rating: data.rating || null,
+    kegiatan:
+      scope === "kebersihan"
+        ? (data.kegiatan || params.summary || "-")
+        : scope === "satpam"
+        ? `Kondisi: ${data.kondisi ?? "-"}\nTemuan: ${data.temuan || "-"}\nTindakan: ${data.tindakan || "-"}`
+        : scope === "ob"
+        ? `Uraian: ${data.uraian || "-"}\nJenis Pekerjaan: ${data.jenis_pekerjaan || "-"}`
+        : scope === "toko"
+        ? `Kondisi Stok: ${data.kondisi_stok || "-"}\nCatatan Stok: ${data.catatan_stok || "-"}`
+        : (params.summary || "-"),
+  };
+
+  const isPending = report.status === "submitted";
 
   const onApprove = () => {
     if (rating === 0) {
@@ -319,14 +349,25 @@ export default function LaporanDetailScreen() {
                 <Text className="font-bold text-on-surface mb-3">
                   Bukti Foto
                 </Text>
-                <Text className="text-on-surface-variant text-xs mb-2">
-                  Sebelum
-                </Text>
-                <PhotoGrid count={3} placeholder="Sebelum" />
-                <Text className="text-on-surface-variant text-xs mt-4 mb-2">
-                  Sesudah
-                </Text>
-                <PhotoGrid count={3} placeholder="Sesudah" />
+                {scope === "kebersihan" || scope === "ob" ? (
+                  <>
+                    <Text className="text-on-surface-variant text-xs mb-2">
+                      Sebelum
+                    </Text>
+                    <PhotoGrid urls={report.fotoSebelum} placeholder="Sebelum" />
+                    <Text className="text-on-surface-variant text-xs mt-4 mb-2">
+                      Sesudah
+                    </Text>
+                    <PhotoGrid urls={report.fotoSesudah} placeholder="Sesudah" />
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-on-surface-variant text-xs mb-2">
+                      Foto Lampiran
+                    </Text>
+                    <PhotoGrid urls={report.foto} placeholder="Lampiran" />
+                  </>
+                )}
               </View>
             </View>
 
@@ -481,27 +522,36 @@ function InfoRow({
 }
 
 function PhotoGrid({
-  count,
+  urls,
   placeholder,
 }: {
-  count: number;
+  urls: string[] | undefined;
   placeholder: string;
 }) {
+  const images = urls || [];
+  if (images.length === 0) {
+    return (
+      <View className="flex-row items-center gap-2 p-3 bg-surface border border-dashed border-outline-variant rounded-xl w-full">
+        <MaterialCommunityIcons name="image-off-outline" size={20} color="#8a9099" />
+        <Text className="text-on-surface-variant text-xs italic">
+          Tidak ada foto {placeholder.toLowerCase()}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-row flex-wrap gap-2">
-      {Array.from({ length: count }).map((_, i) => (
+      {images.map((url, i) => (
         <View
-          key={i}
-          className="w-24 h-24 rounded-xl bg-surface-container border border-outline-variant items-center justify-center"
+          key={url + i}
+          className="w-24 h-24 rounded-xl overflow-hidden bg-surface-container border border-outline-variant"
         >
-          <MaterialCommunityIcons
-            name="image-outline"
-            size={28}
-            color="#c1c6d6"
+          <Image
+            source={{ uri: url }}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="cover"
           />
-          <Text className="text-on-surface-variant text-[10px] mt-1">
-            {placeholder} #{i + 1}
-          </Text>
         </View>
       ))}
     </View>
