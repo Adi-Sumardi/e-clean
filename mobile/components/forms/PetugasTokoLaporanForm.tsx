@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -30,7 +30,7 @@ const nowTime = () => {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
-export function PetugasTokoLaporanForm() {
+export function PetugasTokoLaporanForm({ preselectedLokasiId }: { preselectedLokasiId?: number }) {
   const isTablet = useIsTablet();
   const [lokasiId, setLokasiId] = useState<number | string | null>(null);
   const [jadwalId, setJadwalId] = useState<number | string | null>(null);
@@ -51,6 +51,18 @@ export function PetugasTokoLaporanForm() {
   const jadwalQuery = useFieldJadwalToday("toko");
   const createLaporan = useCreateFieldLaporan("toko");
   const submitting = createLaporan.isPending;
+
+  useEffect(() => {
+    if (preselectedLokasiId && jadwalQuery.data) {
+      const schedule = (jadwalQuery.data ?? []).find(
+        (j) => j.lokasi?.id === preselectedLokasiId
+      );
+      if (schedule) {
+        setJadwalId(schedule.id);
+        setLokasiId(schedule.lokasi?.id ?? null);
+      }
+    }
+  }, [preselectedLokasiId, jadwalQuery.data]);
 
   const lokasiOptions = useMemo<SelectOption[]>(
     () =>

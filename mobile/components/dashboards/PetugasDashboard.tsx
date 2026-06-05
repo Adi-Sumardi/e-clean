@@ -100,7 +100,13 @@ export function PetugasDashboard() {
               return (
                 <Pressable
                   key={c.id}
-                  onPress={() => router.push("/(tabs)/laporan")}
+                  onPress={() => {
+                    if (c.lokasi_id) {
+                      router.push({ pathname: "/(tabs)/laporan", params: { lokasiId: String(c.lokasi_id) } });
+                    } else {
+                      router.push("/(tabs)/laporan");
+                    }
+                  }}
                   className="flex-row items-center gap-3 p-3 mt-2 rounded-xl bg-surface active:opacity-80"
                 >
                   <View className="px-2 py-1 rounded-full bg-error/15">

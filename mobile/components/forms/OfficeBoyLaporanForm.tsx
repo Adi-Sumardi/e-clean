@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -28,7 +28,7 @@ const nowTime = () => {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
-export function OfficeBoyLaporanForm() {
+export function OfficeBoyLaporanForm({ preselectedLokasiId }: { preselectedLokasiId?: number }) {
   const isTablet = useIsTablet();
   const [areaId, setAreaId] = useState<number | string | null>(null);
   const [jadwalId, setJadwalId] = useState<number | string | null>(null);
@@ -45,6 +45,18 @@ export function OfficeBoyLaporanForm() {
   const jadwalQuery = useFieldJadwalToday("ob");
   const createLaporan = useCreateFieldLaporan("ob");
   const submitting = createLaporan.isPending;
+
+  useEffect(() => {
+    if (preselectedLokasiId && jadwalQuery.data) {
+      const schedule = (jadwalQuery.data ?? []).find(
+        (j) => j.lokasi?.id === preselectedLokasiId
+      );
+      if (schedule) {
+        setJadwalId(schedule.id);
+        setAreaId(schedule.lokasi?.id ?? null);
+      }
+    }
+  }, [preselectedLokasiId, jadwalQuery.data]);
 
   const areaOptions = useMemo<SelectOption[]>(
     () =>

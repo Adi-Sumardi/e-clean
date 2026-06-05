@@ -184,6 +184,7 @@ export interface NotificationItem {
     | string;
   scope?: ApprovalScope;
   ref_id?: number;
+  lokasi_id?: number;
   title: string;
   body: string;
   time?: string;

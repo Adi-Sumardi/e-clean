@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from "expo-router";
 import { useAuthStore } from "@/stores/auth-store";
 import { PetugasLaporanForm } from "@/components/forms/PetugasLaporanForm";
 import { SatpamLaporanForm } from "@/components/forms/SatpamLaporanForm";
@@ -6,16 +7,18 @@ import { PetugasTokoLaporanForm } from "@/components/forms/PetugasTokoLaporanFor
 
 export default function LaporanScreen() {
   const role = useAuthStore((s) => s.user?.role);
+  const params = useLocalSearchParams();
+  const lokasiId = params.lokasiId ? Number(params.lokasiId) : undefined;
 
   switch (role) {
     case "satpam":
-      return <SatpamLaporanForm />;
+      return <SatpamLaporanForm preselectedLokasiId={lokasiId} />;
     case "office_boy":
-      return <OfficeBoyLaporanForm />;
+      return <OfficeBoyLaporanForm preselectedLokasiId={lokasiId} />;
     case "petugas_toko":
-      return <PetugasTokoLaporanForm />;
+      return <PetugasTokoLaporanForm preselectedLokasiId={lokasiId} />;
     case "petugas":
     default:
-      return <PetugasLaporanForm />;
+      return <PetugasLaporanForm preselectedLokasiId={lokasiId} />;
   }
 }
