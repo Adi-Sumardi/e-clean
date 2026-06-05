@@ -164,16 +164,21 @@ export default function LoginScreen() {
             />
 
             <SafeAreaView edges={["top"]} style={{ width: "100%" }}>
-              <View className="flex-row justify-end px-6 mb-[-12px]">
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: 24, marginBottom: -12 }}>
                 <Pressable
                   onPress={() => setShowConfig(true)}
-                  className="p-2 bg-white/10 rounded-full active:bg-white/20"
+                  style={({ pressed }) => ({
+                    padding: 8,
+                    backgroundColor: pressed ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.1)",
+                    borderRadius: 9999,
+                  })}
                 >
-                  <Ionicons name="settings-outline" size={22} color="#ffffff" />
+                  <Ionicons name="settings-outline" size={24} color="#ffffff" />
                 </Pressable>
               </View>
               <View className="items-center px-6">
-                <View
+                <Pressable
+                  onLongPress={() => setShowConfig(true)}
                   style={{
                     width: 88,
                     height: 88,
@@ -193,7 +198,7 @@ export default function LoginScreen() {
                     style={{ width: 64, height: 64, borderRadius: 14 }}
                     resizeMode="contain"
                   />
-                </View>
+                </Pressable>
                 <Text className="text-white text-3xl font-bold mt-4 tracking-tight">
                   ServiceGO
                 </Text>
