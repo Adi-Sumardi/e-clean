@@ -9,37 +9,10 @@ import { TaskCard, type TaskItem } from "@/components/TaskCard";
 import { useIsTablet } from "@/lib/useIsTablet";
 import { NotificationBell } from "@/components/NotificationBell";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { useFieldJadwalToday } from "@/lib/hooks";
+import { jadwalToTask } from "@/lib/mappers";
 
-const DUMMY_PATROLI: TaskItem[] = [
-  {
-    id: 1,
-    title: "Patroli Gate Utama",
-    location: "Pintu Masuk Depan",
-    time: "08:00 - 09:00",
-    status: "done",
-  },
-  {
-    id: 2,
-    title: "Patroli Area Parkir",
-    location: "Parkir Belakang",
-    time: "10:00 - 11:00",
-    status: "done",
-  },
-  {
-    id: 3,
-    title: "Patroli Lantai 2 & 3",
-    location: "Gedung A",
-    time: "13:00 - 14:00",
-    status: "in_progress",
-  },
-  {
-    id: 4,
-    title: "Patroli Perimeter Malam",
-    location: "Seluruh Area",
-    time: "20:00 - 21:00",
-    status: "pending",
-  },
-];
+
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -116,9 +89,15 @@ export function SatpamDashboard() {
   const isTablet = useIsTablet();
   const user = useAuthStore((s) => s.user);
 
+  const jadwalQuery = useFieldJadwalToday("satpam");
+  const todayTasks = useMemo(
+    () => (jadwalQuery.data ?? []).map(jadwalToTask),
+    [jadwalQuery.data]
+  );
+
   const stats = useMemo(() => {
-    const done = DUMMY_PATROLI.filter((t) => t.status === "done").length;
-    const inProgress = DUMMY_PATROLI.filter(
+    const done = todayTasks.filter((t) => t.status === "done").length;
+    const inProgress = todayTasks.filter(
       (t) => t.status === "in_progress"
     ).length;
     const openIncidents = RECENT_INCIDENTS.filter(
@@ -128,13 +107,13 @@ export function SatpamDashboard() {
     return {
       done,
       inProgress,
-      total: DUMMY_PATROLI.length,
-      open: DUMMY_PATROLI.length - done,
-      progress: Math.round((done / DUMMY_PATROLI.length) * 100),
+      total: todayTasks.length,
+      open: todayTasks.length - done,
+      progress: todayTasks.length > 0 ? Math.round((done / todayTasks.length) * 100) : 0,
       openIncidents,
       activeVisitors,
     };
-  }, []);
+  }, [todayTasks]);
 
   const headerPad = isTablet ? "px-8" : "px-5";
   const contentPad = isTablet ? 32 : 20;
@@ -300,14 +279,20 @@ export function SatpamDashboard() {
               </Text>
             </View>
             <View className="gap-3">
-              {DUMMY_PATROLI.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onPressReport={() => router.push("/(tabs)/laporan")}
-                  onPressFinish={() => router.push("/(tabs)/laporan")}
-                />
-              ))}
+              {todayTasks.length === 0 ? (
+                <Text className="text-on-surface-variant text-center py-6">
+                  {jadwalQuery.isLoading ? "Memuat jadwal..." : "Tidak ada jadwal hari ini"}
+                </Text>
+              ) : (
+                todayTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onPressReport={() => router.push("/(tabs)/laporan")}
+                    onPressFinish={() => router.push("/(tabs)/laporan")}
+                  />
+                ))
+              )}
             </View>
           </View>
 

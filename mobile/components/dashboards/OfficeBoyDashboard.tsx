@@ -8,6 +8,7 @@ import { StatCard } from "@/components/StatCard";
 import { useIsTablet } from "@/lib/useIsTablet";
 import { NotificationBell } from "@/components/NotificationBell";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { useFieldJadwalToday } from "@/lib/hooks";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -20,54 +21,7 @@ interface AreaTask {
   note?: string;
 }
 
-const AREA_TASKS: AreaTask[] = [
-  {
-    id: 1,
-    area: "Pantry Lantai 1",
-    icon: "cafe-outline",
-    time: "07:00",
-    status: "done",
-    note: "Setup pagi: kopi, teh, air panas",
-  },
-  {
-    id: 2,
-    area: "Lobi Utama",
-    icon: "business-outline",
-    time: "07:30",
-    status: "done",
-    note: "Cek koran & majalah",
-  },
-  {
-    id: 3,
-    area: "Ruang Rapat Besar",
-    icon: "easel-outline",
-    time: "09:00",
-    status: "in_progress",
-    note: "Setup untuk rapat direksi",
-  },
-  {
-    id: 4,
-    area: "Pantry Lantai 2",
-    icon: "cafe-outline",
-    time: "10:00",
-    status: "pending",
-  },
-  {
-    id: 5,
-    area: "Toilet Pria Lt.1",
-    icon: "water-outline",
-    time: "11:00",
-    status: "pending",
-  },
-  {
-    id: 6,
-    area: "Ruang Rapat Kecil",
-    icon: "easel-outline",
-    time: "14:00",
-    status: "pending",
-    note: "Setup untuk training",
-  },
-];
+
 
 interface RoomRequest {
   id: number;
@@ -165,22 +119,58 @@ export function OfficeBoyDashboard() {
   const isTablet = useIsTablet();
   const user = useAuthStore((s) => s.user);
 
+  const jadwalQuery = useFieldJadwalToday("ob");
+
+  const areaTasks = useMemo<AreaTask[]>(() => {
+    return (jadwalQuery.data ?? []).map((j) => {
+      const status: AreaTask["status"] =
+        j.status === "completed"
+          ? "done"
+          : j.status === "in_progress"
+            ? "in_progress"
+            : "pending";
+
+      const name = j.lokasi?.nama_lokasi ?? "";
+      let icon: IoniconName = "briefcase-outline";
+      if (name.toLowerCase().includes("pantry") || name.toLowerCase().includes("kopi")) {
+        icon = "cafe-outline";
+      } else if (name.toLowerCase().includes("rapat")) {
+        icon = "easel-outline";
+      } else if (name.toLowerCase().includes("toilet")) {
+        icon = "water-outline";
+      } else if (name.toLowerCase().includes("lobi")) {
+        icon = "business-outline";
+      }
+
+      return {
+        id: j.id,
+        area: j.lokasi
+          ? [j.lokasi.nama_lokasi, j.lokasi.lantai].filter(Boolean).join(" · ")
+          : `Tugas #${j.id}`,
+        icon,
+        time: [j.jam_mulai, j.jam_selesai].filter(Boolean).join(" - "),
+        status,
+        note: j.catatan || undefined,
+      };
+    });
+  }, [jadwalQuery.data]);
+
   const stats = useMemo(() => {
-    const done = AREA_TASKS.filter((t) => t.status === "done").length;
-    const pending = AREA_TASKS.filter((t) => t.status === "pending").length;
-    const inProgress = AREA_TASKS.filter(
+    const done = areaTasks.filter((t) => t.status === "done").length;
+    const pending = areaTasks.filter((t) => t.status === "pending").length;
+    const inProgress = areaTasks.filter(
       (t) => t.status === "in_progress"
     ).length;
     return {
       done,
       pending,
       inProgress,
-      total: AREA_TASKS.length,
-      progress: Math.round((done / AREA_TASKS.length) * 100),
+      total: areaTasks.length,
+      progress: areaTasks.length > 0 ? Math.round((done / areaTasks.length) * 100) : 0,
       activeRequests: ROOM_REQUESTS.filter((r) => r.status !== "done").length,
       pendingDeliveries: DELIVERIES.length,
     };
-  }, []);
+  }, [areaTasks]);
 
   const headerPad = isTablet ? "px-8" : "px-5";
   const contentPad = isTablet ? 32 : 20;
@@ -508,98 +498,104 @@ export function OfficeBoyDashboard() {
               </Text>
             </View>
             <View className="gap-2">
-              {AREA_TASKS.map((t) => {
-                const tone = STATUS_TONE[t.status];
-                const isDone = t.status === "done";
-                return (
-                  <View
-                    key={t.id}
-                    className={`p-3 rounded-2xl border-2 ${
-                      isDone
-                        ? "bg-secondary/5 border-secondary/30"
-                        : "bg-surface-container-lowest border-outline-variant"
-                    }`}
-                  >
-                    <View className="flex-row items-center gap-3">
-                      <View
-                        className={`w-11 h-11 rounded-xl ${tone.bg} items-center justify-center`}
-                      >
-                        <Ionicons
-                          name={t.icon}
-                          size={20}
-                          color={
-                            t.status === "done"
-                              ? "#0a7e3e"
-                              : t.status === "in_progress"
-                                ? "#005bbf"
-                                : "#5a6072"
-                          }
-                        />
-                      </View>
-                      <View className="flex-1">
-                        <View className="flex-row items-center gap-2">
-                          <Text
-                            className={`font-bold text-on-surface ${
-                              isDone ? "line-through opacity-60" : ""
-                            }`}
-                            numberOfLines={1}
-                          >
-                            {t.area}
-                          </Text>
-                          <View className="px-2 py-0.5 rounded-full bg-on-surface-variant/10">
-                            <Text className="text-on-surface-variant text-[10px] font-bold">
-                              {t.time}
-                            </Text>
-                          </View>
+              {areaTasks.length === 0 ? (
+                <Text className="text-on-surface-variant text-center py-6">
+                  {jadwalQuery.isLoading ? "Memuat jadwal..." : "Tidak ada jadwal hari ini"}
+                </Text>
+              ) : (
+                areaTasks.map((t) => {
+                  const tone = STATUS_TONE[t.status];
+                  const isDone = t.status === "done";
+                  return (
+                    <View
+                      key={t.id}
+                      className={`p-3 rounded-2xl border-2 ${
+                        isDone
+                          ? "bg-secondary/5 border-secondary/30"
+                          : "bg-surface-container-lowest border-outline-variant"
+                      }`}
+                    >
+                      <View className="flex-row items-center gap-3">
+                        <View
+                          className={`w-11 h-11 rounded-xl ${tone.bg} items-center justify-center`}
+                        >
+                          <Ionicons
+                            name={t.icon}
+                            size={20}
+                            color={
+                              t.status === "done"
+                                ? "#0a7e3e"
+                                : t.status === "in_progress"
+                                  ? "#005bbf"
+                                  : "#5a6072"
+                            }
+                          />
                         </View>
-                        {t.note ? (
-                          <Text
-                            className="text-on-surface-variant text-xs mt-0.5"
-                            numberOfLines={1}
-                          >
-                            {t.note}
+                        <View className="flex-1">
+                          <View className="flex-row items-center gap-2">
+                            <Text
+                              className={`font-bold text-on-surface ${
+                                isDone ? "line-through opacity-60" : ""
+                              }`}
+                              numberOfLines={1}
+                            >
+                              {t.area}
+                            </Text>
+                            <View className="px-2 py-0.5 rounded-full bg-on-surface-variant/10">
+                              <Text className="text-on-surface-variant text-[10px] font-bold">
+                                {t.time}
+                              </Text>
+                            </View>
+                          </View>
+                          {t.note ? (
+                            <Text
+                              className="text-on-surface-variant text-xs mt-0.5"
+                              numberOfLines={1}
+                            >
+                              {t.note}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <View className={`px-2 py-1 rounded-full ${tone.bg}`}>
+                          <Text className={`text-[10px] font-bold ${tone.text}`}>
+                            {tone.label}
                           </Text>
-                        ) : null}
+                        </View>
                       </View>
-                      <View className={`px-2 py-1 rounded-full ${tone.bg}`}>
-                        <Text className={`text-[10px] font-bold ${tone.text}`}>
-                          {tone.label}
-                        </Text>
-                      </View>
-                    </View>
 
-                    {!isDone && (
-                      <View className="flex-row gap-2 mt-3">
-                        <Pressable
-                          onPress={() => router.push("/(tabs)/laporan")}
-                          className="px-3 h-9 rounded-lg bg-surface-container-highest items-center justify-center"
-                        >
-                          <Ionicons
-                            name="camera-outline"
-                            size={16}
-                            color="#414754"
-                          />
-                        </Pressable>
-                        <Pressable
-                          onPress={() => router.push("/(tabs)/laporan")}
-                          className="flex-1 h-9 rounded-lg bg-tertiary items-center justify-center flex-row gap-1 active:opacity-90"
-                        >
-                          <Ionicons
-                            name="checkmark"
-                            size={14}
-                            color="#ffffff"
-                          />
-                          <Text className="text-white text-xs font-bold">
-                            {t.status === "in_progress"
-                              ? "Selesaikan"
-                              : "Mulai"}
-                          </Text>
-                        </Pressable>
-                      </View>
-                    )}
-                  </View>
-                );
-              })}
+                      {!isDone && (
+                        <View className="flex-row gap-2 mt-3">
+                          <Pressable
+                            onPress={() => router.push("/(tabs)/laporan")}
+                            className="px-3 h-9 rounded-lg bg-surface-container-highest items-center justify-center"
+                          >
+                            <Ionicons
+                              name="camera-outline"
+                              size={16}
+                              color="#414754"
+                            />
+                          </Pressable>
+                          <Pressable
+                            onPress={() => router.push("/(tabs)/laporan")}
+                            className="flex-1 h-9 rounded-lg bg-tertiary items-center justify-center flex-row gap-1 active:opacity-90"
+                          >
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color="#ffffff"
+                            />
+                            <Text className="text-white text-xs font-bold">
+                              {t.status === "in_progress"
+                                ? "Selesaikan"
+                                : "Mulai"}
+                            </Text>
+                          </Pressable>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })
+              )}
             </View>
           </View>
         </View>
