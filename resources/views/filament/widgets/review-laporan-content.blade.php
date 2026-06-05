@@ -1,6 +1,6 @@
 @php
     $actualRecord = match ($record->service_type ?? 'kebersihan') {
-        'kebersihan' => $record,
+        'kebersihan' => \App\Models\ActivityReport::find($record->id),
         'satpam' => \App\Models\LaporanSatpam::find($record->id),
         'ob' => \App\Models\LaporanOb::find($record->id),
         'toko' => \App\Models\LaporanToko::find($record->id),

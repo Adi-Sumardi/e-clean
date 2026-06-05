@@ -195,7 +195,7 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
             ->icon('heroicon-o-pencil-square')
             ->fillForm(function (ActivityReport $record) {
                 $actualRecord = match ($record->service_type ?? 'kebersihan') {
-                    'kebersihan' => $record,
+                    'kebersihan' => ActivityReport::find($record->id),
                     'satpam' => LaporanSatpam::find($record->id),
                     'ob' => LaporanOb::find($record->id),
                     'toko' => LaporanToko::find($record->id),
@@ -293,7 +293,7 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
             ->action(function (ActivityReport $record, array $data) {
                 // Find and update the actual model
                 $actualRecord = match ($record->service_type ?? 'kebersihan') {
-                    'kebersihan' => $record,
+                    'kebersihan' => ActivityReport::find($record->id),
                     'satpam' => LaporanSatpam::find($record->id),
                     'ob' => LaporanOb::find($record->id),
                     'toko' => LaporanToko::find($record->id),
