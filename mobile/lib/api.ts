@@ -2,10 +2,25 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import Constants from "expo-constants";
 import { storage } from "./storage";
 
-const apiUrl =
-  process.env.EXPO_PUBLIC_API_URL ??
-  (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
-  "http://10.0.2.2:8000";
+export const API_URL_KEY = "eclean.api.url";
+
+export async function getApiUrl(): Promise<string> {
+  const customUrl = await storage.getItem(API_URL_KEY);
+  if (customUrl) return customUrl;
+  return (
+    process.env.EXPO_PUBLIC_API_URL ??
+    (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
+    "http://10.0.2.2:8000"
+  );
+}
+
+export async function saveApiUrl(url: string): Promise<void> {
+  if (url) {
+    await storage.setItem(API_URL_KEY, url);
+  } else {
+    await storage.removeItem(API_URL_KEY);
+  }
+}
 
 export const TOKEN_KEY = "eclean.auth.token";
 
@@ -18,12 +33,16 @@ export interface ApiEnvelope<T> {
 }
 
 export const api = axios.create({
-  baseURL: `${apiUrl}/api/v1`,
+  // Initial fallback, request interceptor overrides this dynamically
+  baseURL: "http://10.0.2.2:8000/api/v1",
   timeout: 20000,
   headers: { Accept: "application/json" },
 });
 
 api.interceptors.request.use(async (config) => {
+  const url = await getApiUrl();
+  config.baseURL = `${url}/api/v1`;
+
   const token = await storage.getItem(TOKEN_KEY);
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;

@@ -4,6 +4,7 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -19,7 +20,7 @@ import * as Linking from "expo-linking";
 import Constants from "expo-constants";
 import { useLocalSearchParams } from "expo-router";
 import { useAuthStore } from "@/stores/auth-store";
-import { TOKEN_KEY } from "@/lib/api";
+import { TOKEN_KEY, getApiUrl, saveApiUrl } from "@/lib/api";
 import { storage } from "@/lib/storage";
 
 const APP_ICON = require("../../assets/icons/app_icon.png");
@@ -47,6 +48,16 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [showConfig, setShowConfig] = useState(false);
+  const [configUrl, setConfigUrl] = useState("");
+
+  useEffect(() => {
+    const loadUrl = async () => {
+      const url = await getApiUrl();
+      setConfigUrl(url);
+    };
+    void loadUrl();
+  }, []);
 
   const loading = status === "loading";
 
@@ -85,10 +96,7 @@ export default function LoginScreen() {
   const onGoogleLogin = async () => {
     try {
       setLocalError(null);
-      const apiUrl =
-        process.env.EXPO_PUBLIC_API_URL ??
-        (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
-        "http://10.0.2.2:8000";
+      const apiUrl = await getApiUrl();
       await Linking.openURL(`${apiUrl}/auth/google?platform=mobile`);
     } catch (err: any) {
       setLocalError(err?.message ?? "Gagal membuka Google login.");
@@ -155,7 +163,15 @@ export default function LoginScreen() {
               }}
             />
 
-            <SafeAreaView edges={["top"]}>
+            <SafeAreaView edges={["top"]} style={{ width: "100%" }}>
+              <View className="flex-row justify-end px-6 mb-[-12px]">
+                <Pressable
+                  onPress={() => setShowConfig(true)}
+                  className="p-2 bg-white/10 rounded-full active:bg-white/20"
+                >
+                  <Ionicons name="settings-outline" size={22} color="#ffffff" />
+                </Pressable>
+              </View>
               <View className="items-center px-6">
                 <View
                   style={{
@@ -339,6 +355,68 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showConfig}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowConfig(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 px-6">
+          <View className="bg-surface-container-lowest w-full rounded-3xl p-6 shadow-2xl">
+            <Text className="text-xl font-bold text-on-surface mb-2">
+              Konfigurasi API Server
+            </Text>
+            <Text className="text-on-surface-variant text-sm mb-4">
+              Masukkan URL server lokal (misalnya http://192.168.x.x:8000)
+            </Text>
+
+            <View className="flex-row items-center h-12 px-3 bg-surface border border-outline rounded-xl mb-6">
+              <Ionicons name="link-outline" size={18} color="#5a6072" />
+              <TextInput
+                value={configUrl}
+                onChangeText={setConfigUrl}
+                placeholder="http://192.168.1.xxx:8000"
+                placeholderTextColor="#c1c6d6"
+                autoCapitalize="none"
+                autoCorrect={false}
+                className="flex-1 ml-2 text-on-surface"
+              />
+            </View>
+
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={async () => {
+                  await saveApiUrl("");
+                  const defaultUrl = await getApiUrl();
+                  setConfigUrl(defaultUrl);
+                  setShowConfig(false);
+                }}
+                className="flex-1 h-11 border border-outline-variant bg-surface items-center justify-center rounded-xl active:opacity-80"
+              >
+                <Text className="text-on-surface font-semibold text-sm">Reset</Text>
+              </Pressable>
+              
+              <Pressable
+                onPress={() => setShowConfig(false)}
+                className="flex-1 h-11 border border-outline-variant bg-surface items-center justify-center rounded-xl active:opacity-80"
+              >
+                <Text className="text-on-surface font-semibold text-sm">Batal</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={async () => {
+                  await saveApiUrl(configUrl.trim());
+                  setShowConfig(false);
+                }}
+                className="flex-1 h-11 bg-primary items-center justify-center rounded-xl active:opacity-90"
+              >
+                <Text className="text-white font-bold text-sm">Simpan</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
