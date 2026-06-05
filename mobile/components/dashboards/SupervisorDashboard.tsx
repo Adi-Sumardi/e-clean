@@ -18,7 +18,9 @@ import { useIsTablet } from "@/lib/useIsTablet";
 import {
   useUnits,
   usePendingApprovals,
-
+  useJadwalToday,
+  useFieldJadwalToday,
+  useDashboard,
 } from "@/lib/hooks";
 import type { ApprovalItem, ApprovalScope } from "@/lib/types";
 
@@ -404,7 +406,6 @@ const SCOPE_BADGE_COLOR: Record<Scope, string> = {
   toko: "#0891b2",
 };
 
-// -------------------- COMPONENT --------------------
 export function SupervisorDashboard() {
   const router = useRouter();
   const isTablet = useIsTablet();
@@ -413,8 +414,6 @@ export function SupervisorDashboard() {
   // Per-unit approval filter (null = all units).
   const [unitId, setUnitId] = useState<number | null>(null);
 
-  const stats = STATS_BY_SCOPE[scope];
-  const monthly = MONTHLY_SUMMARY_BY_SCOPE[scope];
   const barData = BAR_BY_SCOPE[scope];
 
   // --- Live approval queue (real API), filtered by scope + unit ---
@@ -422,11 +421,116 @@ export function SupervisorDashboard() {
   const approvalsQuery = usePendingApprovals(scope as ApprovalScope | "all", unitId);
   const pending = approvalsQuery.data ?? [];
 
-  const schedule = useMemo(
-    () =>
-      scope === "all" ? ALL_SCHEDULE : ALL_SCHEDULE.filter((s) => s.tim === scope),
-    [scope]
-  );
+  // --- Live queries for Today's Schedule across all 4 teams ---
+  const todayKebersihanQuery = useJadwalToday();
+  const todaySatpamQuery = useFieldJadwalToday("satpam");
+  const todayObQuery = useFieldJadwalToday("ob");
+  const todayTokoQuery = useFieldJadwalToday("toko");
+  const dashboardQuery = useDashboard();
+
+  const isScheduleLoading =
+    todayKebersihanQuery.isLoading ||
+    todaySatpamQuery.isLoading ||
+    todayObQuery.isLoading ||
+    todayTokoQuery.isLoading;
+
+  const schedules = useMemo(() => {
+    const mapJadwal = (j: any, tim: Scope): ScheduleItem => {
+      let status: ScheduleItem["status"] = "belum";
+      if (j.status === "completed") status = "selesai";
+      else if (j.status === "in_progress") status = "berjalan";
+      else if (j.status === "missed") status = "terlambat";
+
+      const timeStr = j.jam_mulai && j.jam_selesai ? `${j.jam_mulai} - ${j.jam_selesai}` : "";
+
+      return {
+        id: j.id,
+        shift: j.shift ? (j.shift.charAt(0).toUpperCase() + j.shift.slice(1)) : "Pagi",
+        petugas: j.petugas?.name ?? "-",
+        lokasi: j.lokasi?.nama_lokasi ?? "-",
+        status,
+        keterangan: timeStr || undefined,
+        tim,
+      };
+    };
+
+    const list: ScheduleItem[] = [];
+    if (scope === "all" || scope === "kebersihan") {
+      (todayKebersihanQuery.data ?? []).forEach((j) => list.push(mapJadwal(j, "kebersihan")));
+    }
+    if (scope === "all" || scope === "satpam") {
+      (todaySatpamQuery.data ?? []).forEach((j) => list.push(mapJadwal(j, "satpam")));
+    }
+    if (scope === "all" || scope === "ob") {
+      (todayObQuery.data ?? []).forEach((j) => list.push(mapJadwal(j, "ob")));
+    }
+    if (scope === "all" || scope === "toko") {
+      (todayTokoQuery.data ?? []).forEach((j) => list.push(mapJadwal(j, "toko")));
+    }
+    return list;
+  }, [
+    scope,
+    todayKebersihanQuery.data,
+    todaySatpamQuery.data,
+    todayObQuery.data,
+    todayTokoQuery.data,
+  ]);
+
+  const dynamicStats = useMemo(() => {
+    const total = schedules.length;
+    const completed = schedules.filter((s) => s.status === "selesai").length;
+    const late = schedules.filter((s) => s.status === "terlambat").length;
+    const uniquePetugas = new Set(schedules.map((s) => s.petugas)).size;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return {
+      pendingApproval: pending.length,
+      jadwalHariIni: total,
+      laporanHariIni: completed,
+      completionRate,
+      totalPetugas: uniquePetugas,
+      keterlambatan: late,
+    };
+  }, [schedules, pending.length]);
+
+  const monthly = useMemo(() => {
+    if ((scope === "all" || scope === "kebersihan") && dashboardQuery.data?.monthly_stats) {
+      const m = dashboardQuery.data.monthly_stats as any;
+      const total = m.reports?.total ?? 0;
+      const approved = m.reports?.approved ?? 0;
+      const late = m.performance?.late_submissions ?? 0;
+      const pendingCount = m.performance?.pending ?? 0;
+
+      const ontimePct = total > 0 ? Math.round(((approved - late) / total) * 1000) / 10 : 0;
+      const latePct = total > 0 ? Math.round((late / total) * 1000) / 10 : 0;
+      const expiredPct = total > 0 ? Math.round((pendingCount / total) * 1000) / 10 : 0;
+
+      return {
+        total,
+        ontime: Math.max(0, approved - late),
+        ontimePct,
+        late,
+        latePct,
+        expired: pendingCount,
+        expiredPct,
+        avgRating: m.reports?.average_rating ?? 5.0,
+      };
+    }
+    return MONTHLY_SUMMARY_BY_SCOPE[scope];
+  }, [scope, dashboardQuery.data]);
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      todayKebersihanQuery.refetch(),
+      todaySatpamQuery.refetch(),
+      todayObQuery.refetch(),
+      todayTokoQuery.refetch(),
+      approvalsQuery.refetch(),
+      dashboardQuery.refetch(),
+      unitsQuery.refetch(),
+    ]);
+  };
+
 
   const currentScopeConfig = SCOPES.find((s) => s.key === scope) ?? SCOPES[0];
 
@@ -556,8 +660,15 @@ export function SupervisorDashboard() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={approvalsQuery.isFetching}
-            onRefresh={() => approvalsQuery.refetch()}
+            refreshing={
+              todayKebersihanQuery.isFetching ||
+              todaySatpamQuery.isFetching ||
+              todayObQuery.isFetching ||
+              todayTokoQuery.isFetching ||
+              approvalsQuery.isFetching ||
+              dashboardQuery.isFetching
+            }
+            onRefresh={handleRefresh}
           />
         }
       >
@@ -576,29 +687,29 @@ export function SupervisorDashboard() {
                 icon: "hourglass-outline",
                 label: "Menunggu",
                 hint: "Approval",
-                value: stats.pendingApproval,
-                color: stats.pendingApproval > 0 ? "#d62828" : "#0a7e3e",
+                value: dynamicStats.pendingApproval,
+                color: dynamicStats.pendingApproval > 0 ? "#d62828" : "#0a7e3e",
               },
               {
                 icon: "calendar-outline",
                 label: "Jadwal",
-                hint: `${stats.completionRate}% selesai`,
-                value: stats.jadwalHariIni,
+                hint: `${dynamicStats.completionRate}% selesai`,
+                value: dynamicStats.jadwalHariIni,
                 color: "#e08a14",
               },
               {
                 icon: "people-outline",
                 label: "Petugas",
                 hint: "Aktif",
-                value: stats.totalPetugas,
+                value: dynamicStats.totalPetugas,
                 color: "#0a5fd6",
               },
               {
                 icon: "time-outline",
                 label: "Terlambat",
                 hint: "Hari ini",
-                value: stats.keterlambatan,
-                color: stats.keterlambatan > 0 ? "#d62828" : "#0a7e3e",
+                value: dynamicStats.keterlambatan,
+                color: dynamicStats.keterlambatan > 0 ? "#d62828" : "#0a7e3e",
               },
             ] as const
           ).map((t) => (
@@ -810,7 +921,7 @@ export function SupervisorDashboard() {
                     Jadwal Hari Ini
                   </Text>
                   <Text className="text-on-surface-variant text-xs">
-                    {stats.laporanHariIni} dari {stats.jadwalHariIni} selesai
+                    {dynamicStats.laporanHariIni} dari {dynamicStats.jadwalHariIni} selesai
                   </Text>
                 </View>
                 <View
@@ -818,9 +929,9 @@ export function SupervisorDashboard() {
                   style={{
                     borderWidth: 3,
                     borderColor:
-                      stats.completionRate >= 80
+                      dynamicStats.completionRate >= 80
                         ? "#0a7e3e"
-                        : stats.completionRate >= 50
+                        : dynamicStats.completionRate >= 50
                           ? "#e08a14"
                           : "#d62828",
                   }}
@@ -829,19 +940,26 @@ export function SupervisorDashboard() {
                     className="font-bold text-xs"
                     style={{
                       color:
-                        stats.completionRate >= 80
+                        dynamicStats.completionRate >= 80
                           ? "#0a7e3e"
-                          : stats.completionRate >= 50
+                          : dynamicStats.completionRate >= 50
                             ? "#e08a14"
                             : "#d62828",
                     }}
                   >
-                    {stats.completionRate}%
+                    {dynamicStats.completionRate}%
                   </Text>
                 </View>
               </View>
 
-              {schedule.length === 0 ? (
+              {isScheduleLoading ? (
+                <View className="items-center py-6">
+                  <ActivityIndicator color="#005bbf" />
+                  <Text className="text-on-surface-variant text-sm mt-2">
+                    Memuat jadwal...
+                  </Text>
+                </View>
+              ) : schedules.length === 0 ? (
                 <View className="items-center py-6">
                   <Ionicons name="calendar-outline" size={48} color="#c1c6d6" />
                   <Text className="text-on-surface-variant text-sm mt-2">
@@ -850,7 +968,7 @@ export function SupervisorDashboard() {
                 </View>
               ) : (
                 <View className="gap-2">
-                  {schedule.map((s) => {
+                  {schedules.map((s) => {
                     const tone = STATUS_TONE[s.status];
                     const teamConfig = SCOPES.find((sc) => sc.key === s.tim);
                     return (

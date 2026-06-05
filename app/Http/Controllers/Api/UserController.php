@@ -43,23 +43,27 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = User::query()->with('roles');
+            $cacheKey = 'api_users_index_' . md5(serialize($request->all()));
 
-            if ($request->filled('role')) {
-                $query->role($request->role);
-            }
-            if ($request->boolean('active_only')) {
-                $query->where('is_active', true);
-            }
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            }
+            $users = \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($request) {
+                $query = User::query()->with('roles');
 
-            $users = $query->orderBy('name')->get();
+                if ($request->filled('role')) {
+                    $query->role($request->role);
+                }
+                if ($request->boolean('active_only')) {
+                    $query->where('is_active', true);
+                }
+                if ($request->filled('search')) {
+                    $search = $request->search;
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+                }
+
+                return $query->orderBy('name')->get();
+            });
 
             return $this->successResponse(
                 UserResource::collection($users),
@@ -111,6 +115,8 @@ class UserController extends Controller
             ]);
             $user->assignRole($validated['role']);
 
+            \Illuminate\Support\Facades\Cache::flush();
+
             return $this->successResponse(
                 new UserResource($user->load('roles')),
                 'User created successfully',
@@ -154,6 +160,8 @@ class UserController extends Controller
                 $user->syncRoles([$validated['role']]);
             }
 
+            \Illuminate\Support\Facades\Cache::flush();
+
             return $this->successResponse(
                 new UserResource($user->fresh('roles')),
                 'User updated successfully'
@@ -182,6 +190,8 @@ class UserController extends Controller
             }
 
             $user->delete();
+
+            \Illuminate\Support\Facades\Cache::flush();
 
             return $this->successResponse(null, 'User deleted successfully');
         } catch (\Exception $e) {

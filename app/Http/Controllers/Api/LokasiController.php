@@ -29,31 +29,36 @@ class LokasiController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Lokasi::query()->with('unit');
+            $user = $request->user();
+            $cacheKey = 'api_lokasi_index_' . $user->id . '_' . md5(serialize($request->all()));
 
-            // Field staff only see active locations; managers can opt-in to all.
-            if (! $this->canManage($request) || ! $request->boolean('include_inactive')) {
-                $query->where('is_active', true);
-            }
+            $locations = \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($request, $user) {
+                $query = Lokasi::query()->with('unit');
 
-            if ($request->filled('unit_id')) {
-                $query->where('unit_id', $request->unit_id);
-            }
-            if ($request->filled('kategori')) {
-                $query->where('kategori', $request->kategori);
-            }
-            if ($request->filled('lantai')) {
-                $query->where('lantai', $request->lantai);
-            }
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('nama_lokasi', 'like', "%{$search}%")
-                        ->orWhere('kode_lokasi', 'like', "%{$search}%");
-                });
-            }
+                // Field staff only see active locations; managers can opt-in to all.
+                if (! $this->canManage($request) || ! $request->boolean('include_inactive')) {
+                    $query->where('is_active', true);
+                }
 
-            $locations = $query->orderBy('nama_lokasi')->get();
+                if ($request->filled('unit_id')) {
+                    $query->where('unit_id', $request->unit_id);
+                }
+                if ($request->filled('kategori')) {
+                    $query->where('kategori', $request->kategori);
+                }
+                if ($request->filled('lantai')) {
+                    $query->where('lantai', $request->lantai);
+                }
+                if ($request->filled('search')) {
+                    $search = $request->search;
+                    $query->where(function ($q) use ($search) {
+                        $q->where('nama_lokasi', 'like', "%{$search}%")
+                            ->orWhere('kode_lokasi', 'like', "%{$search}%");
+                    });
+                }
+
+                return $query->orderBy('nama_lokasi')->get();
+            });
 
             return $this->successResponse(
                 LokasiResource::collection($locations),
@@ -102,6 +107,8 @@ class LokasiController extends Controller
                 'is_active' => $validated['is_active'] ?? true,
             ]));
 
+            \Illuminate\Support\Facades\Cache::flush();
+
             return $this->successResponse(
                 new LokasiResource($lokasi->load('unit')),
                 'Location created successfully',
@@ -138,6 +145,8 @@ class LokasiController extends Controller
 
             $lokasi->update($validated);
 
+            \Illuminate\Support\Facades\Cache::flush();
+
             return $this->successResponse(
                 new LokasiResource($lokasi->fresh('unit')),
                 'Location updated successfully'
@@ -162,6 +171,8 @@ class LokasiController extends Controller
             }
 
             $lokasi->delete();
+
+            \Illuminate\Support\Facades\Cache::flush();
 
             return $this->successResponse(null, 'Location deleted successfully');
         } catch (\Exception $e) {

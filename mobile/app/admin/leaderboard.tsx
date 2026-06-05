@@ -20,7 +20,7 @@ const MEDAL_COLORS = ["#ffd700", "#c0c0c0", "#cd7f32"];
 
 export default function LeaderboardScreen() {
   const isTablet = useIsTablet();
-  const { data, isLoading, isError } = useLeaderboard();
+  const { data, isLoading, isError, error } = useLeaderboard();
 
   const LEADERBOARD = useMemo<LeaderRow[]>(
     () =>
@@ -55,7 +55,7 @@ export default function LeaderboardScreen() {
             </View>
           ) : isError ? (
             <Text className="text-on-surface-variant text-center py-16">
-              Gagal memuat peringkat.
+              Gagal memuat peringkat: {error instanceof Error ? error.message : "Terjadi kesalahan."}
             </Text>
           ) : LEADERBOARD.length === 0 ? (
             <Text className="text-on-surface-variant text-center py-16">

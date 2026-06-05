@@ -1,9 +1,17 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AdminScreen, EmptyState } from "@/components/admin/AdminScreen";
+import { EntityFormModal, type FieldDef, type FormValues } from "@/components/admin/EntityFormModal";
 import { useIsTablet } from "@/lib/useIsTablet";
+import {
+  useGuestComplaints,
+  useUsers,
+  useAssignComplaint,
+  useUpdateComplaintStatus,
+} from "@/lib/hooks";
+import { ApiError } from "@/lib/api";
 
 type Status = "pending" | "in_progress" | "resolved" | "rejected";
 type Filter = "all" | Status;
@@ -21,56 +29,6 @@ interface ComplaintRow {
   assignedTo?: string;
 }
 
-const COMPLAINTS: ComplaintRow[] = [
-  {
-    id: 1,
-    jenis: "Tumpahan",
-    lokasi: "Toilet Lt.1 - Gedung A",
-    unit: "Office",
-    pelapor: "Ibu Ratna (Tamu)",
-    telepon: "0812-3456-7890",
-    deskripsi: "Tumpahan air di area wastafel, lantai licin",
-    waktu: "30 menit lalu",
-    status: "in_progress",
-    assignedTo: "Rahmat Hidayat",
-  },
-  {
-    id: 2,
-    jenis: "Kotor",
-    lokasi: "Lobi Utama",
-    unit: "Office",
-    pelapor: "Bp. Hasan (Karyawan)",
-    telepon: "0813-9876-5432",
-    deskripsi: "Sampah kertas berserakan di pojok lobi",
-    waktu: "1 jam lalu",
-    status: "pending",
-  },
-  {
-    id: 3,
-    jenis: "Bau",
-    lokasi: "Pantry Lt.3",
-    unit: "Office",
-    pelapor: "Bu. Sari",
-    telepon: "0811-2233-4455",
-    deskripsi: "Tempat sampah berbau menyengat",
-    waktu: "2 jam lalu",
-    status: "resolved",
-    assignedTo: "Citra Wijaya",
-  },
-  {
-    id: 4,
-    jenis: "Fasilitas Rusak",
-    lokasi: "Toilet Wanita Lt.2",
-    unit: "Office",
-    pelapor: "Ibu Maya",
-    telepon: "0822-1111-2222",
-    deskripsi: "Pintu cubicle rusak engselnya",
-    waktu: "3 jam lalu",
-    status: "in_progress",
-    assignedTo: "Andi Setiawan",
-  },
-];
-
 const STATUS_TONE: Record<Status, { bg: string; text: string; label: string }> = {
   pending: { bg: "bg-error/15", text: "text-error", label: "Menunggu" },
   in_progress: {
@@ -87,10 +45,19 @@ const STATUS_TONE: Record<Status, { bg: string; text: string; label: string }> =
 };
 
 const JENIS_TONE: Record<string, string> = {
-  Tumpahan: "#d62828",
-  Kotor: "#e08a14",
-  Bau: "#0891b2",
-  "Fasilitas Rusak": "#5a6072",
+  tumpahan: "#d62828",
+  kotor: "#e08a14",
+  bau: "#0891b2",
+  rusak: "#5a6072",
+  lainnya: "#7e5a17",
+};
+
+const JENIS_LABEL: Record<string, string> = {
+  tumpahan: "Tumpahan",
+  kotor: "Kotor",
+  bau: "Bau",
+  rusak: "Fasilitas Rusak",
+  lainnya: "Lainnya",
 };
 
 const FILTERS: { key: Filter; label: string }[] = [
@@ -101,23 +68,75 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "rejected", label: "Ditolak" },
 ];
 
+function showApiError(err: unknown) {
+  const msg =
+    err instanceof ApiError && err.errors
+      ? Object.values(err.errors).flat().join("\n")
+      : err instanceof Error
+        ? err.message
+        : "Terjadi kesalahan.";
+  Alert.alert("Gagal", msg);
+}
+
 export default function KeluhanScreen() {
   const isTablet = useIsTablet();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
+  const [assigningId, setAssigningId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<Status | null>(null);
+
+  const { data: rawComplaints, isLoading, refetch } = useGuestComplaints();
+  const { data: petugasList } = useUsers({ role: "petugas", active_only: true });
+
+  const assignMutation = useAssignComplaint();
+  const updateStatusMutation = useUpdateComplaintStatus();
+
+  const complaints = useMemo<ComplaintRow[]>(() => {
+    if (!rawComplaints) return [];
+    return rawComplaints.map((c) => {
+      // Calculate relative time or format date
+      let waktu = "Baru saja";
+      if (c.created_at) {
+        try {
+          const d = new Date(c.created_at);
+          waktu = d.toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        } catch {}
+      }
+
+      return {
+        id: c.id,
+        jenis: JENIS_LABEL[c.jenis_keluhan] ?? c.jenis_keluhan,
+        lokasi: c.lokasi?.nama_lokasi ?? "-",
+        unit: c.lokasi?.unit?.nama_unit ?? "-",
+        pelapor: c.nama_pelapor,
+        telepon: c.telepon_pelapor ?? "-",
+        deskripsi: c.deskripsi_keluhan,
+        waktu,
+        status: c.status,
+        assignedTo: c.assignee?.name,
+      };
+    });
+  }, [rawComplaints]);
+
   const stats = useMemo(
     () => ({
-      total: COMPLAINTS.length,
-      pending: COMPLAINTS.filter((c) => c.status === "pending").length,
-      inProgress: COMPLAINTS.filter((c) => c.status === "in_progress").length,
+      total: complaints.length,
+      pending: complaints.filter((c) => c.status === "pending").length,
+      inProgress: complaints.filter((c) => c.status === "in_progress").length,
     }),
-    []
+    [complaints]
   );
 
   const filtered = useMemo(() => {
     const s = q.toLowerCase().trim();
-    let list = COMPLAINTS;
+    let list = complaints;
     if (filter !== "all") list = list.filter((c) => c.status === filter);
     if (s) {
       list = list.filter(
@@ -128,7 +147,79 @@ export default function KeluhanScreen() {
       );
     }
     return list;
-  }, [q, filter]);
+  }, [q, filter, complaints]);
+
+  const assignFields = useMemo<FieldDef[]>(
+    () => [
+      {
+        key: "assigned_to",
+        label: "Petugas Lapangan",
+        type: "select",
+        required: true,
+        options: (petugasList ?? []).map((u) => ({ value: u.id, label: u.name })),
+      },
+    ],
+    [petugasList]
+  );
+
+  const statusFields = useMemo<FieldDef[]>(
+    () => [
+      {
+        key: "status",
+        label: "Status Penanganan",
+        type: "select",
+        required: true,
+        options: [
+          { value: "in_progress", label: "Sedang Ditangani" },
+          { value: "resolved", label: "Selesai" },
+          { value: "rejected", label: "Ditolak" },
+        ],
+      },
+      {
+        key: "catatan_penanganan",
+        label: "Catatan Tindak Lanjut",
+        type: "textarea",
+      },
+    ],
+    []
+  );
+
+  const handleAssignSubmit = (values: FormValues) => {
+    if (!assigningId) return;
+    assignMutation.mutate(
+      {
+        id: assigningId,
+        assignedTo: Number(values.assigned_to),
+      },
+      {
+        onSuccess: () => {
+          setAssigningId(null);
+          Alert.alert("Berhasil", "Keluhan telah ditugaskan.");
+          refetch();
+        },
+        onError: showApiError,
+      }
+    );
+  };
+
+  const handleStatusSubmit = (values: FormValues) => {
+    if (!updatingId) return;
+    updateStatusMutation.mutate(
+      {
+        id: updatingId,
+        status: String(values.status),
+        catatanPenanganan: values.catatan_penanganan ? String(values.catatan_penanganan) : undefined,
+      },
+      {
+        onSuccess: () => {
+          setUpdatingId(null);
+          Alert.alert("Berhasil", "Status keluhan telah diperbarui.");
+          refetch();
+        },
+        onError: showApiError,
+      }
+    );
+  };
 
   return (
     <>
@@ -186,9 +277,13 @@ export default function KeluhanScreen() {
         </View>
 
         <ScrollView
-          contentContainerStyle={{ padding: isTablet ? 32 : 20, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: isTablet ? 32 : 20, paddingBottom: 120 }}
         >
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <View className="items-center py-16">
+              <ActivityIndicator color="#d62828" />
+            </View>
+          ) : filtered.length === 0 ? (
             <EmptyState
               icon="checkmark-done-circle-outline"
               title="Tidak ada keluhan"
@@ -197,10 +292,15 @@ export default function KeluhanScreen() {
             <View className={isTablet ? "flex-row flex-wrap -m-2" : "gap-3"}>
               {filtered.map((c) => {
                 const tone = STATUS_TONE[c.status];
-                const jenisColor = JENIS_TONE[c.jenis] ?? "#5a6072";
+                // normalize tone key match
+                const normalizedJenis = String(c.jenis).toLowerCase();
+                const jenisColor = JENIS_TONE[normalizedJenis] ?? "#5a6072";
                 return (
                   <View key={c.id} className={isTablet ? "w-1/2 p-2" : ""}>
-                    <Pressable className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant active:opacity-80">
+                    <Pressable
+                      onPress={() => setUpdatingId(c.id)}
+                      className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant active:opacity-80"
+                    >
                       <View className="flex-row items-start gap-3">
                         <View
                           className="w-12 h-12 rounded-xl items-center justify-center"
@@ -245,7 +345,7 @@ export default function KeluhanScreen() {
                               className="text-on-surface-variant text-xs"
                               numberOfLines={1}
                             >
-                              {c.pelapor}
+                              {c.pelapor} · {c.telepon}
                             </Text>
                           </View>
                           <Text
@@ -257,11 +357,14 @@ export default function KeluhanScreen() {
                         </View>
                       </View>
                       <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-outline-variant/50">
-                        <View className={`px-2 py-0.5 rounded-full ${tone.bg}`}>
+                        <Pressable
+                          onPress={() => setUpdatingId(c.id)}
+                          className={`px-2 py-0.5 rounded-full ${tone.bg}`}
+                        >
                           <Text className={`text-[10px] font-bold ${tone.text}`}>
                             {tone.label}
                           </Text>
-                        </View>
+                        </Pressable>
                         {c.assignedTo ? (
                           <View className="flex-row items-center gap-1">
                             <Ionicons
@@ -274,7 +377,10 @@ export default function KeluhanScreen() {
                             </Text>
                           </View>
                         ) : (
-                          <Pressable className="px-3 py-1 rounded-lg bg-primary active:opacity-80">
+                          <Pressable
+                            onPress={() => setAssigningId(c.id)}
+                            className="px-3 py-1 rounded-lg bg-primary active:opacity-80"
+                          >
                             <Text className="text-white text-[11px] font-bold">
                               Assign
                             </Text>
@@ -289,6 +395,30 @@ export default function KeluhanScreen() {
           )}
         </ScrollView>
       </AdminScreen>
+
+      <EntityFormModal
+        visible={assigningId !== null}
+        title="Tugaskan Petugas"
+        fields={assignFields}
+        initialValues={{}}
+        submitting={assignMutation.isPending}
+        submitLabel="Tugaskan"
+        onCancel={() => setAssigningId(null)}
+        onSubmit={handleAssignSubmit}
+      />
+
+      <EntityFormModal
+        visible={updatingId !== null}
+        title="Ubah Status Keluhan"
+        fields={statusFields}
+        initialValues={{
+          status: "in_progress",
+        }}
+        submitting={updateStatusMutation.isPending}
+        submitLabel="Perbarui Status"
+        onCancel={() => setUpdatingId(null)}
+        onSubmit={handleStatusSubmit}
+      />
     </>
   );
 }

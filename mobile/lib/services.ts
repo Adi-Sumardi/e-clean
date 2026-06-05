@@ -346,6 +346,19 @@ export const fieldService = {
       url: `${FIELD_BASE[scope]}/jadwal/today`,
     }),
 
+  jadwalCreate: (scope: FieldScope, data: any) =>
+    request<any>({
+      method: "POST",
+      url: `${FIELD_BASE[scope]}/jadwal`,
+      data,
+    }),
+
+  jadwalDelete: (scope: FieldScope, id: number) =>
+    request<null>({
+      method: "DELETE",
+      url: `${FIELD_BASE[scope]}/jadwal/${id}`,
+    }),
+
   /**
    * Create a field-staff report (multipart). `fields` holds scalar values;
    * `photos` maps each photo field name to an array of local image uris.
@@ -432,4 +445,25 @@ export const approvalService = {
       data: { rejected_reason },
     });
   },
+};
+
+export const guestComplaintService = {
+  list: (params?: { status?: string }) =>
+    request<import("./types").GuestComplaint[]>({
+      method: "GET",
+      url: "/guest-complaints",
+      params,
+    }),
+  assign: (id: number, assignedTo: number) =>
+    request<import("./types").GuestComplaint>({
+      method: "POST",
+      url: `/guest-complaints/${id}/assign`,
+      data: { assigned_to: assignedTo },
+    }),
+  updateStatus: (id: number, status: string, catatanPenanganan?: string) =>
+    request<import("./types").GuestComplaint>({
+      method: "POST",
+      url: `/guest-complaints/${id}/status`,
+      data: { status, catatan_penanganan: catatanPenanganan },
+    }),
 };

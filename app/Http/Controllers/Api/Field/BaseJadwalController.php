@@ -139,4 +139,66 @@ abstract class BaseJadwalController extends Controller
             return $this->errorResponse('Failed to retrieve schedule: ' . $e->getMessage(), 500);
         }
     }
+
+    public function store(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            if (!$user->hasAnyRole(['super_admin', 'admin', 'supervisor'])) {
+                return $this->forbiddenResponse('Only admin/supervisor can create schedules');
+            }
+
+            $model = $this->model();
+
+            $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+                'petugas_id' => ['required', 'exists:users,id'],
+                'lokasi_id' => ['required', 'exists:lokasis,id'],
+                'tanggal' => ['required', 'date'],
+                'shift' => ['required', 'string', 'max:50'],
+                'jam_mulai' => ['required', 'date_format:H:i'],
+                'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
+                'catatan' => ['nullable', 'string', 'max:1000'],
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $validated = $validator->validated();
+
+            // Set default pending status
+            $validated['status'] = 'pending';
+            $validated['created_by'] = $user->id;
+
+            $schedule = $model::create($validated);
+            $schedule->load(['lokasi.unit', 'petugas']);
+
+            $resource = $this->resourceClass();
+            return $this->successResponse(new $resource($schedule), 'Schedule created successfully', 201);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to create schedule: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            if (!$user->hasAnyRole(['super_admin', 'admin', 'supervisor'])) {
+                return $this->forbiddenResponse('Only admin/supervisor can delete schedules');
+            }
+
+            $model = $this->model();
+            $schedule = $model::find($id);
+
+            if (!$schedule) {
+                return $this->notFoundResponse('Schedule not found');
+            }
+
+            $schedule->delete();
+            return $this->successResponse(null, 'Schedule deleted successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to delete schedule: ' . $e->getMessage(), 500);
+        }
+    }
 }

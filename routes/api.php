@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Field\ObJadwalController;
 use App\Http\Controllers\Api\Field\ObLaporanController;
 use App\Http\Controllers\Api\Field\TokoJadwalController;
 use App\Http\Controllers\Api\Field\TokoLaporanController;
+use App\Http\Controllers\Api\GuestComplaintController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -113,6 +114,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     // Notifications feed (drives the bell icon on dashboards)
     Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
 
+    // Guest Complaints management
+    Route::prefix('guest-complaints')->group(function () {
+        Route::get('/', [GuestComplaintController::class, 'index']);
+        Route::post('/{id}/assign', [GuestComplaintController::class, 'assign']);
+        Route::post('/{id}/status', [GuestComplaintController::class, 'updateStatus']);
+    });
+
     // Units (for per-unit filtering + management)
     Route::prefix('units')->group(function () {
         Route::get('/', [UnitController::class, 'index']);
@@ -129,6 +137,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
             Route::get('/today', [SatpamJadwalController::class, 'today']);
             Route::get('/upcoming', [SatpamJadwalController::class, 'upcoming']);
             Route::get('/{id}', [SatpamJadwalController::class, 'show']);
+            Route::post('/', [SatpamJadwalController::class, 'store']);
+            Route::delete('/{id}', [SatpamJadwalController::class, 'destroy']);
         });
         Route::prefix('laporan')->group(function () {
             Route::get('/', [SatpamLaporanController::class, 'index']);
@@ -146,6 +156,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
             Route::get('/today', [ObJadwalController::class, 'today']);
             Route::get('/upcoming', [ObJadwalController::class, 'upcoming']);
             Route::get('/{id}', [ObJadwalController::class, 'show']);
+            Route::post('/', [ObJadwalController::class, 'store']);
+            Route::delete('/{id}', [ObJadwalController::class, 'destroy']);
         });
         Route::prefix('laporan')->group(function () {
             Route::get('/', [ObLaporanController::class, 'index']);
@@ -163,6 +175,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
             Route::get('/today', [TokoJadwalController::class, 'today']);
             Route::get('/upcoming', [TokoJadwalController::class, 'upcoming']);
             Route::get('/{id}', [TokoJadwalController::class, 'show']);
+            Route::post('/', [TokoJadwalController::class, 'store']);
+            Route::delete('/{id}', [TokoJadwalController::class, 'destroy']);
         });
         Route::prefix('laporan')->group(function () {
             Route::get('/', [TokoLaporanController::class, 'index']);

@@ -23,64 +23,78 @@ class PenilaianController extends Controller
     {
         try {
             $user = $request->user();
-            $query = Penilaian::with(['petugas', 'penilai']);
+            $cacheKey = 'api_penilaian_index_' . $user->id . '_' . md5(serialize($request->all()));
 
-            // Role-based filtering - Petugas only sees their own evaluations
-            if ($user->hasRole('petugas')) {
-                $query->where('petugas_id', $user->id);
-            }
+            $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($request, $user) {
+                $query = Penilaian::with(['petugas', 'penilai']);
 
-            // Filter by petugas (admin/supervisor only)
-            if ($request->has('petugas_id') && !$user->hasRole('petugas')) {
-                $query->where('petugas_id', $request->petugas_id);
-            }
+                // Role-based filtering - Petugas only sees their own evaluations
+                if ($user->hasRole('petugas')) {
+                    $query->where('petugas_id', $user->id);
+                }
 
-            // Filter by period
-            if ($request->has('periode_bulan')) {
-                $query->where('periode_bulan', $request->periode_bulan);
-            }
+                // Filter by petugas (admin/supervisor only)
+                if ($request->has('petugas_id') && !$user->hasRole('petugas')) {
+                    $query->where('petugas_id', $request->petugas_id);
+                }
 
-            if ($request->has('periode_tahun')) {
-                $query->where('periode_tahun', $request->periode_tahun);
-            }
+                // Filter by period
+                if ($request->has('periode_bulan')) {
+                    $query->where('periode_bulan', $request->periode_bulan);
+                }
 
-            // Filter by category
-            if ($request->has('kategori')) {
-                $query->where('kategori', $request->kategori);
-            }
+                if ($request->has('periode_tahun')) {
+                    $query->where('periode_tahun', $request->periode_tahun);
+                }
 
-            // Filter by minimum score
-            if ($request->has('min_rata_rata')) {
-                $query->where('rata_rata', '>=', $request->min_rata_rata);
-            }
+                // Filter by category
+                if ($request->has('kategori')) {
+                    $query->where('kategori', $request->kategori);
+                }
 
-            // Pagination
-            $perPage = $request->get('per_page', 15);
-            if ($perPage === 'all') {
+                // Filter by minimum score
+                if ($request->has('min_rata_rata')) {
+                    $query->where('rata_rata', '>=', $request->min_rata_rata);
+                }
+
+                // Pagination
+                $perPage = $request->get('per_page', 15);
+                if ($perPage === 'all') {
+                    $penilaian = $query->orderBy('periode_tahun', 'desc')
+                                       ->orderBy('periode_bulan', 'desc')
+                                       ->get();
+
+                    return [
+                        'type' => 'all',
+                        'data' => PenilaianResource::collection($penilaian)->resolve(),
+                    ];
+                }
+
                 $penilaian = $query->orderBy('periode_tahun', 'desc')
-                                   ->orderBy('periode_bulan', 'desc')
-                                   ->get();
+                                  ->orderBy('periode_bulan', 'desc')
+                                  ->paginate($perPage);
 
-                return $this->successResponse(
-                    PenilaianResource::collection($penilaian),
-                    'Evaluations retrieved successfully'
-                );
+                return [
+                    'type' => 'paginated',
+                    'data' => PenilaianResource::collection($penilaian->items())->resolve(),
+                    'pagination' => [
+                        'current_page' => $penilaian->currentPage(),
+                        'last_page' => $penilaian->lastPage(),
+                        'per_page' => $penilaian->perPage(),
+                        'total' => $penilaian->total(),
+                        'from' => $penilaian->firstItem(),
+                        'to' => $penilaian->lastItem(),
+                    ]
+                ];
+            });
+
+            if ($result['type'] === 'all') {
+                return $this->successResponse($result['data'], 'Evaluations retrieved successfully');
             }
-
-            $penilaian = $query->orderBy('periode_tahun', 'desc')
-                              ->orderBy('periode_bulan', 'desc')
-                              ->paginate($perPage);
 
             return $this->successResponse([
-                'data' => PenilaianResource::collection($penilaian->items()),
-                'pagination' => [
-                    'current_page' => $penilaian->currentPage(),
-                    'last_page' => $penilaian->lastPage(),
-                    'per_page' => $penilaian->perPage(),
-                    'total' => $penilaian->total(),
-                    'from' => $penilaian->firstItem(),
-                    'to' => $penilaian->lastItem(),
-                ]
+                'data' => $result['data'],
+                'pagination' => $result['pagination']
             ], 'Evaluations retrieved successfully');
 
         } catch (\Exception $e) {
@@ -189,6 +203,8 @@ class PenilaianController extends Controller
             // Load relationships
             $penilaian->load(['petugas', 'penilai']);
 
+            \Illuminate\Support\Facades\Cache::flush();
+
             return $this->successResponse(
                 new PenilaianResource($penilaian),
                 'Evaluation created successfully',
@@ -277,6 +293,8 @@ class PenilaianController extends Controller
             // Reload relationships
             $penilaian->load(['petugas', 'penilai']);
 
+            \Illuminate\Support\Facades\Cache::flush();
+
             return $this->successResponse(
                 new PenilaianResource($penilaian),
                 'Evaluation updated successfully'
@@ -305,6 +323,8 @@ class PenilaianController extends Controller
 
             $penilaian = Penilaian::findOrFail($id);
             $penilaian->delete();
+
+            \Illuminate\Support\Facades\Cache::flush();
 
             return $this->successResponse(
                 null,

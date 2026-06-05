@@ -3,9 +3,17 @@ import { Alert, Pressable, ScrollView, Text, View, ActivityIndicator } from "rea
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AdminScreen, EmptyState } from "@/components/admin/AdminScreen";
+import { EntityFormModal, type FieldDef, type FormValues } from "@/components/admin/EntityFormModal";
 import { useIsTablet } from "@/lib/useIsTablet";
-import { useFieldJadwalList } from "@/lib/hooks";
+import {
+  useFieldJadwalList,
+  useUsers,
+  useLokasi,
+  useCreateFieldJadwal,
+  useDeleteFieldJadwal,
+} from "@/lib/hooks";
 import type { FieldScope } from "@/lib/services";
+import { ApiError } from "@/lib/api";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -55,12 +63,41 @@ const STATUS_TONE: Record<
 
 type Filter = "all" | JadwalItem["status"];
 
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function showApiError(err: unknown) {
+  const msg =
+    err instanceof ApiError && err.errors
+      ? Object.values(err.errors).flat().join("\n")
+      : err instanceof Error
+        ? err.message
+        : "Terjadi kesalahan.";
+  Alert.alert("Gagal", msg);
+}
+
 export function JadwalTimScreen({ config }: { config: TimConfig }) {
   const isTablet = useIsTablet();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const { data: rawJadwal, isLoading } = useFieldJadwalList(config.scope);
+  const { data: rawJadwal, isLoading, refetch } = useFieldJadwalList(config.scope);
+
+  const role =
+    config.scope === "ob"
+      ? "office_boy"
+      : config.scope === "toko"
+        ? "petugas_toko"
+        : "satpam";
+
+  const { data: petugasList } = useUsers({ role, active_only: true });
+  const { data: lokasiList } = useLokasi();
+
+  const createMutation = useCreateFieldJadwal(config.scope);
+  const deleteMutation = useDeleteFieldJadwal(config.scope);
 
   const data = useMemo<JadwalItem[]>(() => {
     if (!rawJadwal) return [];
@@ -112,12 +149,78 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
     { key: "missed", label: "Terlewat", count: counts.missed },
   ];
 
-  const handleKelola = () => {
-    Alert.alert(
-      "Kelola Jadwal",
-      "Penjadwalan & pengelolaan petugas selengkapnya dapat diatur melalui dashboard web Filament admin."
+  const fields = useMemo<FieldDef[]>(
+    () => [
+      {
+        key: "petugas_id",
+        label: "Petugas",
+        type: "select",
+        required: true,
+        options: (petugasList ?? []).map((u) => ({ value: u.id, label: u.name })),
+      },
+      {
+        key: "lokasi_id",
+        label: "Lokasi",
+        type: "select",
+        required: true,
+        options: (lokasiList ?? []).map((l) => ({
+          value: l.id,
+          label: l.lantai ? `${l.nama_lokasi} - ${l.lantai}` : l.nama_lokasi,
+        })),
+      },
+      { key: "tanggal", label: "Tanggal", type: "text", required: true, placeholder: "YYYY-MM-DD" },
+      {
+        key: "shift",
+        label: "Shift",
+        type: "select",
+        required: true,
+        options: config.shifts.map((s) => ({ value: s.toLowerCase(), label: s })),
+      },
+      { key: "jam_mulai", label: "Jam Mulai", type: "text", required: true, placeholder: "08:00" },
+      { key: "jam_selesai", label: "Jam Selesai", type: "text", required: true, placeholder: "10:00" },
+      { key: "catatan", label: "Catatan", type: "textarea" },
+    ],
+    [petugasList, lokasiList, config.shifts]
+  );
+
+  const onSubmit = (values: FormValues) => {
+    createMutation.mutate(
+      {
+        petugas_id: Number(values.petugas_id),
+        lokasi_id: Number(values.lokasi_id),
+        tanggal: String(values.tanggal),
+        shift: String(values.shift),
+        jam_mulai: String(values.jam_mulai),
+        jam_selesai: String(values.jam_selesai),
+        catatan: values.catatan ? String(values.catatan) : undefined,
+      },
+      {
+        onSuccess: () => {
+          setModalOpen(false);
+          Alert.alert("Berhasil", "Jadwal dibuat.");
+          refetch();
+        },
+        onError: showApiError,
+      }
     );
   };
+
+  const confirmDelete = (id: number, name: string) =>
+    Alert.alert("Hapus Jadwal", `Hapus jadwal untuk ${name}?`, [
+      { text: "Batal", style: "cancel" },
+      {
+        text: "Hapus",
+        style: "destructive",
+        onPress: () =>
+          deleteMutation.mutate(id, {
+            onSuccess: () => {
+              Alert.alert("Berhasil", "Jadwal dihapus.");
+              refetch();
+            },
+            onError: showApiError,
+          }),
+      },
+    ]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -153,8 +256,8 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
         searchValue={q}
         onSearchChange={setQ}
         searchPlaceholder={`Cari ${config.noun} / petugas...`}
-        onAdd={handleKelola}
-        addLabel="Kelola"
+        onAdd={() => setModalOpen(true)}
+        addLabel="Buat"
       >
         {/* Filter pills */}
         <View className="border-b border-surface-variant bg-surface">
@@ -223,7 +326,7 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
         </View>
 
         <ScrollView
-          contentContainerStyle={{ padding: isTablet ? 32 : 20, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: isTablet ? 32 : 20, paddingBottom: 130 }}
         >
           {isLoading ? (
             <View className="items-center py-20">
@@ -241,10 +344,7 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
                 const formattedDate = formatDate(j.tanggal);
                 return (
                   <View key={j.id} className={isTablet ? "w-1/2 p-2" : ""}>
-                    <Pressable
-                      onPress={handleKelola}
-                      className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant active:opacity-80"
-                    >
+                    <View className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant">
                       <View className="flex-row items-center gap-3">
                         <View
                           className="w-14 h-14 rounded-xl items-center justify-center"
@@ -321,21 +421,15 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
                             {tone.label}
                           </Text>
                         </View>
-                        <Pressable onPress={handleKelola} className="flex-row items-center gap-1 active:opacity-70">
-                          <Text
-                            className="text-xs font-bold"
-                            style={{ color: config.color }}
-                          >
-                            Kelola
-                          </Text>
-                          <Ionicons
-                            name="chevron-forward"
-                            size={12}
-                            color={config.color}
-                          />
+                        <Pressable
+                          onPress={() => confirmDelete(j.id, j.petugas)}
+                          className="flex-row items-center gap-1 active:opacity-70"
+                        >
+                          <Ionicons name="trash-outline" size={14} color="#d62828" />
+                          <Text className="text-error text-xs font-bold">Hapus</Text>
                         </Pressable>
                       </View>
-                    </Pressable>
+                    </View>
                   </View>
                 );
               })}
@@ -343,6 +437,22 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
           )}
         </ScrollView>
       </AdminScreen>
+
+      <EntityFormModal
+        visible={modalOpen}
+        title={`Buat Jadwal ${config.title}`}
+        fields={fields}
+        initialValues={{
+          tanggal: todayStr(),
+          jam_mulai: "08:00",
+          jam_selesai: "10:00",
+          shift: config.shifts[0]?.toLowerCase() ?? "pagi",
+        }}
+        submitting={createMutation.isPending}
+        submitLabel="Buat Jadwal"
+        onCancel={() => setModalOpen(false)}
+        onSubmit={onSubmit}
+      />
     </>
   );
 }

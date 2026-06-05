@@ -5,6 +5,8 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ROLE_LABEL } from "@/constants/role";
 import { useIsTablet } from "@/lib/useIsTablet";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { usePendingApprovals, useNotifications } from "@/lib/hooks";
+import { useMemo } from "react";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -241,10 +243,45 @@ export default function MenuScreen() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "super_admin";
 
-  const visibleGroups = MENU_GROUPS.map((g) => ({
-    ...g,
-    items: g.items.filter((it) => !it.adminOnly || isAdmin),
-  })).filter((g) => g.items.length > 0);
+  // --- Fetch live pending approvals count for each role group ---
+  const approvalsKebersihan = usePendingApprovals("kebersihan");
+  const approvalsSatpam = usePendingApprovals("satpam");
+  const approvalsOb = usePendingApprovals("ob");
+  const approvalsToko = usePendingApprovals("toko");
+  const notificationsQuery = useNotifications();
+
+  const visibleGroups = useMemo(() => {
+    const counts = {
+      "approval-kebersihan": approvalsKebersihan.data?.length ?? 0,
+      "approval-satpam": approvalsSatpam.data?.length ?? 0,
+      "approval-ob": approvalsOb.data?.length ?? 0,
+      "approval-toko": approvalsToko.data?.length ?? 0,
+      "keluhan": (notificationsQuery.data?.items ?? []).filter(
+        (n) => n.type === "guest_complaint"
+      ).length,
+    };
+
+    return MENU_GROUPS.map((g) => ({
+      ...g,
+      items: g.items
+        .filter((it) => !it.adminOnly || isAdmin)
+        .map((it) => ({
+          ...it,
+          badge: it.key in counts 
+            ? (counts[it.key as keyof typeof counts] > 0 
+                ? counts[it.key as keyof typeof counts] 
+                : undefined)
+            : undefined,
+        })),
+    })).filter((g) => g.items.length > 0);
+  }, [
+    isAdmin,
+    approvalsKebersihan.data,
+    approvalsSatpam.data,
+    approvalsOb.data,
+    approvalsToko.data,
+    notificationsQuery.data,
+  ]);
 
   const handlePress = (item: MenuTileData) => {
     if (item.href) {

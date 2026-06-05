@@ -16,6 +16,7 @@ import {
   fieldService,
   userService,
   notificationService,
+  guestComplaintService,
   type FieldScope,
   type ActivityReportFilters as ReportFilters,
   type LokasiInput,
@@ -399,5 +400,59 @@ export const useDeleteJadwal = () => {
   return useMutation({
     mutationFn: (id: number) => jadwalService.remove(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.jadwal }),
+  });
+};
+
+/* --------------------------------------------------- guest complaints */
+
+export const useGuestComplaints = (params?: { status?: string }) =>
+  useQuery({
+    queryKey: ["guest-complaints", params ?? {}],
+    queryFn: () => guestComplaintService.list(params),
+  });
+
+export const useAssignComplaint = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: number; assignedTo: number }) =>
+      guestComplaintService.assign(vars.id, vars.assignedTo),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guest-complaints"] });
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+};
+
+export const useUpdateComplaintStatus = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: number; status: string; catatanPenanganan?: string }) =>
+      guestComplaintService.updateStatus(vars.id, vars.status, vars.catatanPenanganan),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["guest-complaints"] });
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+};
+
+/* ---------------------------------------------------- field schedule CRUD */
+
+export const useCreateFieldJadwal = (scope: FieldScope) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => fieldService.jadwalCreate(scope, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["field", scope, "jadwal"] });
+    },
+  });
+};
+
+export const useDeleteFieldJadwal = (scope: FieldScope) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => fieldService.jadwalDelete(scope, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["field", scope, "jadwal"] });
+    },
   });
 };

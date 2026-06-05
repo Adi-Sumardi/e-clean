@@ -47,41 +47,45 @@ class JadwalKebersihanController extends Controller
     {
         try {
             $user = $request->user();
-            $query = JadwalKebersihan::with(['lokasi', 'petugas']);
+            $cacheKey = 'api_jadwal_index_' . $user->id . '_' . md5(serialize($request->all()));
 
-            // Petugas only sees their own schedules
-            if ($user->hasRole('petugas')) {
-                $query->where('petugas_id', $user->id);
-            }
+            $schedules = \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($request, $user) {
+                $query = JadwalKebersihan::with(['lokasi', 'petugas']);
 
-            // Filter by date range
-            if ($request->has('start_date') && $request->has('end_date')) {
-                $query->whereBetween('tanggal', [
-                    $request->start_date,
-                    $request->end_date
-                ]);
-            } elseif ($request->has('date')) {
-                // Filter by specific date
-                $query->whereDate('tanggal', $request->date);
-            } else {
-                // Default: current month
-                $query->whereMonth('tanggal', Carbon::now()->month)
-                      ->whereYear('tanggal', Carbon::now()->year);
-            }
+                // Petugas only sees their own schedules
+                if ($user->hasRole('petugas')) {
+                    $query->where('petugas_id', $user->id);
+                }
 
-            // Filter by status
-            if ($request->has('status')) {
-                $query->where('status', $request->status);
-            }
+                // Filter by date range
+                if ($request->has('start_date') && $request->has('end_date')) {
+                    $query->whereBetween('tanggal', [
+                        $request->start_date,
+                        $request->end_date
+                    ]);
+                } elseif ($request->has('date')) {
+                    // Filter by specific date
+                    $query->whereDate('tanggal', $request->date);
+                } else {
+                    // Default: current month
+                    $query->whereMonth('tanggal', Carbon::now()->month)
+                          ->whereYear('tanggal', Carbon::now()->year);
+                }
 
-            // Filter by shift
-            if ($request->has('shift')) {
-                $query->where('shift', $request->shift);
-            }
+                // Filter by status
+                if ($request->has('status')) {
+                    $query->where('status', $request->status);
+                }
 
-            $schedules = $query->orderBy('tanggal')
-                              ->orderBy('jam_mulai')
-                              ->get();
+                // Filter by shift
+                if ($request->has('shift')) {
+                    $query->where('shift', $request->shift);
+                }
+
+                return $query->orderBy('tanggal')
+                             ->orderBy('jam_mulai')
+                             ->get();
+            });
 
             return $this->successResponse(
                 JadwalKebersihanResource::collection($schedules),
@@ -193,6 +197,8 @@ class JadwalKebersihanController extends Controller
             $jadwal = JadwalKebersihan::create($validated);
             $jadwal->load(['lokasi', 'petugas']);
 
+            \Illuminate\Support\Facades\Cache::flush();
+
             return $this->successResponse(
                 new JadwalKebersihanResource($jadwal),
                 'Schedule created successfully',
@@ -220,6 +226,8 @@ class JadwalKebersihanController extends Controller
             $validated = $request->validate($this->scheduleRules(partial: true));
             $jadwal->update($validated);
 
+            \Illuminate\Support\Facades\Cache::flush();
+
             return $this->successResponse(
                 new JadwalKebersihanResource($jadwal->fresh(['lokasi', 'petugas'])),
                 'Schedule updated successfully'
@@ -244,6 +252,8 @@ class JadwalKebersihanController extends Controller
             }
 
             $jadwal->delete();
+
+            \Illuminate\Support\Facades\Cache::flush();
 
             return $this->successResponse(null, 'Schedule deleted successfully');
         } catch (\Exception $e) {

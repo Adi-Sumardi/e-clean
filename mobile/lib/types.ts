@@ -218,3 +218,31 @@ export function primaryRole(roles: string[] | undefined): UserRole {
   }
   return (roles[0] as UserRole) ?? "petugas";
 }
+
+export interface GuestComplaint {
+  id: number;
+  nama_pelapor: string;
+  email_pelapor?: string | null;
+  telepon_pelapor?: string | null;
+  jenis_keluhan: string;
+  deskripsi_keluhan: string;
+  foto_keluhan?: string | null;
+  status: "pending" | "in_progress" | "resolved" | "rejected";
+  assigned_to?: number | null;
+  assigned_at?: string | null;
+  handled_by?: number | null;
+  handled_at?: string | null;
+  catatan_penanganan?: string | null;
+  foto_penanganan?: string | null;
+  created_at: string;
+  updated_at: string;
+  lokasi?: Lokasi;
+  assignee?: {
+    id: number;
+    name: string;
+  };
+  handler?: {
+    id: number;
+    name: string;
+  };
+}
