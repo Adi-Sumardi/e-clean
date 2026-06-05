@@ -133,6 +133,7 @@ class JadwalKebersihanTest extends TestCase
 
         JadwalKebersihan::factory()->count(5)->create([
             'lokasi_id' => $this->lokasi->id,
+            'tanggal' => today(),
         ]);
 
         $response = $this->getJson('/api/v1/jadwal');

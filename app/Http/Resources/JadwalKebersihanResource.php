@@ -16,6 +16,8 @@ class JadwalKebersihanResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'petugas_id' => $this->petugas_id,
+            'lokasi_id' => $this->lokasi_id,
             'tanggal' => $this->tanggal?->format('Y-m-d'),
             'shift' => $this->shift,
             'jam_mulai' => $this->jam_mulai?->format('H:i'),

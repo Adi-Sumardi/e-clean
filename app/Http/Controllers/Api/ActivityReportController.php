@@ -416,16 +416,20 @@ class ActivityReportController extends Controller
     {
         try {
             $user = $request->user();
-            $query = ActivityReport::query();
+            $report = ActivityReport::findOrFail($id);
 
             // Role-based authorization
             if ($user->hasRole('petugas')) {
-                // Petugas can only delete draft reports
-                $query->where('petugas_id', $user->id)
-                      ->where('status', 'draft');
-            }
+                // If it doesn't belong to the petugas, return 404 Not Found to prevent enumeration
+                if ($report->petugas_id !== $user->id) {
+                    return $this->notFoundResponse('Activity report not found');
+                }
 
-            $report = $query->findOrFail($id);
+                // If it belongs to them but is not a draft, return 403 Forbidden
+                if ($report->status !== 'draft') {
+                    return $this->forbiddenResponse('You can only delete draft reports');
+                }
+            }
 
             // Delete associated photos
             if (is_array($report->foto_sebelum)) {
@@ -447,7 +451,7 @@ class ActivityReportController extends Controller
             );
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->notFoundResponse('Activity report not found or unauthorized to delete');
+            return $this->notFoundResponse('Activity report not found');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to delete activity report: ' . $e->getMessage(), 500);
         }
@@ -495,6 +499,12 @@ class ActivityReportController extends Controller
                 'submitted_reports' => $submittedReports,
                 'approved_reports' => $approvedReports,
                 'rejected_reports' => $rejectedReports,
+                'by_status' => [
+                    'draft' => $draftReports,
+                    'submitted' => $submittedReports,
+                    'approved' => $approvedReports,
+                    'rejected' => $rejectedReports,
+                ],
                 'average_rating' => $averageRating ? round($averageRating, 2) : null,
             ], 'Statistics retrieved successfully');
 

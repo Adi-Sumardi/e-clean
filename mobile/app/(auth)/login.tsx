@@ -164,18 +164,6 @@ export default function LoginScreen() {
             />
 
             <SafeAreaView edges={["top"]} style={{ width: "100%" }}>
-              <View style={{ flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: 24, marginBottom: -12 }}>
-                <Pressable
-                  onPress={() => setShowConfig(true)}
-                  style={({ pressed }) => ({
-                    padding: 8,
-                    backgroundColor: pressed ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.1)",
-                    borderRadius: 9999,
-                  })}
-                >
-                  <Ionicons name="settings-outline" size={24} color="#ffffff" />
-                </Pressable>
-              </View>
               <View className="items-center px-6">
                 <Pressable
                   onLongPress={() => setShowConfig(true)}

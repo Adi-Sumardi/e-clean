@@ -58,7 +58,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://172.16.5.181:8000",
+      "apiUrl": "https://css.kopkaryapi.id",
       "router": {},
       "eas": {
         "projectId": "8a36b483-556a-4dfc-8eae-5937ea1d39d8"

@@ -102,15 +102,15 @@ class ActivityReportResourceTest extends TestCase
     public function activity_report_status_can_be_filtered()
     {
         ActivityReport::factory()->create(['status' => 'approved']);
-        ActivityReport::factory()->create(['status' => 'pending']);
+        ActivityReport::factory()->create(['status' => 'submitted']);
         ActivityReport::factory()->create(['status' => 'rejected']);
 
         $approved = ActivityReport::where('status', 'approved')->count();
-        $pending = ActivityReport::where('status', 'pending')->count();
+        $submitted = ActivityReport::where('status', 'submitted')->count();
         $rejected = ActivityReport::where('status', 'rejected')->count();
 
         $this->assertEquals(1, $approved);
-        $this->assertEquals(1, $pending);
+        $this->assertEquals(1, $submitted);
         $this->assertEquals(1, $rejected);
     }
 }

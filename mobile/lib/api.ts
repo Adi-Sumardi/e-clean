@@ -10,7 +10,7 @@ export async function getApiUrl(): Promise<string> {
   return (
     process.env.EXPO_PUBLIC_API_URL ??
     (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
-    "http://10.0.2.2:8000"
+    "https://css.kopkaryapi.id"
   );
 }
 
@@ -34,7 +34,7 @@ export interface ApiEnvelope<T> {
 
 export const api = axios.create({
   // Initial fallback, request interceptor overrides this dynamically
-  baseURL: "http://10.0.2.2:8000/api/v1",
+  baseURL: "https://css.kopkaryapi.id/api/v1",
   timeout: 20000,
   headers: { Accept: "application/json" },
 });

@@ -100,14 +100,12 @@ class JadwalKebersihanController extends Controller
     {
         try {
             $user = $request->user();
-            $query = JadwalKebersihan::with(['lokasi', 'petugas']);
+            $schedule = JadwalKebersihan::with(['lokasi', 'petugas'])->findOrFail($id);
 
             // Petugas can only view their own schedules
-            if ($user->hasRole('petugas')) {
-                $query->where('petugas_id', $user->id);
+            if ($user->hasRole('petugas') && $schedule->petugas_id !== $user->id) {
+                return $this->forbiddenResponse('You are not allowed to view this schedule.');
             }
-
-            $schedule = $query->findOrFail($id);
 
             return $this->successResponse(
                 new JadwalKebersihanResource($schedule),

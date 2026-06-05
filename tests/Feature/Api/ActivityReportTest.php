@@ -55,7 +55,10 @@ class ActivityReportTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    '*' => ['id', 'petugas_id', 'lokasi_id', 'tanggal', 'status'],
+                    'data' => [
+                        '*' => ['id', 'petugas_id', 'lokasi_id', 'tanggal', 'status'],
+                    ],
+                    'pagination' => ['current_page', 'last_page', 'per_page', 'total'],
                 ],
             ]);
     }
@@ -66,7 +69,7 @@ class ActivityReportTest extends TestCase
         Sanctum::actingAs($this->petugas);
 
         $response = $this->postJson('/api/v1/activity-reports', [
-            'jadwal_kebersihan_id' => $this->jadwal->id,
+            'jadwal_id' => $this->jadwal->id,
             'lokasi_id' => $this->lokasi->id,
             'tanggal' => today()->format('Y-m-d'),
             'shift' => 'pagi',
@@ -75,8 +78,8 @@ class ActivityReportTest extends TestCase
             'kegiatan' => 'Pembersihan ruang kelas',
             'kondisi_awal' => 'Kotor',
             'kondisi_akhir' => 'Bersih',
-            'foto_sebelum' => UploadedFile::fake()->image('before.jpg'),
-            'foto_sesudah' => UploadedFile::fake()->image('after.jpg'),
+            'foto_sebelum' => [UploadedFile::fake()->image('before.jpg', 150, 150)],
+            'foto_sesudah' => [UploadedFile::fake()->image('after.jpg', 150, 150)],
             'gps_latitude' => -6.200000,
             'gps_longitude' => 106.816666,
             'status' => 'draft',
@@ -107,7 +110,6 @@ class ActivityReportTest extends TestCase
 
         $response = $this->postJson("/api/v1/activity-reports/{$report->id}", [
             'status' => 'submitted',
-            '_method' => 'PUT',
         ]);
 
         $response->assertStatus(200);
@@ -131,7 +133,6 @@ class ActivityReportTest extends TestCase
             'status' => 'approved',
             'rating' => 4,
             'catatan_supervisor' => 'Good work!',
-            '_method' => 'PUT',
         ]);
 
         $response->assertStatus(200);
@@ -155,7 +156,6 @@ class ActivityReportTest extends TestCase
         $response = $this->postJson("/api/v1/activity-reports/{$report->id}", [
             'status' => 'rejected',
             'rejected_reason' => 'Incomplete photos',
-            '_method' => 'PUT',
         ]);
 
         $response->assertStatus(200);
