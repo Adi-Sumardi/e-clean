@@ -13,6 +13,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { syncQueue } from "@/lib/offline-queue";
+import { useFonts } from "expo-font";
+import { Ionicons, MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
 import AnimatedSplash from "@/components/AnimatedSplash";
 
 const queryClient = new QueryClient({
@@ -46,11 +48,25 @@ function RouterGate() {
 export default function RootLayout() {
   const hydrate = useAuthStore((s) => s.hydrate);
   const status = useAuthStore((s) => s.status);
-  const [showSplash, setShowSplash] = useState(true);
+  
+  const [fontsLoaded, fontError] = useFonts({
+    ...Ionicons.font,
+    ...MaterialCommunityIcons.font,
+    ...FontAwesome.font,
+  });
+
+  const [animationFinished, setAnimationFinished] = useState(false);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // Log font error if any
+  useEffect(() => {
+    if (fontError) {
+      console.warn("Failed to load fonts:", fontError);
+    }
+  }, [fontError]);
 
   // Flush any queued offline report submissions on launch and whenever the
   // app returns to the foreground (best-effort; safe when there's nothing).
@@ -64,8 +80,10 @@ export default function RootLayout() {
   }, [status]);
 
   const handleSplashFinish = useCallback(() => {
-    setShowSplash(false);
+    setAnimationFinished(true);
   }, []);
+
+  const showActiveSplash = (!fontsLoaded && !fontError) || !animationFinished;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -73,9 +91,10 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <StatusBar style="dark" />
           <RouterGate />
-          {showSplash && <AnimatedSplash onFinish={handleSplashFinish} />}
+          {showActiveSplash && <AnimatedSplash onFinish={handleSplashFinish} />}
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }
+
