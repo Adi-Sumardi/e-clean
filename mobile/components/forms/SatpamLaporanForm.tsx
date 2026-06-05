@@ -6,7 +6,7 @@ import { FormSelect, type SelectOption } from "@/components/FormSelect";
 import { FormField } from "@/components/FormField";
 import { PhotoUpload, type PhotoItem } from "@/components/PhotoUpload";
 import { useIsTablet } from "@/lib/useIsTablet";
-import { useLokasi, useCreateFieldLaporan } from "@/lib/hooks";
+import { useLokasi, useCreateFieldLaporan, useFieldJadwalToday } from "@/lib/hooks";
 import { ApiError } from "@/lib/api";
 
 const SHIFT_OPTIONS: SelectOption[] = [
@@ -34,6 +34,7 @@ const nowTime = () => {
 export function SatpamLaporanForm() {
   const isTablet = useIsTablet();
   const [posId, setPosId] = useState<number | string | null>(null);
+  const [jadwalId, setJadwalId] = useState<number | string | null>(null);
   const [shift, setShift] = useState<number | string | null>("pagi");
   const [kondisi, setKondisi] = useState<number | string | null>("aman");
   const [tanggal, setTanggal] = useState(todayStr());
@@ -43,6 +44,7 @@ export function SatpamLaporanForm() {
   const [foto, setFoto] = useState<PhotoItem[]>([]);
 
   const lokasiQuery = useLokasi();
+  const jadwalQuery = useFieldJadwalToday("satpam");
   const createLaporan = useCreateFieldLaporan("satpam");
   const submitting = createLaporan.isPending;
 
@@ -55,8 +57,30 @@ export function SatpamLaporanForm() {
     [lokasiQuery.data]
   );
 
+  const jadwalOptions = useMemo<SelectOption[]>(
+    () =>
+      (jadwalQuery.data ?? []).map((j) => ({
+        value: j.id,
+        label: `${j.shift} · ${j.jam_mulai}${
+          j.lokasi ? ` · ${j.lokasi.nama_lokasi}` : ""
+        }`,
+      })),
+    [jadwalQuery.data]
+  );
+
+  const onJadwalChange = (val: number | string) => {
+    setJadwalId(val);
+    const j = (jadwalQuery.data ?? []).find((x) => x.id === val);
+    if (j?.lokasi?.id) {
+      setPosId(j.lokasi.id);
+    } else {
+      setPosId(null);
+    }
+  };
+
   const canSubmit =
     !!posId &&
+    !!jadwalId &&
     !!shift &&
     !!kondisi &&
     tanggal.length > 0 &&
@@ -69,6 +93,7 @@ export function SatpamLaporanForm() {
     createLaporan.mutate(
       {
         fields: {
+          jadwal_id: jadwalId ? Number(jadwalId) : undefined,
           lokasi_id: Number(posId),
           tanggal,
           jam_mulai: jamPatroli,
@@ -83,6 +108,8 @@ export function SatpamLaporanForm() {
         onSuccess: (result) => {
           setCatatan("");
           setTindakLanjut("");
+          setJadwalId(null);
+          setPosId(null);
           setFoto([]);
           Alert.alert(
             "Berhasil",
@@ -115,14 +142,30 @@ export function SatpamLaporanForm() {
         Informasi Patroli
       </Text>
       <FormSelect
+        label="Jadwal Terkait"
+        required
+        icon="calendar-outline"
+        value={jadwalId}
+        options={jadwalOptions}
+        onChange={onJadwalChange}
+        placeholder={
+          jadwalQuery.isLoading
+            ? "Memuat jadwal..."
+            : jadwalOptions.length === 0
+              ? "Tidak ada jadwal hari ini"
+              : "Pilih jadwal..."
+        }
+      />
+      <FormSelect
         label="Pos / Lokasi Patroli"
         required
         icon="location-outline"
         value={posId}
         options={posOptions}
         onChange={setPosId}
+        disabled={true}
         placeholder={
-          lokasiQuery.isLoading ? "Memuat lokasi..." : "Pilih lokasi..."
+          jadwalId ? "Otomatis dari jadwal" : "Pilih jadwal terlebih dahulu"
         }
       />
       <FormSelect

@@ -6,7 +6,7 @@ import { FormSelect, type SelectOption } from "@/components/FormSelect";
 import { FormField } from "@/components/FormField";
 import { PhotoUpload, type PhotoItem } from "@/components/PhotoUpload";
 import { useIsTablet } from "@/lib/useIsTablet";
-import { useLokasi, useCreateFieldLaporan } from "@/lib/hooks";
+import { useLokasi, useCreateFieldLaporan, useFieldJadwalToday } from "@/lib/hooks";
 import { ApiError } from "@/lib/api";
 
 const JENIS_TUGAS: SelectOption[] = [
@@ -31,6 +31,7 @@ const nowTime = () => {
 export function OfficeBoyLaporanForm() {
   const isTablet = useIsTablet();
   const [areaId, setAreaId] = useState<number | string | null>(null);
+  const [jadwalId, setJadwalId] = useState<number | string | null>(null);
   const [jenisTugas, setJenisTugas] = useState<number | string | null>(null);
   const [pemohon, setPemohon] = useState("");
   const [tanggal, setTanggal] = useState(todayStr());
@@ -41,6 +42,7 @@ export function OfficeBoyLaporanForm() {
   const [fotoSesudah, setFotoSesudah] = useState<PhotoItem[]>([]);
 
   const lokasiQuery = useLokasi();
+  const jadwalQuery = useFieldJadwalToday("ob");
   const createLaporan = useCreateFieldLaporan("ob");
   const submitting = createLaporan.isPending;
 
@@ -53,10 +55,32 @@ export function OfficeBoyLaporanForm() {
     [lokasiQuery.data]
   );
 
+  const jadwalOptions = useMemo<SelectOption[]>(
+    () =>
+      (jadwalQuery.data ?? []).map((j) => ({
+        value: j.id,
+        label: `${j.shift} · ${j.jam_mulai}${
+          j.lokasi ? ` · ${j.lokasi.nama_lokasi}` : ""
+        }`,
+      })),
+    [jadwalQuery.data]
+  );
+
+  const onJadwalChange = (val: number | string) => {
+    setJadwalId(val);
+    const j = (jadwalQuery.data ?? []).find((x) => x.id === val);
+    if (j?.lokasi?.id) {
+      setAreaId(j.lokasi.id);
+    } else {
+      setAreaId(null);
+    }
+  };
+
   const isRequest = jenisTugas === "permintaan" || jenisTugas === "antar_dokumen";
 
   const canSubmit =
     !!areaId &&
+    !!jadwalId &&
     !!jenisTugas &&
     tanggal.length > 0 &&
     jamMulai.length > 0 &&
@@ -72,6 +96,7 @@ export function OfficeBoyLaporanForm() {
     createLaporan.mutate(
       {
         fields: {
+          jadwal_id: jadwalId ? Number(jadwalId) : undefined,
           lokasi_id: Number(areaId),
           tanggal,
           jam_mulai: jamMulai,
@@ -91,6 +116,8 @@ export function OfficeBoyLaporanForm() {
           setDeskripsi("");
           setPemohon("");
           setJamSelesai("");
+          setJadwalId(null);
+          setAreaId(null);
           setFotoSebelum([]);
           setFotoSesudah([]);
           Alert.alert(
@@ -124,14 +151,30 @@ export function OfficeBoyLaporanForm() {
         Informasi Tugas
       </Text>
       <FormSelect
+        label="Jadwal Terkait"
+        required
+        icon="calendar-outline"
+        value={jadwalId}
+        options={jadwalOptions}
+        onChange={onJadwalChange}
+        placeholder={
+          jadwalQuery.isLoading
+            ? "Memuat jadwal..."
+            : jadwalOptions.length === 0
+              ? "Tidak ada jadwal hari ini"
+              : "Pilih jadwal..."
+        }
+      />
+      <FormSelect
         label="Area / Ruangan"
         required
         icon="home-outline"
         value={areaId}
         options={areaOptions}
         onChange={setAreaId}
+        disabled={true}
         placeholder={
-          lokasiQuery.isLoading ? "Memuat lokasi..." : "Pilih area..."
+          jadwalId ? "Otomatis dari jadwal" : "Pilih jadwal terlebih dahulu"
         }
       />
       <FormSelect

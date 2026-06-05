@@ -61,7 +61,11 @@ export function PetugasLaporanForm() {
   const onJadwalChange = (val: number | string) => {
     setJadwalId(val);
     const j = (jadwalQuery.data ?? []).find((x) => x.id === val);
-    if (j?.lokasi?.id) setLokasiId(j.lokasi.id);
+    if (j?.lokasi?.id) {
+      setLokasiId(j.lokasi.id);
+    } else {
+      setLokasiId(null);
+    }
   };
 
   const canSubmit =
@@ -95,6 +99,7 @@ export function PetugasLaporanForm() {
           setCatatanPetugas("");
           setJamSelesai("");
           setJadwalId(null);
+          setLokasiId(null);
           setFotoSebelum([]);
           setFotoSesudah([]);
           Alert.alert(
@@ -149,9 +154,9 @@ export function PetugasLaporanForm() {
         value={lokasiId}
         options={lokasiOptions}
         onChange={setLokasiId}
-        disabled={!!jadwalId}
+        disabled={true}
         placeholder={
-          jadwalId ? "Otomatis dari jadwal" : "Pilih jadwal dulu"
+          jadwalId ? "Otomatis dari jadwal" : "Pilih jadwal terlebih dahulu"
         }
       />
       <FormField

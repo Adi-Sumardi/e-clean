@@ -6,7 +6,7 @@ import { FormSelect, type SelectOption } from "@/components/FormSelect";
 import { FormField } from "@/components/FormField";
 import { PhotoUpload, type PhotoItem } from "@/components/PhotoUpload";
 import { useIsTablet } from "@/lib/useIsTablet";
-import { useLokasi, useCreateFieldLaporan } from "@/lib/hooks";
+import { useLokasi, useCreateFieldLaporan, useFieldJadwalToday } from "@/lib/hooks";
 import { ApiError } from "@/lib/api";
 
 const SHIFT_OPTIONS: SelectOption[] = [
@@ -33,6 +33,7 @@ const nowTime = () => {
 export function PetugasTokoLaporanForm() {
   const isTablet = useIsTablet();
   const [lokasiId, setLokasiId] = useState<number | string | null>(null);
+  const [jadwalId, setJadwalId] = useState<number | string | null>(null);
   const [shift, setShift] = useState<number | string | null>("pagi");
   const [tanggal, setTanggal] = useState(todayStr());
   const [jamBuka, setJamBuka] = useState("08:00");
@@ -47,6 +48,7 @@ export function PetugasTokoLaporanForm() {
   const [fotoToko, setFotoToko] = useState<PhotoItem[]>([]);
 
   const lokasiQuery = useLokasi();
+  const jadwalQuery = useFieldJadwalToday("toko");
   const createLaporan = useCreateFieldLaporan("toko");
   const submitting = createLaporan.isPending;
 
@@ -59,8 +61,30 @@ export function PetugasTokoLaporanForm() {
     [lokasiQuery.data]
   );
 
+  const jadwalOptions = useMemo<SelectOption[]>(
+    () =>
+      (jadwalQuery.data ?? []).map((j) => ({
+        value: j.id,
+        label: `${j.shift} · ${j.jam_mulai}${
+          j.lokasi ? ` · ${j.lokasi.nama_lokasi}` : ""
+        }`,
+      })),
+    [jadwalQuery.data]
+  );
+
+  const onJadwalChange = (val: number | string) => {
+    setJadwalId(val);
+    const j = (jadwalQuery.data ?? []).find((x) => x.id === val);
+    if (j?.lokasi?.id) {
+      setLokasiId(j.lokasi.id);
+    } else {
+      setLokasiId(null);
+    }
+  };
+
   const canSubmit =
     !!lokasiId &&
+    !!jadwalId &&
     !!shift &&
     tanggal.length > 0 &&
     jamBuka.length > 0 &&
@@ -92,6 +116,7 @@ export function PetugasTokoLaporanForm() {
     createLaporan.mutate(
       {
         fields: {
+          jadwal_id: jadwalId ? Number(jadwalId) : undefined,
           lokasi_id: Number(lokasiId),
           tanggal,
           jam_mulai: jamBuka,
@@ -111,6 +136,8 @@ export function PetugasTokoLaporanForm() {
           setTotalRetur("");
           setSaldoKasir("");
           setCatatan("");
+          setJadwalId(null);
+          setLokasiId(null);
           setFotoKasir([]);
           setFotoToko([]);
           Alert.alert(
@@ -144,14 +171,30 @@ export function PetugasTokoLaporanForm() {
         Informasi Shift
       </Text>
       <FormSelect
+        label="Jadwal Terkait"
+        required
+        icon="calendar-outline"
+        value={jadwalId}
+        options={jadwalOptions}
+        onChange={onJadwalChange}
+        placeholder={
+          jadwalQuery.isLoading
+            ? "Memuat jadwal..."
+            : jadwalOptions.length === 0
+              ? "Tidak ada jadwal hari ini"
+              : "Pilih jadwal..."
+        }
+      />
+      <FormSelect
         label="Toko / Lokasi"
         required
         icon="storefront-outline"
         value={lokasiId}
         options={lokasiOptions}
         onChange={setLokasiId}
+        disabled={true}
         placeholder={
-          lokasiQuery.isLoading ? "Memuat lokasi..." : "Pilih toko..."
+          jadwalId ? "Otomatis dari jadwal" : "Pilih jadwal terlebih dahulu"
         }
       />
       <FormSelect
