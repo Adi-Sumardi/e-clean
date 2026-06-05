@@ -3,6 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Models\ActivityReport;
+use App\Models\LaporanSatpam;
+use App\Models\LaporanOb;
+use App\Models\LaporanToko;
 use App\Models\Unit;
 use App\Models\User;
 use Filament\Actions\Action;
@@ -24,6 +27,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SupervisorPendingReportsWidget extends TableWidget implements HasForms, HasActions
 {
@@ -44,18 +48,55 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
 
     public function table(Table $table): Table
     {
+        $kebersihan = DB::table('activity_reports')
+            ->select('id', 'tanggal', 'petugas_id', 'lokasi_id', 'status', 'created_at', 'kegiatan as deskripsi', DB::raw("'kebersihan' as service_type"))
+            ->where('status', 'submitted')
+            ->whereNull('deleted_at');
+
+        $satpam = DB::table('laporan_satpam')
+            ->select('id', 'tanggal', 'petugas_id', 'lokasi_id', 'status', 'created_at', 'temuan as deskripsi', DB::raw("'satpam' as service_type"))
+            ->where('status', 'submitted')
+            ->whereNull('deleted_at');
+
+        $ob = DB::table('laporan_ob')
+            ->select('id', 'tanggal', 'petugas_id', 'lokasi_id', 'status', 'created_at', 'uraian as deskripsi', DB::raw("'ob' as service_type"))
+            ->where('status', 'submitted')
+            ->whereNull('deleted_at');
+
+        $toko = DB::table('laporan_toko')
+            ->select('id', 'tanggal', 'petugas_id', 'lokasi_id', 'status', 'created_at', 'catatan_petugas as deskripsi', DB::raw("'toko' as service_type"))
+            ->where('status', 'submitted')
+            ->whereNull('deleted_at');
+
+        $unionQuery = $kebersihan->unionAll($satpam)->unionAll($ob)->unionAll($toko);
+
         return $table
             ->query(
                 ActivityReport::query()
-                    ->where('status', 'submitted')
-                    ->where('tanggal', '>=', \Carbon\Carbon::now()->subDays(30))
+                    ->fromSub($unionQuery, 'all_reports')
                     ->with(['petugas', 'lokasi.unit'])
-                    ->orderBy('tanggal', 'desc')
             )
             ->columns([
                 TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
+                    ->sortable(),
+
+                TextColumn::make('service_type')
+                    ->label('Divisi')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'kebersihan' => 'success',
+                        'satpam' => 'danger',
+                        'ob' => 'warning',
+                        'toko' => 'info',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'kebersihan' => 'Kebersihan',
+                        'satpam' => 'Security (Satpam)',
+                        'ob' => 'Office Boy',
+                        'toko' => 'Petugas Toko',
+                    })
                     ->sortable(),
 
                 TextColumn::make('petugas.name')
@@ -76,11 +117,11 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
                     ->wrap()
                     ->sortable(),
 
-                TextColumn::make('kegiatan')
-                    ->label('Kegiatan')
+                TextColumn::make('deskripsi')
+                    ->label('Kegiatan/Temuan')
                     ->limit(50)
                     ->tooltip(function ($record) {
-                        return $record->kegiatan;
+                        return $record->deskripsi;
                     })
                     ->wrap(),
 
@@ -97,6 +138,21 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
                     ->sortable(),
             ])
             ->filters([
+                SelectFilter::make('service_type')
+                    ->label('Filter Divisi/Layanan')
+                    ->options([
+                        'kebersihan' => 'Kebersihan (Cleaning)',
+                        'satpam' => 'Security (Satpam)',
+                        'ob' => 'Office Boy (OB)',
+                        'toko' => 'Petugas Toko (Toko)',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (!empty($data['value'])) {
+                            $query->where('service_type', $data['value']);
+                        }
+                    })
+                    ->placeholder('Semua Divisi'),
+
                 SelectFilter::make('unit_id')
                     ->label('Filter Unit/Kampus')
                     ->options(
@@ -115,7 +171,7 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
                     ->preload()
                     ->placeholder('Semua Unit'),
             ])
-            ->filtersFormColumns(1)
+            ->filtersFormColumns(2)
             ->emptyStateHeading('Tidak ada laporan yang menunggu approval')
             ->emptyStateDescription('Semua laporan sudah ditinjau!')
             ->emptyStateIcon('heroicon-o-check-badge')
@@ -134,21 +190,43 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
             ->color('primary')
             ->icon('heroicon-o-pencil-square')
             ->fillForm(function (ActivityReport $record) {
+                $actualRecord = match ($record->service_type ?? 'kebersihan') {
+                    'kebersihan' => $record,
+                    'satpam' => LaporanSatpam::find($record->id),
+                    'ob' => LaporanOb::find($record->id),
+                    'toko' => LaporanToko::find($record->id),
+                };
+
+                if (!$actualRecord) {
+                    return [];
+                }
+
                 return [
-                    'petugas_id' => $record->petugas_id,
-                    'lokasi_id' => $record->lokasi_id,
-                    'tanggal' => $record->tanggal,
-                    'jam_mulai' => $record->jam_mulai,
-                    'jam_selesai' => $record->jam_selesai,
-                    'kegiatan' => $record->kegiatan,
-                    'foto_sebelum' => $record->foto_sebelum,
-                    'foto_sesudah' => $record->foto_sesudah,
-                    'catatan_petugas' => $record->catatan_petugas,
-                    'status' => $record->status,
-                    'rating' => $record->rating,
-                    'catatan_supervisor' => $record->catatan_supervisor,
-                    'rejected_reason' => $record->rejected_reason,
-                    'approved_by' => $record->approved_by,
+                    'petugas_id' => $actualRecord->petugas_id,
+                    'lokasi_id' => $actualRecord->lokasi_id,
+                    'tanggal' => $actualRecord->tanggal,
+                    'jam_mulai' => $actualRecord->jam_mulai,
+                    'jam_selesai' => $actualRecord->jam_selesai,
+                    'kegiatan' => match ($record->service_type ?? 'kebersihan') {
+                        'kebersihan' => $actualRecord->kegiatan,
+                        'satpam' => "Kondisi: {$actualRecord->kondisi}\nTemuan: {$actualRecord->temuan}\nTindakan: {$actualRecord->tindakan}",
+                        'ob' => "Jenis Pekerjaan: {$actualRecord->jenis_pekerjaan}\nUraian: {$actualRecord->uraian}",
+                        'toko' => "Kondisi Stok: {$actualRecord->kondisi_stok}\nCatatan Stok: {$actualRecord->catatan_stok}",
+                    },
+                    'foto_sebelum' => match ($record->service_type ?? 'kebersihan') {
+                        'kebersihan', 'ob' => $actualRecord->foto_sebelum,
+                        'satpam', 'toko' => $actualRecord->foto,
+                    },
+                    'foto_sesudah' => match ($record->service_type ?? 'kebersihan') {
+                        'kebersihan', 'ob' => $actualRecord->foto_sesudah,
+                        default => null,
+                    },
+                    'catatan_petugas' => $actualRecord->catatan_petugas,
+                    'status' => $actualRecord->status,
+                    'rating' => $actualRecord->rating,
+                    'catatan_supervisor' => $actualRecord->catatan_supervisor,
+                    'rejected_reason' => $actualRecord->rejected_reason,
+                    'approved_by' => $actualRecord->approved_by,
                 ];
             })
             ->form([
@@ -209,15 +287,56 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
                     ->columnSpanFull(),
             ])
             ->action(function (ActivityReport $record, array $data) {
-                // Set approved_by to current user ID
-                $data['approved_by'] = Auth::id();
+                // Find and update the actual model
+                $actualRecord = match ($record->service_type ?? 'kebersihan') {
+                    'kebersihan' => $record,
+                    'satpam' => LaporanSatpam::find($record->id),
+                    'ob' => LaporanOb::find($record->id),
+                    'toko' => LaporanToko::find($record->id),
+                };
 
-                // Auto-set approved_at timestamp when approved
-                if ($data['status'] === 'approved' && !$record->approved_at) {
-                    $data['approved_at'] = now();
+                if ($actualRecord) {
+                    $updateData = [
+                        'status' => $data['status'],
+                        'approved_by' => Auth::id(),
+                        'catatan_supervisor' => $data['catatan_supervisor'] ?? null,
+                    ];
+
+                    if ($data['status'] === 'approved') {
+                        $updateData['approved_at'] = now();
+                        $updateData['rating'] = $data['rating'] ?? null;
+                        $updateData['rejected_reason'] = null;
+                    } elseif ($data['status'] === 'rejected') {
+                        $updateData['approved_at'] = now();
+                        $updateData['rejected_reason'] = $data['rejected_reason'] ?? null;
+                        $updateData['rating'] = null;
+                    } else {
+                        $updateData['approved_at'] = null;
+                        $updateData['rejected_reason'] = null;
+                        $updateData['rating'] = null;
+                    }
+
+                    $actualRecord->update($updateData);
+
+                    // Send push notification if petugas exists
+                    if ($actualRecord->petugas) {
+                        $title = $data['status'] === 'approved' ? 'Laporan Disetujui' : 'Laporan Ditolak';
+                        $body = $data['status'] === 'approved' 
+                            ? 'Laporan kegiatan Anda telah disetujui supervisor.' 
+                            : 'Laporan kegiatan Anda ditolak: ' . \Illuminate\Support\Str::limit($data['rejected_reason'] ?? '', 80);
+                        
+                        try {
+                            app(\App\Services\ExpoPushService::class)->sendToUser(
+                                $actualRecord->petugas,
+                                $title,
+                                $body,
+                                ['type' => "report_{$data['status']}", 'report_id' => $actualRecord->id]
+                            );
+                        } catch (\Exception $e) {
+                            // ignore push service exceptions gracefully
+                        }
+                    }
                 }
-
-                $record->update($data);
 
                 // Send success notification
                 \Filament\Notifications\Notification::make()

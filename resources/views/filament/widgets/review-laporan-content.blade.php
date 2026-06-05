@@ -1,3 +1,16 @@
+@php
+    $actualRecord = match ($record->service_type ?? 'kebersihan') {
+        'kebersihan' => $record,
+        'satpam' => \App\Models\LaporanSatpam::find($record->id),
+        'ob' => \App\Models\LaporanOb::find($record->id),
+        'toko' => \App\Models\LaporanToko::find($record->id),
+    };
+    $isKebersihan = ($record->service_type ?? 'kebersihan') === 'kebersihan';
+    $isSatpam = ($record->service_type ?? 'kebersihan') === 'satpam';
+    $isOb = ($record->service_type ?? 'kebersihan') === 'ob';
+    $isToko = ($record->service_type ?? 'kebersihan') === 'toko';
+@endphp
+
 <div class="space-y-6">
     {{-- Header Info Card --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -11,7 +24,7 @@
                 <div class="min-w-0 flex-1">
                     <p class="text-xs text-gray-600 dark:text-gray-400 font-medium mb-0.5">📅 Tanggal</p>
                     <p class="text-sm font-semibold text-gray-900 dark:text-white">
-                        {{ \Carbon\Carbon::parse($record->tanggal)->locale('id')->isoFormat('D MMMM YYYY') }}
+                        {{ \Carbon\Carbon::parse($actualRecord->tanggal)->locale('id')->isoFormat('D MMMM YYYY') }}
                     </p>
                 </div>
             </div>
@@ -27,7 +40,7 @@
                 <div class="min-w-0 flex-1">
                     <p class="text-xs text-gray-600 dark:text-gray-400 font-medium mb-0.5">⏰ Waktu Kerja</p>
                     <p class="text-sm font-semibold text-gray-900 dark:text-white">
-                        {{ \Carbon\Carbon::parse($record->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($record->jam_selesai)->format('H:i') }}
+                        {{ \Carbon\Carbon::parse($actualRecord->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($actualRecord->jam_selesai)->format('H:i') }}
                     </p>
                 </div>
             </div>
@@ -43,13 +56,13 @@
                 </div>
                 <div class="min-w-0 flex-1">
                     <p class="text-xs text-gray-600 dark:text-gray-400 font-medium mb-0.5">📍 Lokasi</p>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $record->lokasi->nama_lokasi }}</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $actualRecord->lokasi->nama_lokasi }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Deskripsi Kegiatan --}}
+    {{-- Detail Laporan --}}
     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
         <div class="flex items-start space-x-3">
             <div class="bg-gray-500 rounded-full p-2 mt-0.5">
@@ -58,8 +71,22 @@
                 </svg>
             </div>
             <div class="flex-1">
-                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deskripsi Kegiatan</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{{ $record->kegiatan }}</p>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Detail Laporan</p>
+                <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed space-y-1">
+                    @if($isKebersihan)
+                        <p>{{ $actualRecord->kegiatan }}</p>
+                    @elseif($isSatpam)
+                        <p><strong>Kondisi:</strong> {{ $actualRecord->kondisi }}</p>
+                        <p><strong>Temuan:</strong> {{ $actualRecord->temuan }}</p>
+                        <p><strong>Tindakan:</strong> {{ $actualRecord->tindakan }}</p>
+                    @elseif($isOb)
+                        <p><strong>Jenis Pekerjaan:</strong> {{ $actualRecord->jenis_pekerjaan }}</p>
+                        <p><strong>Uraian:</strong> {{ $actualRecord->uraian }}</p>
+                    @elseif($isToko)
+                        <p><strong>Catatan Stok:</strong> {{ $actualRecord->catatan_stok }}</p>
+                        <p><strong>Kondisi Stok:</strong> {{ $actualRecord->kondisi_stok }}</p>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -74,14 +101,19 @@
         </h3>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {{-- Foto Sebelum --}}
+            {{-- Foto Sebelum / Utama --}}
             <div class="space-y-3">
                 @php
-                    $fotoSebelum = $record->foto_sebelum;
+                    $fotoSebelum = match ($record->service_type ?? 'kebersihan') {
+                        'kebersihan', 'ob' => $actualRecord->foto_sebelum,
+                        'satpam', 'toko' => $actualRecord->foto,
+                    };
                     $fotoSebelumArray = is_array($fotoSebelum) ? $fotoSebelum : ($fotoSebelum ? [$fotoSebelum] : []);
                 @endphp
                 <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">📸 Sebelum Dibersihkan</span>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        📸 {{ ($isSatpam || $isToko) ? 'Foto Dokumentasi' : 'Sebelum Tindakan' }}
+                    </span>
                     <span class="text-xs text-gray-500 dark:text-gray-400">
                         {{ count($fotoSebelumArray) }} foto
                     </span>
@@ -117,11 +149,14 @@
             {{-- Foto Sesudah --}}
             <div class="space-y-3">
                 @php
-                    $fotoSesudah = $record->foto_sesudah;
+                    $fotoSesudah = match ($record->service_type ?? 'kebersihan') {
+                        'kebersihan', 'ob' => $actualRecord->foto_sesudah,
+                        default => null,
+                    };
                     $fotoSesudahArray = is_array($fotoSesudah) ? $fotoSesudah : ($fotoSesudah ? [$fotoSesudah] : []);
                 @endphp
                 <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">✨ Sesudah Dibersihkan</span>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">✨ Sesudah Tindakan</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400">
                         {{ count($fotoSesudahArray) }} foto
                     </span>
@@ -142,13 +177,19 @@
                             </div>
                         @endforeach
                     </div>
+                @elseif($isSatpam || $isToko)
+                    <div class="flex items-center justify-center h-40 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800">
+                        <div class="text-center p-4">
+                            <p class="text-xs text-gray-500">Divisi ini hanya memerlukan satu foto dokumentasi utama</p>
+                        </div>
+                    </div>
                 @else
                     <div class="flex items-center justify-center h-40 bg-gray-100 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                         <div class="text-center">
                             <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            <p class="mt-2 text-xs text-gray-500">Tidak ada foto</p>
+                            <p class="mt-2 text-xs text-gray-500">Tidak ada foto sesudah</p>
                         </div>
                     </div>
                 @endif
@@ -157,7 +198,7 @@
     </div>
 
     {{-- Catatan Petugas --}}
-    @if($record->catatan_petugas)
+    @if($actualRecord->catatan_petugas)
         <div class="bg-amber-50 dark:bg-amber-950 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
             <div class="flex items-start space-x-3">
                 <div class="bg-amber-500 rounded-full p-2 mt-0.5">
@@ -167,7 +208,7 @@
                 </div>
                 <div class="flex-1">
                     <p class="text-sm font-medium text-amber-800 dark:text-amber-300 mb-2">💬 Catatan dari Petugas</p>
-                    <p class="text-sm text-amber-700 dark:text-amber-400 leading-relaxed">{{ $record->catatan_petugas }}</p>
+                    <p class="text-sm text-amber-700 dark:text-amber-400 leading-relaxed">{{ $actualRecord->catatan_petugas }}</p>
                 </div>
             </div>
         </div>
