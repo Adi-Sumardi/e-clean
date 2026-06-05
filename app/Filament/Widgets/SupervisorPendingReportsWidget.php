@@ -70,9 +70,13 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
 
         $unionQuery = $kebersihan->unionAll($satpam)->unionAll($ob)->unionAll($toko);
 
+        $model = new ActivityReport();
+        $model->setTable('all_reports');
+
         return $table
             ->query(
-                ActivityReport::query()
+                $model->newQuery()
+                    ->withTrashed()
                     ->fromSub($unionQuery, 'all_reports')
                     ->with(['petugas', 'lokasi.unit'])
             )
