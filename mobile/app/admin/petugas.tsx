@@ -1,123 +1,82 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { Stack } from "expo-router";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AdminScreen, EmptyState } from "@/components/admin/AdminScreen";
 import { useIsTablet } from "@/lib/useIsTablet";
+import { useUsers } from "@/lib/hooks";
+import { ROLE_LABEL } from "@/constants/role";
 
 interface PetugasRow {
   id: number;
   name: string;
   email: string;
-  unit: string;
-  jadwalAktif: number;
-  rating: number;
-  laporanBulanIni: number;
-  status: "aktif" | "cuti";
-}
-
-const PETUGAS: PetugasRow[] = [
-  {
-    id: 1,
-    name: "Rahmat Hidayat",
-    email: "rahmat@yapi",
-    unit: "Office",
-    jadwalAktif: 5,
-    rating: 4.8,
-    laporanBulanIni: 42,
-    status: "aktif",
-  },
-  {
-    id: 2,
-    name: "Siti Nurhaliza",
-    email: "siti@yapi",
-    unit: "Office",
-    jadwalAktif: 4,
-    rating: 4.7,
-    laporanBulanIni: 39,
-    status: "aktif",
-  },
-  {
-    id: 3,
-    name: "Andi Setiawan",
-    email: "andi@yapi",
-    unit: "Office",
-    jadwalAktif: 5,
-    rating: 4.6,
-    laporanBulanIni: 36,
-    status: "aktif",
-  },
-  {
-    id: 4,
-    name: "Budi Hartono",
-    email: "budi@yapi",
-    unit: "Office",
-    jadwalAktif: 3,
-    rating: 4.3,
-    laporanBulanIni: 28,
-    status: "aktif",
-  },
-  {
-    id: 5,
-    name: "Citra Wijaya",
-    email: "citra@yapi",
-    unit: "Office",
-    jadwalAktif: 4,
-    rating: 4.5,
-    laporanBulanIni: 31,
-    status: "aktif",
-  },
-  {
-    id: 6,
-    name: "Eko Prasetyo",
-    email: "eko@yapi",
-    unit: "Office",
-    jadwalAktif: 0,
-    rating: 4.1,
-    laporanBulanIni: 8,
-    status: "cuti",
-  },
-];
-
-function ratingColor(r: number) {
-  if (r >= 4.5) return "#0a7e3e";
-  if (r >= 4.0) return "#e08a14";
-  return "#d62828";
+  role: string;
+  status: "aktif" | "nonaktif";
+  phone: string;
 }
 
 export default function PetugasAdminScreen() {
   const isTablet = useIsTablet();
+  const router = useRouter();
   const [q, setQ] = useState("");
+
+  const { data, isLoading } = useUsers();
+
+  const STAFF_ROLES = ["petugas", "satpam", "office_boy", "petugas_toko"];
+
+  const staffList = useMemo<PetugasRow[]>(() => {
+    if (!data) return [];
+    return data
+      .filter((u) => u.roles.some((r) => STAFF_ROLES.includes(r)))
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.roles[0] ?? "petugas",
+        status: u.is_active ? "aktif" : "nonaktif",
+        phone: u.phone ?? "-",
+      }));
+  }, [data]);
 
   const filtered = useMemo(() => {
     const s = q.toLowerCase().trim();
-    if (!s) return PETUGAS;
-    return PETUGAS.filter(
+    if (!s) return staffList;
+    return staffList.filter(
       (p) =>
-        p.name.toLowerCase().includes(s) || p.email.toLowerCase().includes(s)
+        p.name.toLowerCase().includes(s) ||
+        p.email.toLowerCase().includes(s) ||
+        (ROLE_LABEL[p.role as keyof typeof ROLE_LABEL] ?? p.role).toLowerCase().includes(s)
     );
-  }, [q]);
+  }, [q, staffList]);
 
-  const onAdd = () => Alert.alert("Tambah Petugas", "Form akan tampil di sini.");
+  const onAdd = () => {
+    // Navigate to users management to add new user/staff
+    router.push("/admin/users");
+  };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <AdminScreen
-        title="Petugas Kebersihan"
-        subtitle={`${PETUGAS.length} petugas terdaftar`}
+        title="Petugas Lapangan"
+        subtitle={`${staffList.length} petugas terdaftar`}
         icon="people-circle-outline"
         color="#0a7e3e"
         searchValue={q}
         onSearchChange={setQ}
         searchPlaceholder="Cari petugas..."
         onAdd={onAdd}
-        addLabel="Petugas"
+        addLabel="Kelola User"
       >
         <ScrollView
           contentContainerStyle={{ padding: isTablet ? 32 : 20, paddingBottom: 40 }}
         >
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <View className="items-center py-20">
+              <ActivityIndicator size="large" color="#0a7e3e" />
+            </View>
+          ) : filtered.length === 0 ? (
             <EmptyState icon="search-outline" title="Tidak ditemukan" />
           ) : isTablet ? (
             <View className="flex-row flex-wrap -m-2">
@@ -142,9 +101,9 @@ export default function PetugasAdminScreen() {
 
 function PetugasCard({ p }: { p: PetugasRow }) {
   const isActive = p.status === "aktif";
-  const rColor = ratingColor(p.rating);
+  const roleLabelStr = ROLE_LABEL[p.role as keyof typeof ROLE_LABEL] ?? p.role;
   return (
-    <Pressable className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant active:opacity-80">
+    <View className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant">
       <View className="flex-row items-center gap-3">
         <View className="w-12 h-12 rounded-full bg-secondary/10 items-center justify-center">
           <Text className="font-bold text-base text-secondary">
@@ -157,14 +116,8 @@ function PetugasCard({ p }: { p: PetugasRow }) {
           </Text>
           <View className="flex-row items-center gap-2 mt-0.5">
             <View className="flex-row items-center gap-1">
-              <Ionicons name="business-outline" size={11} color="#5a6072" />
-              <Text className="text-on-surface-variant text-xs">{p.unit}</Text>
-            </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="star" size={11} color={rColor} />
-              <Text className="text-xs font-bold" style={{ color: rColor }}>
-                {p.rating}
-              </Text>
+              <Ionicons name="shield-outline" size={11} color="#5a6072" />
+              <Text className="text-on-surface-variant text-xs">{roleLabelStr}</Text>
             </View>
           </View>
         </View>
@@ -178,24 +131,24 @@ function PetugasCard({ p }: { p: PetugasRow }) {
               isActive ? "text-secondary" : "text-tertiary"
             }`}
           >
-            {isActive ? "Aktif" : "Cuti"}
+            {isActive ? "Aktif" : "Nonaktif"}
           </Text>
         </View>
       </View>
       <View className="flex-row items-center gap-2 mt-3 pt-3 border-t border-outline-variant/50">
         <View className="flex-1 flex-row items-center gap-1">
-          <Ionicons name="calendar-outline" size={12} color="#005bbf" />
-          <Text className="text-on-surface-variant text-xs">
-            {p.jadwalAktif} jadwal
+          <Ionicons name="mail-outline" size={12} color="#005bbf" />
+          <Text className="text-on-surface-variant text-xs" numberOfLines={1}>
+            {p.email}
           </Text>
         </View>
         <View className="flex-1 flex-row items-center gap-1">
-          <Ionicons name="clipboard-outline" size={12} color="#0a7e3e" />
-          <Text className="text-on-surface-variant text-xs">
-            {p.laporanBulanIni} laporan/bln
+          <Ionicons name="call-outline" size={12} color="#0a7e3e" />
+          <Text className="text-on-surface-variant text-xs" numberOfLines={1}>
+            {p.phone}
           </Text>
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }

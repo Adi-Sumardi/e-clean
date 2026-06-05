@@ -195,7 +195,7 @@ function PodiumColumn({
   medalColor,
 }: {
   rank: number;
-  data: LeaderRow;
+  data?: LeaderRow;
   heightClass: string;
   medalColor: string;
 }) {
@@ -211,12 +211,12 @@ function PodiumColumn({
         className="text-on-surface font-bold text-xs text-center"
         numberOfLines={1}
       >
-        {data.petugas}
+        {data?.petugas ?? "-"}
       </Text>
       <View className="flex-row items-center gap-0.5 mb-1 mt-0.5">
         <Ionicons name="star" size={10} color="#e08a14" />
         <Text className="text-tertiary text-[11px] font-bold">
-          {data.avgRating}
+          {data?.avgRating ?? "-"}
         </Text>
       </View>
       <View

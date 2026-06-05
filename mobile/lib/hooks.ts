@@ -180,6 +180,13 @@ export const useFieldJadwalToday = (scope: FieldScope) =>
     queryFn: () => fieldService.jadwalToday(scope),
   });
 
+/** List of schedules for a field-staff domain. */
+export const useFieldJadwalList = (scope: FieldScope, filters?: { date?: string; start_date?: string; end_date?: string }) =>
+  useQuery({
+    queryKey: ["field", scope, "jadwal", "list", filters ?? {}],
+    queryFn: () => fieldService.jadwalList(scope, filters),
+  });
+
 /** Submit a field-staff report (multipart with photos). */
 export const useCreateFieldLaporan = (scope: FieldScope) => {
   const qc = useQueryClient();

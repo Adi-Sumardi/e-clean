@@ -1,21 +1,14 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View, ActivityIndicator } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AdminScreen, EmptyState } from "@/components/admin/AdminScreen";
 import { useIsTablet } from "@/lib/useIsTablet";
+import { usePendingApprovals, useApproveReport, useRejectReport } from "@/lib/hooks";
+import type { ApprovalScope, ApprovalItem } from "@/lib/types";
+import { ApiError } from "@/lib/api";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
-
-export interface ApprovalItem {
-  id: number;
-  tanggal: string;
-  petugas: string;
-  area: string;
-  unit: string;
-  kegiatan: string;
-  dibuat: string;
-}
 
 export interface ApprovalConfig {
   title: string;
@@ -23,37 +16,62 @@ export interface ApprovalConfig {
   icon: IoniconName;
   color: string;
   teamLabel: string;
-  data: ApprovalItem[];
+  scope: ApprovalScope;
 }
 
 export function ApprovalTimScreen({ config }: { config: ApprovalConfig }) {
   const router = useRouter();
   const isTablet = useIsTablet();
   const [q, setQ] = useState("");
-  const [items, setItems] = useState(config.data);
+
+  const { data, isLoading, refetch } = usePendingApprovals(config.scope);
+  const approveMutation = useApproveReport();
+  const rejectMutation = useRejectReport();
+
+  const items = data ?? [];
 
   const filtered = useMemo(() => {
     const s = q.toLowerCase().trim();
     if (!s) return items;
     return items.filter(
       (i) =>
-        i.petugas.toLowerCase().includes(s) ||
-        i.area.toLowerCase().includes(s) ||
-        i.kegiatan.toLowerCase().includes(s)
+        i.petugasName.toLowerCase().includes(s) ||
+        i.lokasiName.toLowerCase().includes(s) ||
+        i.summary.toLowerCase().includes(s)
     );
   }, [items, q]);
 
   const onApprove = (item: ApprovalItem) => {
     Alert.alert(
       "Setujui Laporan",
-      `Setujui laporan dari ${item.petugas} (${item.area})?`,
+      `Beri rating/catatan secara detail?`,
       [
         { text: "Batal", style: "cancel" },
         {
-          text: "Setujui",
+          text: "Detail & Nilai",
+          onPress: () => onDetail(item),
+        },
+        {
+          text: "Setujui Langsung (Bintang 5)",
           onPress: () => {
-            setItems((prev) => prev.filter((p) => p.id !== item.id));
-            Alert.alert("Berhasil", "Laporan telah disetujui.");
+            approveMutation.mutate(
+              {
+                scope: item.scope,
+                id: item.id,
+                rating: 5,
+                catatan_supervisor: "Disetujui langsung dari list",
+              },
+              {
+                onSuccess: () => {
+                  Alert.alert("Berhasil", "Laporan telah disetujui.");
+                  refetch();
+                },
+                onError: (err) => {
+                  const msg = err instanceof ApiError ? err.message : "Gagal menyetujui laporan";
+                  Alert.alert("Gagal", msg);
+                },
+              }
+            );
           },
         },
       ]
@@ -61,20 +79,40 @@ export function ApprovalTimScreen({ config }: { config: ApprovalConfig }) {
   };
 
   const onReject = (item: ApprovalItem) => {
-    Alert.alert(
+    Alert.prompt(
       "Tolak Laporan",
-      `Tolak laporan dari ${item.petugas}?`,
+      `Masukkan alasan penolakan untuk ${item.petugasName}:`,
       [
         { text: "Batal", style: "cancel" },
         {
           text: "Tolak",
           style: "destructive",
-          onPress: () => {
-            setItems((prev) => prev.filter((p) => p.id !== item.id));
-            Alert.alert("Berhasil", "Laporan ditolak.");
+          onPress: (reason) => {
+            if (!reason || !reason.trim()) {
+              Alert.alert("Gagal", "Alasan penolakan tidak boleh kosong.");
+              return;
+            }
+            rejectMutation.mutate(
+              {
+                scope: item.scope,
+                id: item.id,
+                reason: reason.trim(),
+              },
+              {
+                onSuccess: () => {
+                  Alert.alert("Berhasil", "Laporan ditolak.");
+                  refetch();
+                },
+                onError: (err) => {
+                  const msg = err instanceof ApiError ? err.message : "Gagal menolak laporan";
+                  Alert.alert("Gagal", msg);
+                },
+              }
+            );
           },
         },
-      ]
+      ],
+      "plain-text"
     );
   };
 
@@ -83,14 +121,25 @@ export function ApprovalTimScreen({ config }: { config: ApprovalConfig }) {
       pathname: "/admin/laporan-detail",
       params: {
         id: item.id,
-        petugas: item.petugas,
-        lokasi: item.area,
-        unit: item.unit,
+        scope: item.scope,
+        petugas: item.petugasName,
+        lokasi: item.lokasiName,
+        unit: item.unit?.nama_unit ?? "-",
         tanggal: item.tanggal,
-        summary: item.kegiatan,
-        status: "submitted",
+        summary: item.summary,
+        status: item.status,
       },
     });
+
+  const timeLabel = (createdAt?: string) => {
+    if (!createdAt) return "";
+    try {
+      const d = new Date(createdAt);
+      return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "";
+    }
+  };
 
   return (
     <>
@@ -107,8 +156,11 @@ export function ApprovalTimScreen({ config }: { config: ApprovalConfig }) {
         <ScrollView
           contentContainerStyle={{ padding: isTablet ? 32 : 20, paddingBottom: 40 }}
         >
-          {/* Summary banner */}
-          {filtered.length > 0 && (
+          {isLoading ? (
+            <View className="items-center py-20">
+              <ActivityIndicator size="large" color={config.color} />
+            </View>
+          ) : filtered.length > 0 && (
             <View
               className="p-4 rounded-2xl mb-5 flex-row items-center gap-3"
               style={{ backgroundColor: `${config.color}10`, borderColor: `${config.color}40`, borderWidth: 1 }}
@@ -133,7 +185,7 @@ export function ApprovalTimScreen({ config }: { config: ApprovalConfig }) {
             </View>
           )}
 
-          {filtered.length === 0 ? (
+          {!isLoading && filtered.length === 0 ? (
             <EmptyState
               icon="checkmark-done-circle-outline"
               title="Semua sudah diproses"
@@ -160,10 +212,10 @@ export function ApprovalTimScreen({ config }: { config: ApprovalConfig }) {
                             className="font-bold text-on-surface"
                             numberOfLines={1}
                           >
-                            {item.petugas}
+                            {item.petugasName}
                           </Text>
                           <Text className="text-on-surface-variant text-[10px]">
-                            {item.dibuat}
+                            {item.tanggal} {timeLabel(item.createdAt)}
                           </Text>
                         </View>
                         <View className="flex-row items-center gap-1 mt-0.5">
@@ -176,14 +228,14 @@ export function ApprovalTimScreen({ config }: { config: ApprovalConfig }) {
                             className="text-on-surface-variant text-xs flex-1"
                             numberOfLines={1}
                           >
-                            {item.area} · {item.unit}
+                            {item.lokasiName} · {item.unit?.nama_unit ?? "-"}
                           </Text>
                         </View>
                         <Text
                           className="text-on-surface-variant text-xs mt-1"
                           numberOfLines={2}
                         >
-                          {item.kegiatan}
+                          {item.summary}
                         </Text>
                       </View>
                     </Pressable>

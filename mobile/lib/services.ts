@@ -333,6 +333,13 @@ const FIELD_BASE: Record<FieldScope, string> = {
 };
 
 export const fieldService = {
+  jadwalList: (scope: FieldScope, params?: { date?: string; start_date?: string; end_date?: string }) =>
+    request<Jadwal[]>({
+      method: "GET",
+      url: `${FIELD_BASE[scope]}/jadwal`,
+      params,
+    }),
+
   jadwalToday: (scope: FieldScope) =>
     request<Jadwal[]>({
       method: "GET",

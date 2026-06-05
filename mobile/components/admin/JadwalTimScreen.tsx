@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View, ActivityIndicator } from "react-native";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AdminScreen, EmptyState } from "@/components/admin/AdminScreen";
 import { useIsTablet } from "@/lib/useIsTablet";
+import { useFieldJadwalList } from "@/lib/hooks";
+import type { FieldScope } from "@/lib/services";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -24,7 +26,7 @@ export interface TimConfig {
   color: string;
   noun: string;
   shifts: string[];
-  data: JadwalItem[];
+  scope: FieldScope;
 }
 
 const STATUS_TONE: Record<
@@ -58,18 +60,39 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
+  const { data: rawJadwal, isLoading } = useFieldJadwalList(config.scope);
+
+  const data = useMemo<JadwalItem[]>(() => {
+    if (!rawJadwal) return [];
+    return rawJadwal.map((j) => {
+      let status: JadwalItem["status"] = "scheduled";
+      if (j.status === "completed") status = "completed";
+      if (j.status === "missed") status = "missed";
+
+      return {
+        id: j.id,
+        tanggal: j.tanggal,
+        shift: j.shift,
+        petugas: j.petugas?.name ?? "-",
+        area: j.lokasi?.nama_lokasi ?? "-",
+        unit: j.lokasi?.unit?.nama_unit ?? "-",
+        status,
+      };
+    });
+  }, [rawJadwal]);
+
   const counts = useMemo(
     () => ({
-      all: config.data.length,
-      scheduled: config.data.filter((j) => j.status === "scheduled").length,
-      completed: config.data.filter((j) => j.status === "completed").length,
-      missed: config.data.filter((j) => j.status === "missed").length,
+      all: data.length,
+      scheduled: data.filter((j) => j.status === "scheduled").length,
+      completed: data.filter((j) => j.status === "completed").length,
+      missed: data.filter((j) => j.status === "missed").length,
     }),
-    [config.data]
+    [data]
   );
 
   const filtered = useMemo(() => {
-    let list = config.data;
+    let list = data;
     if (filter !== "all") list = list.filter((j) => j.status === filter);
     const s = q.toLowerCase().trim();
     if (s) {
@@ -80,7 +103,7 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
       );
     }
     return list;
-  }, [config.data, filter, q]);
+  }, [data, filter, q]);
 
   const FILTERS: { key: Filter; label: string; count: number }[] = [
     { key: "all", label: "Semua", count: counts.all },
@@ -89,19 +112,49 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
     { key: "missed", label: "Terlewat", count: counts.missed },
   ];
 
+  const handleKelola = () => {
+    Alert.alert(
+      "Kelola Jadwal",
+      "Penjadwalan & pengelolaan petugas selengkapnya dapat diatur melalui dashboard web Filament admin."
+    );
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        return {
+          day: parts[2],
+          month: parts[1] === "01" ? "Jan" :
+                 parts[1] === "02" ? "Feb" :
+                 parts[1] === "03" ? "Mar" :
+                 parts[1] === "04" ? "Apr" :
+                 parts[1] === "05" ? "Mei" :
+                 parts[1] === "06" ? "Jun" :
+                 parts[1] === "07" ? "Jul" :
+                 parts[1] === "08" ? "Agu" :
+                 parts[1] === "09" ? "Sep" :
+                 parts[1] === "10" ? "Okt" :
+                 parts[1] === "11" ? "Nov" : "Des"
+        };
+      }
+    } catch {}
+    return { day: dateStr, month: "" };
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <AdminScreen
         title={config.title}
-        subtitle={config.subtitle ?? `${config.data.length} ${config.noun}`}
+        subtitle={config.subtitle ?? `${data.length} ${config.noun}`}
         icon={config.icon}
         color={config.color}
         searchValue={q}
         onSearchChange={setQ}
         searchPlaceholder={`Cari ${config.noun} / petugas...`}
-        onAdd={() => Alert.alert(`Buat ${config.noun}`, "Form akan tampil.")}
-        addLabel="Buat"
+        onAdd={handleKelola}
+        addLabel="Kelola"
       >
         {/* Filter pills */}
         <View className="border-b border-surface-variant bg-surface">
@@ -172,7 +225,11 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
         <ScrollView
           contentContainerStyle={{ padding: isTablet ? 32 : 20, paddingBottom: 40 }}
         >
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <View className="items-center py-20">
+              <ActivityIndicator size="large" color={config.color} />
+            </View>
+          ) : filtered.length === 0 ? (
             <EmptyState
               icon="calendar-outline"
               title={`Tidak ada ${config.noun}`}
@@ -180,10 +237,14 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
           ) : (
             <View className={isTablet ? "flex-row flex-wrap -m-2" : "gap-3"}>
               {filtered.map((j) => {
-                const tone = STATUS_TONE[j.status];
+                const tone = STATUS_TONE[j.status] ?? STATUS_TONE.scheduled;
+                const formattedDate = formatDate(j.tanggal);
                 return (
                   <View key={j.id} className={isTablet ? "w-1/2 p-2" : ""}>
-                    <Pressable className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant active:opacity-80">
+                    <Pressable
+                      onPress={handleKelola}
+                      className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant active:opacity-80"
+                    >
                       <View className="flex-row items-center gap-3">
                         <View
                           className="w-14 h-14 rounded-xl items-center justify-center"
@@ -193,13 +254,13 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
                             className="text-[10px] font-semibold"
                             style={{ color: config.color }}
                           >
-                            {j.tanggal.split(" ")[1]}
+                            {formattedDate.month}
                           </Text>
                           <Text
                             className="text-lg font-bold"
                             style={{ color: config.color }}
                           >
-                            {j.tanggal.split(" ")[0]}
+                            {formattedDate.day}
                           </Text>
                         </View>
                         <View className="flex-1">
@@ -211,7 +272,7 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
                               {j.petugas}
                             </Text>
                             <View className="px-2 py-0.5 rounded-full bg-tertiary/10">
-                              <Text className="text-tertiary text-[10px] font-bold">
+                              <Text className="text-tertiary text-[10px] font-bold capitalize">
                                 {j.shift}
                               </Text>
                             </View>
@@ -260,7 +321,7 @@ export function JadwalTimScreen({ config }: { config: TimConfig }) {
                             {tone.label}
                           </Text>
                         </View>
-                        <Pressable className="flex-row items-center gap-1 active:opacity-70">
+                        <Pressable onPress={handleKelola} className="flex-row items-center gap-1 active:opacity-70">
                           <Text
                             className="text-xs font-bold"
                             style={{ color: config.color }}
