@@ -45,6 +45,7 @@ class LaporanKeterlambatan extends Model
     protected $table = 'laporan_keterlambatan';
 
     protected $fillable = [
+        'domain',
         'jadwal_kebersihan_id',
         'petugas_id',
         'lokasi_id',

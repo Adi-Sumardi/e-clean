@@ -191,6 +191,22 @@ class JadwalKebersihanController extends Controller
             }
 
             $validated = $request->validate($this->scheduleRules());
+
+            // Cegah DUPLIKAT: jadwal yang persis sama (petugas + lokasi + tanggal
+            // + shift). Tidak memblokir petugas lain di lokasi sama, maupun
+            // petugas sama di lokasi berbeda pada shift sama.
+            $duplicate = JadwalKebersihan::where('petugas_id', $validated['petugas_id'])
+                ->where('lokasi_id', $validated['lokasi_id'])
+                ->whereDate('tanggal', $validated['tanggal'])
+                ->where('shift', $validated['shift'])
+                ->exists();
+            if ($duplicate) {
+                return $this->errorResponse(
+                    'Jadwal yang sama persis sudah ada (petugas, lokasi, tanggal & shift).',
+                    422,
+                );
+            }
+
             $validated['status'] = $validated['status'] ?? 'active';
             $validated['created_by'] = $request->user()->id;
 

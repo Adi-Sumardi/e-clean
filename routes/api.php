@@ -46,6 +46,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
         Route::put('/profile', [AuthController::class, 'updateProfile']);
         Route::post('/push-token', [AuthController::class, 'registerPushToken']);
         Route::delete('/push-token', [AuthController::class, 'unregisterPushToken']);
+        // Web Push (VAPID) untuk PWA
+        Route::get('/vapid-public-key', [AuthController::class, 'vapidPublicKey']);
+        Route::post('/web-push-subscription', [AuthController::class, 'storeWebPushSubscription']);
+        Route::delete('/web-push-subscription', [AuthController::class, 'destroyWebPushSubscription']);
     });
 
     // Lokasi routes (read for all; manage for admin/supervisor)

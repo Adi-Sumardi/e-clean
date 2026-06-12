@@ -4,9 +4,13 @@ namespace App\Services;
 
 use App\Models\ActivityReport;
 use App\Models\LaporanKeterlambatan;
+use App\Models\LaporanOb;
+use App\Models\LaporanSatpam;
+use App\Models\LaporanToko;
 use App\Models\Penilaian;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class PenilaianService
@@ -21,23 +25,33 @@ class PenilaianService
      * @param int $penilaiId (Supervisor yang melakukan approval)
      * @return Penilaian
      */
-    public function generateOrUpdateMonthlyPenilaian(int $petugasId, int $bulan, int $tahun, int $penilaiId): Penilaian
-    {
-        // Ambil semua laporan yang sudah approved bulan ini
-        $approvedReports = ActivityReport::where('petugas_id', $petugasId)
+    public function generateOrUpdateMonthlyPenilaian(
+        int $petugasId,
+        int $bulan,
+        int $tahun,
+        int $penilaiId,
+        string $reportClass = ActivityReport::class,
+        string $jadwalTable = 'jadwal_kebersihanans',
+        bool $hasLate = true
+    ): Penilaian {
+        // Ambil semua laporan yang sudah approved bulan ini (per domain)
+        $approvedReports = $reportClass::where('petugas_id', $petugasId)
             ->whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
             ->where('status', 'approved')
             ->get();
 
-        // Ambil laporan keterlambatan bulan ini
-        $lateReports = LaporanKeterlambatan::where('petugas_id', $petugasId)
-            ->whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
-            ->get();
+        // Laporan keterlambatan hanya ada untuk domain kebersihan
+        $lateCount = 0;
+        if ($hasLate) {
+            $lateCount = LaporanKeterlambatan::where('petugas_id', $petugasId)
+                ->whereMonth('tanggal', $bulan)
+                ->whereYear('tanggal', $tahun)
+                ->count();
+        }
 
-        // Ambil total jadwal bulan ini
-        $totalSchedules = DB::table('jadwal_kebersihanans')
+        // Ambil total jadwal bulan ini (tabel jadwal per domain)
+        $totalSchedules = DB::table($jadwalTable)
             ->where('petugas_id', $petugasId)
             ->whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
@@ -52,7 +66,7 @@ class PenilaianService
         // 2. Skor Ketepatan Waktu (berdasarkan completion rate & laporan keterlambatan)
         // Kombinasi: apakah menyelesaikan semua jadwal + apakah tepat waktu
         $completionRate = $totalSchedules > 0 ? ($approvedReports->count() / $totalSchedules) * 100 : 0;
-        $latePercentage = $totalSchedules > 0 ? ($lateReports->count() / $totalSchedules) * 100 : 0;
+        $latePercentage = $totalSchedules > 0 ? ($lateCount / $totalSchedules) * 100 : 0;
         $skorKetepatanWaktu = $this->calculateKetepatanWaktuScore($completionRate, $latePercentage);
 
         // 3. Skor Kebersihan (dari rating khusus atau sama dengan kualitas)
@@ -73,12 +87,14 @@ class PenilaianService
         $catatan = $this->generateCatatan(
             $approvedReports->count(),
             $totalSchedules,
-            $lateReports->count(),
+            $lateCount,
             $averageRating
         );
 
-        // Cari atau buat penilaian
-        $penilaian = Penilaian::updateOrCreate(
+        // Cari atau buat penilaian. withTrashed() agar baris yang pernah
+        // di-soft-delete ikut ditemukan (mencegah bentrok UNIQUE
+        // petugas_id+periode), lalu dipulihkan bila perlu.
+        $penilaian = Penilaian::withTrashed()->updateOrCreate(
             [
                 'petugas_id' => $petugasId,
                 'periode_bulan' => $bulan,
@@ -96,6 +112,10 @@ class PenilaianService
                 'catatan' => $catatan,
             ]
         );
+
+        if ($penilaian->trashed()) {
+            $penilaian->restore();
+        }
 
         return $penilaian;
     }
@@ -192,25 +212,43 @@ class PenilaianService
     }
 
     /**
-     * Update penilaian saat ada approval baru
-     *
-     * @param ActivityReport $report
-     * @return Penilaian|null
+     * Konfigurasi per domain: tabel jadwal + apakah punya laporan keterlambatan.
      */
-    public function updatePenilaianAfterApproval(ActivityReport $report): ?Penilaian
+    private function domainConfig(string $reportClass): ?array
     {
-        if ($report->status !== 'approved' || !$report->approved_by) {
+        return match ($reportClass) {
+            ActivityReport::class => ['jadwal_table' => 'jadwal_kebersihanans', 'has_late' => true],
+            LaporanSatpam::class => ['jadwal_table' => 'jadwal_satpam', 'has_late' => true],
+            LaporanOb::class => ['jadwal_table' => 'jadwal_ob', 'has_late' => true],
+            LaporanToko::class => ['jadwal_table' => 'jadwal_toko', 'has_late' => true],
+            default => null,
+        };
+    }
+
+    /**
+     * Update penilaian saat ada approval baru. Mendukung semua domain
+     * (kebersihan/satpam/ob/toko) — laporan apa pun yang punya petugas_id,
+     * tanggal, status, approved_by.
+     */
+    public function updatePenilaianAfterApproval(Model $report): ?Penilaian
+    {
+        if (($report->status ?? null) !== 'approved' || empty($report->approved_by)) {
             return null;
         }
 
-        $bulan = $report->tanggal->month;
-        $tahun = $report->tanggal->year;
+        $config = $this->domainConfig(get_class($report));
+        if ($config === null) {
+            return null;
+        }
 
         return $this->generateOrUpdateMonthlyPenilaian(
             $report->petugas_id,
-            $bulan,
-            $tahun,
-            $report->approved_by
+            (int) $report->tanggal->month,
+            (int) $report->tanggal->year,
+            $report->approved_by,
+            get_class($report),
+            $config['jadwal_table'],
+            $config['has_late'],
         );
     }
 }

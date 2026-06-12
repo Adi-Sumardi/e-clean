@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ActivityReportResource;
 use App\Models\ActivityReport;
 use App\Traits\ApiResponse;
+use App\Traits\HandlesIdempotency;
 use App\Traits\SecureErrorHandling;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ use Carbon\Carbon;
 
 class ActivityReportController extends Controller
 {
-    use ApiResponse, SecureErrorHandling;
+    use ApiResponse, SecureErrorHandling, HandlesIdempotency;
 
     /**
      * Get activity reports with filtering
@@ -135,6 +136,18 @@ class ActivityReportController extends Controller
         try {
             $user = $request->user();
 
+            // Idempotency: retry dengan key yang sama mengembalikan laporan lama.
+            if ($existingId = $this->idempotentHit($request, $user->id)) {
+                $existing = ActivityReport::with(['petugas', 'lokasi', 'jadwal'])->find($existingId);
+                if ($existing) {
+                    return $this->successResponse(
+                        new ActivityReportResource($existing),
+                        'Activity report already submitted',
+                        200
+                    );
+                }
+            }
+
             // Validate input with enhanced image validation
             $validator = Validator::make($request->all(), [
                 'jadwal_id' => 'required|exists:jadwal_kebersihanans,id',
@@ -209,6 +222,8 @@ class ActivityReportController extends Controller
 
             // Load relationships
             $report->load(['petugas', 'lokasi', 'jadwal']);
+
+            $this->rememberIdempotency($request, $user->id, 'ActivityReport', $report->id);
 
             return $this->successResponse(
                 new ActivityReportResource($report),
@@ -580,11 +595,11 @@ class ActivityReportController extends Controller
             $report->load(['petugas', 'lokasi.unit', 'jadwal', 'approver']);
 
             if ($report->petugas) {
-                app(\App\Services\ExpoPushService::class)->sendToUser(
+                app(\App\Services\WebPushService::class)->sendToUser(
                     $report->petugas,
                     'Laporan Disetujui',
                     'Laporan kegiatan Anda telah disetujui supervisor.',
-                    ['type' => 'report_approved', 'report_id' => $report->id]
+                    ['type' => 'report_approved', 'ref_id' => $report->id, 'url' => '/laporan']
                 );
             }
 
@@ -628,11 +643,11 @@ class ActivityReportController extends Controller
             $report->load(['petugas', 'lokasi.unit', 'jadwal', 'approver']);
 
             if ($report->petugas) {
-                app(\App\Services\ExpoPushService::class)->sendToUser(
+                app(\App\Services\WebPushService::class)->sendToUser(
                     $report->petugas,
                     'Laporan Ditolak',
                     'Laporan kegiatan Anda ditolak: ' . \Illuminate\Support\Str::limit($report->rejected_reason, 80),
-                    ['type' => 'report_rejected', 'report_id' => $report->id]
+                    ['type' => 'report_rejected', 'ref_id' => $report->id, 'url' => '/laporan']
                 );
             }
 

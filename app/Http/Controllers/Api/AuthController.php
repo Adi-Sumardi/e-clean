@@ -221,4 +221,69 @@ class AuthController extends Controller
             return $this->errorResponse('Failed to clear push token: ' . $e->getMessage(), 500);
         }
     }
+
+    /**
+     * VAPID public key untuk subscribe Web Push di PWA.
+     */
+    public function vapidPublicKey(): JsonResponse
+    {
+        return $this->successResponse(
+            ['public_key' => config('services.vapid.public_key')],
+            'VAPID public key',
+        );
+    }
+
+    /**
+     * Simpan/refresh langganan Web Push (PWA). Idempoten per endpoint.
+     */
+    public function storeWebPushSubscription(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'endpoint' => ['required', 'string'],
+                'keys.p256dh' => ['required', 'string'],
+                'keys.auth' => ['required', 'string'],
+                'content_encoding' => ['nullable', 'string', 'max:50'],
+            ]);
+
+            $request->user()->webPushSubscriptions()->updateOrCreate(
+                ['endpoint_hash' => hash('sha256', $validated['endpoint'])],
+                [
+                    'endpoint' => $validated['endpoint'],
+                    'public_key' => $validated['keys']['p256dh'],
+                    'auth_token' => $validated['keys']['auth'],
+                    'content_encoding' => $validated['content_encoding'] ?? 'aesgcm',
+                    'user_agent' => substr((string) $request->userAgent(), 0, 255),
+                ],
+            );
+
+            return $this->successResponse(null, 'Web push subscription saved');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to save subscription: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Hapus langganan Web Push berdasarkan endpoint.
+     */
+    public function destroyWebPushSubscription(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'endpoint' => ['required', 'string'],
+            ]);
+
+            $request->user()->webPushSubscriptions()
+                ->where('endpoint_hash', hash('sha256', $validated['endpoint']))
+                ->delete();
+
+            return $this->successResponse(null, 'Web push subscription removed');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to remove subscription: ' . $e->getMessage(), 500);
+        }
+    }
 }

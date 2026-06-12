@@ -384,13 +384,26 @@ class DashboardController extends Controller
             $thisYear = $request->get('year', Carbon::now()->year);
             $limit = $request->get('limit', 10);
 
+            // Domain/role: kebersihan (petugas) default; bisa satpam/office_boy/petugas_toko
+            $role = $request->get('role', 'petugas');
+            $reportModels = [
+                'petugas' => \App\Models\ActivityReport::class,
+                'satpam' => \App\Models\LaporanSatpam::class,
+                'office_boy' => \App\Models\LaporanOb::class,
+                'petugas_toko' => \App\Models\LaporanToko::class,
+            ];
+            if (! isset($reportModels[$role])) {
+                $role = 'petugas';
+            }
+            $reportModel = $reportModels[$role];
+
             // === OPTIMIZED: Bulk queries instead of N+1 ===
 
-            // Get all petugas IDs first
-            $petugasIds = User::role('petugas')->pluck('id');
+            // Get all petugas IDs for this role
+            $petugasIds = User::role($role)->pluck('id');
 
-            // Bulk query #1: Activity reports aggregated by petugas (1 query instead of N)
-            $reportsStats = ActivityReport::whereIn('petugas_id', $petugasIds)
+            // Bulk query #1: reports aggregated by petugas
+            $reportsStats = $reportModel::whereIn('petugas_id', $petugasIds)
                 ->whereMonth('tanggal', $thisMonth)
                 ->whereYear('tanggal', $thisYear)
                 ->selectRaw('
@@ -403,14 +416,16 @@ class DashboardController extends Controller
                 ->get()
                 ->keyBy('petugas_id');
 
-            // Bulk query #2: Late submissions count by petugas (1 query instead of N)
-            $lateStats = LaporanKeterlambatan::whereIn('petugas_id', $petugasIds)
-                ->whereMonth('tanggal', $thisMonth)
-                ->whereYear('tanggal', $thisYear)
-                ->selectRaw('petugas_id, COUNT(*) as late_count')
-                ->groupBy('petugas_id')
-                ->get()
-                ->keyBy('petugas_id');
+            // Bulk query #2: Late submissions (hanya domain kebersihan punya data ini)
+            $lateStats = $role === 'petugas'
+                ? LaporanKeterlambatan::whereIn('petugas_id', $petugasIds)
+                    ->whereMonth('tanggal', $thisMonth)
+                    ->whereYear('tanggal', $thisYear)
+                    ->selectRaw('petugas_id, COUNT(*) as late_count')
+                    ->groupBy('petugas_id')
+                    ->get()
+                    ->keyBy('petugas_id')
+                : collect();
 
             // Bulk query #3: Evaluations by petugas (1 query instead of N)
             $evaluations = Penilaian::whereIn('petugas_id', $petugasIds)
@@ -421,7 +436,7 @@ class DashboardController extends Controller
                 ->keyBy('petugas_id');
 
             // Bulk query #4: Get petugas with names (1 query)
-            $petugasList = User::role('petugas')
+            $petugasList = User::role($role)
                 ->select('id', 'name')
                 ->get();
 
@@ -471,8 +486,9 @@ class DashboardController extends Controller
 
             return $this->successResponse([
                 'period' => [
-                    'month' => $thisMonth,
-                    'year' => $thisYear,
+                    'month' => (int) $thisMonth,
+                    'year' => (int) $thisYear,
+                    'role' => $role,
                 ],
                 'leaderboard' => $leaderboard,
             ], 'Leaderboard retrieved successfully');

@@ -166,6 +166,20 @@ abstract class BaseJadwalController extends Controller
 
             $validated = $validator->validated();
 
+            // Cegah DUPLIKAT: jadwal yang persis sama (petugas + lokasi + tanggal
+            // + shift). Petugas lain di lokasi sama tetap boleh (cover/izin).
+            $duplicate = $model::where('petugas_id', $validated['petugas_id'])
+                ->where('lokasi_id', $validated['lokasi_id'])
+                ->whereDate('tanggal', $validated['tanggal'])
+                ->where('shift', $validated['shift'])
+                ->exists();
+            if ($duplicate) {
+                return $this->errorResponse(
+                    'Jadwal yang sama persis sudah ada (petugas, lokasi, tanggal & shift).',
+                    422,
+                );
+            }
+
             // Set default pending status
             $validated['status'] = 'pending';
             $validated['created_by'] = $user->id;

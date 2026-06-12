@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Field;
 
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
+use App\Traits\HandlesIdempotency;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Validator;
 abstract class BaseLaporanController extends Controller
 {
     use ApiResponse;
+    use HandlesIdempotency;
 
     abstract protected function model(): string;
 
@@ -144,6 +146,16 @@ abstract class BaseLaporanController extends Controller
                 return $this->forbiddenResponse('Only ' . $this->ownerRole() . ' can submit this report.');
             }
 
+            // Idempotency: retry dengan key yang sama mengembalikan laporan lama.
+            if ($existingId = $this->idempotentHit($request, $request->user()->id)) {
+                $model = $this->model();
+                $existing = $model::with(['lokasi.unit', 'petugas', 'jadwal'])->find($existingId);
+                if ($existing) {
+                    $resource = $this->resourceClass();
+                    return $this->successResponse(new $resource($existing), 'Report already submitted', 200);
+                }
+            }
+
             $rules = array_merge([
                 'jadwal_id' => 'nullable|integer',
                 'lokasi_id' => 'required|exists:lokasis,id',
@@ -171,6 +183,8 @@ abstract class BaseLaporanController extends Controller
             $model = $this->model();
             $report = $model::create($attributes);
             $report->load(['lokasi.unit', 'petugas', 'jadwal']);
+
+            $this->rememberIdempotency($request, $request->user()->id, class_basename($model), $report->id);
 
             $resource = $this->resourceClass();
 
@@ -236,13 +250,13 @@ abstract class BaseLaporanController extends Controller
             $report->load(['lokasi.unit', 'petugas', 'jadwal', 'approver']);
 
             if ($report->petugas) {
-                app(\App\Services\ExpoPushService::class)->sendToUser(
+                app(\App\Services\WebPushService::class)->sendToUser(
                     $report->petugas,
                     $approved ? 'Laporan Disetujui' : 'Laporan Ditolak',
                     $approved
                         ? 'Laporan Anda telah disetujui supervisor.'
                         : 'Laporan Anda ditolak: ' . \Illuminate\Support\Str::limit($report->rejected_reason, 80),
-                    ['type' => $approved ? 'report_approved' : 'report_rejected', 'report_id' => $report->id]
+                    ['type' => $approved ? 'report_approved' : 'report_rejected', 'ref_id' => $report->id, 'url' => '/laporan']
                 );
             }
 

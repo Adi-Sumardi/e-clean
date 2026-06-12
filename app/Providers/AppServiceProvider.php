@@ -10,9 +10,13 @@ use Illuminate\Http\Request;
 use App\Models\JadwalKebersihan;
 use App\Models\ActivityReport;
 use App\Models\GuestComplaint;
+use App\Models\LaporanSatpam;
+use App\Models\LaporanOb;
+use App\Models\LaporanToko;
 use App\Observers\JadwalKebersihanObserver;
 use App\Observers\ActivityReportObserver;
 use App\Observers\GuestComplaintObserver;
+use App\Observers\FieldLaporanObserver;
 use App\Policies\RolePolicy;
 use Spatie\Permission\Models\Role;
 use Dedoc\Scramble\Scramble;
@@ -41,6 +45,11 @@ class AppServiceProvider extends ServiceProvider
         JadwalKebersihan::observe(JadwalKebersihanObserver::class);
         ActivityReport::observe(ActivityReportObserver::class);
         GuestComplaint::observe(GuestComplaintObserver::class);
+
+        // Penilaian otomatis untuk domain field (satpam/ob/toko)
+        LaporanSatpam::observe(FieldLaporanObserver::class);
+        LaporanOb::observe(FieldLaporanObserver::class);
+        LaporanToko::observe(FieldLaporanObserver::class);
 
         // Register Role policy to hide Shield menu from non-admins
         Gate::policy(Role::class, RolePolicy::class);

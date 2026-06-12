@@ -69,3 +69,6 @@ Homestead.yaml
 # Environment files
 *.env
 *.env.*
+
+# Stray EAS build outputs (build-local.apk tetap di-track)
+mobile/build-[0-9]*.apk

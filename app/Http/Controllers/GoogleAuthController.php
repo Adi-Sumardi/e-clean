@@ -12,8 +12,11 @@ class GoogleAuthController extends Controller
      */
     public function redirectToGoogle(Request $request)
     {
-        if ($request->query('platform') === 'mobile') {
-            session(['auth_platform' => 'mobile']);
+        // Google redirect kembali ke callback tanpa membawa query kita, jadi
+        // platform disimpan di session untuk dibaca saat callback.
+        $platform = $request->query('platform');
+        if (in_array($platform, ['mobile', 'pwa'], true)) {
+            session(['auth_platform' => $platform]);
         } else {
             session()->forget('auth_platform');
         }
@@ -26,19 +29,28 @@ class GoogleAuthController extends Controller
     public function handleGoogleCallback(Request $request)
     {
         $result = GoogleAuthService::handleGoogleCallback();
+        $platform = session('auth_platform') ?? $request->query('platform');
 
         if ($result['success']) {
             $user = $result['user'];
-            
-            if (session('auth_platform') === 'mobile' || $request->query('platform') === 'mobile') {
+
+            if ($platform === 'mobile') {
                 session()->forget('auth_platform');
                 // Revoke old tokens
                 $user->tokens()->delete();
                 // Create a Sanctum token
                 $token = $user->createToken('mobile-app')->plainTextToken;
-                
+
                 // Redirect to deep link: eclean://login?token=...
                 return redirect('eclean://login?token=' . urlencode($token));
+            }
+
+            if ($platform === 'pwa') {
+                session()->forget('auth_platform');
+                $token = $user->createToken('pwa')->plainTextToken;
+
+                // PWA same-origin: kembalikan token ke halaman login PWA.
+                return redirect('/login?token=' . urlencode($token));
             }
 
             // Redirect to Filament admin panel
@@ -46,9 +58,16 @@ class GoogleAuthController extends Controller
                 ->with('success', $result['message']);
         }
 
-        if (session('auth_platform') === 'mobile' || $request->query('platform') === 'mobile') {
+        $errorMessage = $result['message'] ?? 'Failed to authenticate with Google';
+
+        if ($platform === 'mobile') {
             session()->forget('auth_platform');
-            return redirect('eclean://login?error=' . urlencode($result['message'] ?? 'Failed to authenticate with Google'));
+            return redirect('eclean://login?error=' . urlencode($errorMessage));
+        }
+
+        if ($platform === 'pwa') {
+            session()->forget('auth_platform');
+            return redirect('/login?error=' . urlencode($errorMessage));
         }
 
         // Redirect back to login with error

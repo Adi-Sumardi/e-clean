@@ -8,6 +8,29 @@ use Illuminate\Support\Collection;
 class PDFExportService
 {
     /**
+     * Export daftar laporan (generik, semua domain) ke PDF.
+     * Kolom umum: tanggal, petugas, lokasi, unit, jam, status, nilai, catatan.
+     */
+    public function exportLaporanList(Collection $reports, array $options = [])
+    {
+        $data = [
+            'title' => $options['title'] ?? 'Laporan',
+            'period' => $options['period'] ?? null,
+            'reports' => $reports->values(),
+            'generatedAt' => now()->format('d/m/Y H:i'),
+            'totalReports' => $reports->count(),
+            'approvedReports' => $reports->where('status', 'approved')->count(),
+            'pendingReports' => $reports->whereIn('status', ['submitted', 'pending'])->count(),
+            'rejectedReports' => $reports->where('status', 'rejected')->count(),
+        ];
+
+        $pdf = Pdf::loadView('pdf.laporan-list', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf;
+    }
+
+    /**
      * Export Activity Reports to PDF
      *
      * @param Collection $reports

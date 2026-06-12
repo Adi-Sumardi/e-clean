@@ -149,6 +149,14 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Web Push (VAPID) subscriptions — satu per device/browser.
+     */
+    public function webPushSubscriptions()
+    {
+        return $this->hasMany(WebPushSubscription::class);
+    }
+
+    /**
      * Activity reports approved by this user (supervisor/admin)
      */
     public function approvedReports()
