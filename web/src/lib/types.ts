@@ -198,3 +198,77 @@ export interface LeaderboardResponse {
   period: { month: number; year: number };
   leaderboard: LeaderboardEntry[];
 }
+
+/* ---------- Admin Tahap 3: settings, laporan bulanan, keterlambatan ---------- */
+
+export interface AppSettings {
+  reporting_tolerance_minutes: number;
+}
+
+export interface MonthlyPetugasRekap {
+  name: string;
+  total: number;
+  ontime: number;
+  late: number;
+  expired: number;
+  approved: number;
+  avg_rating: number;
+}
+
+export interface MonthlyUnitRekap {
+  unit: string;
+  total: number;
+  petugas: MonthlyPetugasRekap[];
+}
+
+export interface MonthlyStats {
+  total: number;
+  ontime: number;
+  ontime_pct: number;
+  late: number;
+  late_pct: number;
+  expired: number;
+  expired_pct: number;
+  avg_rating: number;
+}
+
+export interface MonthlyReport {
+  stats: MonthlyStats;
+  units: MonthlyUnitRekap[];
+}
+
+/** Laporan keterlambatan — dibuat otomatis sistem saat jadwal terlewat. */
+export interface Keterlambatan {
+  id: number;
+  domain: string;
+  tanggal: string | null;
+  shift: string | null;
+  status: string;
+  keterangan: string | null;
+  batas_waktu_mulai: string | null;
+  batas_waktu_selesai: string | null;
+  waktu_terdeteksi: string | null;
+  petugas: { id: number; name: string } | null;
+  lokasi: {
+    id: number;
+    nama_lokasi: string;
+    unit: { id: number; nama_unit: string } | null;
+  } | null;
+}
+
+/** Statistik dashboard untuk widget analitik beranda (subset yang dipakai). */
+export interface StatusTrendPoint {
+  date: string;
+  approved: number | string;
+  rejected: number | string;
+}
+
+export interface MonthlyTrendPoint {
+  month: string;
+  count: number;
+}
+
+export interface DashboardStatistics {
+  status_trend: StatusTrendPoint[];
+  monthly_trend: MonthlyTrendPoint[];
+}

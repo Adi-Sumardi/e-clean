@@ -9,6 +9,9 @@ const MENU = [
   { href: "/kelola/petugas", icon: "👥", label: "Petugas & Pengguna", desc: "Kelola akun & role" },
   { href: "/kelola/lokasi", icon: "📍", label: "Lokasi", desc: "Kelola titik lokasi" },
   { href: "/kelola/unit", icon: "🏢", label: "Unit", desc: "Kelola unit/area" },
+  { href: "/kelola/laporan-bulanan", icon: "📊", label: "Laporan Bulanan", desc: "Rekap bulanan + unduh PDF" },
+  { href: "/kelola/keterlambatan", icon: "⏰", label: "Keterlambatan", desc: "Jadwal terlewat tanpa laporan" },
+  { href: "/kelola/pengaturan", icon: "⚙️", label: "Pengaturan", desc: "Toleransi waktu pelaporan" },
 ];
 
 export default function KelolaPage() {
@@ -43,7 +46,7 @@ export default function KelolaPage() {
       </div>
 
       <p className="clay-sunken p-4 text-center text-xs text-muted">
-        Pengaturan, export PDF & laporan bulanan tetap di panel admin (Filament).
+        Fitur QR (scan & cetak kode lokasi) masih di panel admin (Filament).
       </p>
     </div>
   );

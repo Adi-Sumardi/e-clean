@@ -22,6 +22,10 @@ import {
   complaintService,
   userService,
   dashboardService,
+  settingService,
+  reportService,
+  keterlambatanService,
+  type MonthlyReportParams,
 } from "./services";
 import { isAuthenticated } from "./auth";
 
@@ -92,6 +96,45 @@ export function useLeaderboard(
   return useQuery({
     queryKey: ["leaderboard", opts.role, opts.month, opts.year],
     queryFn: () => dashboardService.leaderboard(opts),
+    enabled: enabled && isAuthenticated(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSettings(enabled = true) {
+  return useQuery({
+    queryKey: ["settings"],
+    queryFn: settingService.get,
+    enabled: enabled && isAuthenticated(),
+  });
+}
+
+export function useMonthlyReport(enabled: boolean, params: MonthlyReportParams) {
+  return useQuery({
+    queryKey: ["monthly-report", params.bulan, params.tahun, params.unit_id, params.petugas_id],
+    queryFn: () => reportService.monthly(params),
+    enabled: enabled && isAuthenticated(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useKeterlambatan(
+  enabled: boolean,
+  filters?: { domain?: string; status?: string; bulan?: number; tahun?: number },
+) {
+  return useQuery({
+    queryKey: ["keterlambatan", filters?.domain, filters?.status, filters?.bulan, filters?.tahun],
+    queryFn: () => keterlambatanService.list(filters),
+    enabled: enabled && isAuthenticated(),
+    staleTime: 60 * 1000,
+  });
+}
+
+/** Statistik analitik beranda (trend approved/rejected + 12 bulan). */
+export function useDashboardStatistics(enabled: boolean, opts?: { start_date?: string }) {
+  return useQuery({
+    queryKey: ["dashboard-statistics", opts?.start_date],
+    queryFn: () => dashboardService.statistics(opts),
     enabled: enabled && isAuthenticated(),
     staleTime: 5 * 60 * 1000,
   });

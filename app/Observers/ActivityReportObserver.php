@@ -88,6 +88,17 @@ class ActivityReportObserver
      */
     public function created(ActivityReport $report): void
     {
+        // Laporan masuk (termasuk hasil sync offline PWA yang telat tiba) →
+        // hapus catatan keterlambatan yang terlanjur dibuat sistem.
+        try {
+            \App\Models\LaporanKeterlambatan::resolveForReport($report, 'kebersihan');
+        } catch (\Throwable $e) {
+            Log::error('Gagal resolve keterlambatan', [
+                'report_id' => $report->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         // Notify supervisor when new report is submitted
         if ($report->status === 'submitted') {
             try {
@@ -128,6 +139,18 @@ class ActivityReportObserver
      */
     public function updated(ActivityReport $report): void
     {
+        // Draft yang baru di-submit juga menggugurkan catatan keterlambatan.
+        if ($report->wasChanged('status')) {
+            try {
+                \App\Models\LaporanKeterlambatan::resolveForReport($report, 'kebersihan');
+            } catch (\Throwable $e) {
+                Log::error('Gagal resolve keterlambatan', [
+                    'report_id' => $report->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         // === AUTO-UPDATE GUEST COMPLAINTS STATUS ===
         if ($report->wasChanged('status') && $report->lokasi_id) {
             $this->updateGuestComplaintsStatus($report);

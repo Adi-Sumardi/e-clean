@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMe, useLaporan } from "@/lib/hooks";
 import { REVIEW_DOMAINS, type DomainConfig } from "@/lib/domain";
+import { reportService } from "@/lib/services";
+import { ApiError } from "@/lib/api";
 import { PageHeader, Spinner, EmptyState, ErrorState, StatusBadge } from "@/components/ui";
 import { formatTanggal, formatJam } from "@/lib/format";
 
@@ -19,6 +21,9 @@ export default function LaporanMonitorPage() {
   const [domain, setDomain] = useState<DomainConfig>(REVIEW_DOMAINS[0]);
   const [status, setStatus] = useState("all");
 
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
   const { data, isLoading, isError, refetch } = useLaporan(manager ? domain : null);
 
   const filtered = useMemo(() => {
@@ -26,12 +31,44 @@ export default function LaporanMonitorPage() {
     return status === "all" ? list : list.filter((l) => l.status === status);
   }, [data, status]);
 
+  async function downloadPdf() {
+    const now = new Date();
+    setDownloadError(null);
+    setDownloading(true);
+    try {
+      await reportService.downloadListPdf({
+        domain: domain.key,
+        bulan: now.getMonth() + 1,
+        tahun: now.getFullYear(),
+        status: status === "all" ? undefined : status,
+      });
+    } catch (err) {
+      setDownloadError(err instanceof ApiError ? err.message : "Gagal mengunduh PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <Link href="/beranda" className="text-sm font-semibold text-primary">
         ← Kembali
       </Link>
-      <PageHeader title="Laporan" subtitle="Pantau laporan semua petugas" />
+      <PageHeader
+        title="Laporan"
+        subtitle="Pantau laporan semua petugas"
+        right={
+          <button
+            onClick={downloadPdf}
+            disabled={downloading || !manager}
+            title="Unduh PDF laporan bulan ini (sesuai filter)"
+            className="clay-primary px-4 py-2 text-sm font-bold disabled:opacity-60"
+          >
+            {downloading ? "Menyiapkan…" : "⬇ PDF"}
+          </button>
+        }
+      />
+      {downloadError && <p className="text-sm text-danger">{downloadError}</p>}
 
       {/* Filter tipe */}
       <div className="flex gap-2 overflow-x-auto pb-1">

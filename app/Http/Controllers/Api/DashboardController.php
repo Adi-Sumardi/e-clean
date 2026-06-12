@@ -357,6 +357,28 @@ class DashboardController extends Controller
                     ];
                 });
 
+            // Approved vs rejected per hari (widget trend kinerja di PWA)
+            $statusTrendQuery = ActivityReport::whereBetween('tanggal', [$startDate, $endDate]);
+            if ($petugasId) {
+                $statusTrendQuery->where('petugas_id', $petugasId);
+            }
+            $statusTrend = $statusTrendQuery->selectRaw('DATE(tanggal) as date,
+                    SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            // Total laporan per bulan, 12 bulan terakhir (widget overview admin di PWA)
+            $monthExpr = DB::connection()->getDriverName() === 'sqlite'
+                ? "strftime('%Y-%m', tanggal)"
+                : "DATE_FORMAT(tanggal, '%Y-%m')";
+            $monthlyTrend = ActivityReport::where('tanggal', '>=', Carbon::now()->subMonths(11)->startOfMonth())
+                ->selectRaw("{$monthExpr} as month, COUNT(*) as count")
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
+
             return $this->successResponse([
                 'period' => [
                     'start_date' => $startDate->format('Y-m-d'),
@@ -366,6 +388,8 @@ class DashboardController extends Controller
                 'late_submissions_trend' => $lateTrend,
                 'reports_by_status' => $reportsByStatus,
                 'rating_trend' => $ratingTrend,
+                'status_trend' => $statusTrend,
+                'monthly_trend' => $monthlyTrend,
             ], 'Statistics retrieved successfully');
 
         } catch (\Exception $e) {

@@ -11,6 +11,7 @@ import {
 import JadwalCard from "@/components/JadwalCard";
 import { Spinner } from "@/components/ui";
 import InstallPrompt from "@/components/InstallPrompt";
+import AnalyticsWidgets from "@/components/AnalyticsWidgets";
 import { formatJam, formatTanggal } from "@/lib/format";
 
 export default function BerandaPage() {
@@ -145,8 +146,14 @@ export default function BerandaPage() {
               <MenuCard href="/kelola/laporan" icon="📋" label="Laporan" />
               <MenuCard href="/kelola/lokasi" icon="📍" label="Lokasi" />
               <MenuCard href="/kelola/unit" icon="🏢" label="Unit" />
+              <MenuCard href="/kelola/laporan-bulanan" icon="📊" label="Lap. Bulanan" />
+              <MenuCard href="/kelola/keterlambatan" icon="⏰" label="Terlambat" />
+              <MenuCard href="/kelola/pengaturan" icon="⚙️" label="Pengaturan" />
             </div>
           </section>
+
+          {/* Widget analitik (rekap bulanan, trend mingguan, 12 bulan) */}
+          <AnalyticsWidgets />
         </>
       ) : (
         /* ---- Tampilan Petugas ---- */

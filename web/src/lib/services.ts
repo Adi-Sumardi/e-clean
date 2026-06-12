@@ -1,6 +1,6 @@
 /** Pembungkus endpoint API per domain fitur. */
 
-import { api } from "./api";
+import { api, downloadFile } from "./api";
 import { setToken, clearToken } from "./auth";
 import type { DomainConfig } from "./domain";
 import type {
@@ -14,6 +14,10 @@ import type {
   Unit,
   GuestComplaint,
   LeaderboardResponse,
+  AppSettings,
+  MonthlyReport,
+  Keterlambatan,
+  DashboardStatistics,
 } from "./types";
 
 export const authService = {
@@ -287,5 +291,71 @@ export const dashboardService = {
     return api.get<LeaderboardResponse>("/dashboard/leaderboard", {
       params: { role: opts?.role, month: opts?.month, year: opts?.year },
     });
+  },
+  /** Statistik untuk widget analitik beranda (trend status + 12 bulan). */
+  statistics(opts?: { start_date?: string; end_date?: string }): Promise<DashboardStatistics> {
+    return api.get<DashboardStatistics>("/dashboard/statistics", {
+      params: { start_date: opts?.start_date, end_date: opts?.end_date },
+    });
+  },
+};
+
+export const settingService = {
+  get(): Promise<AppSettings> {
+    return api.get<AppSettings>("/settings");
+  },
+  update(body: AppSettings): Promise<AppSettings> {
+    return api.put<AppSettings>("/settings", { json: body });
+  },
+};
+
+export interface MonthlyReportParams {
+  bulan: number;
+  tahun: number;
+  unit_id?: number;
+  petugas_id?: number;
+}
+
+export const reportService = {
+  monthly(params: MonthlyReportParams): Promise<MonthlyReport> {
+    return api.get<MonthlyReport>("/reports/monthly", { params: { ...params } });
+  },
+  downloadMonthlyPdf(params: MonthlyReportParams): Promise<void> {
+    return downloadFile(
+      "/reports/monthly/pdf",
+      { ...params },
+      `laporan-bulanan-${params.tahun}-${params.bulan}.pdf`,
+    );
+  },
+  /** Export PDF daftar laporan satu domain sesuai filter aktif. */
+  downloadListPdf(params: {
+    domain: string;
+    bulan: number;
+    tahun: number;
+    status?: string;
+    unit_id?: number;
+    petugas_id?: number;
+  }): Promise<void> {
+    return downloadFile(
+      "/reports/export/pdf",
+      { ...params },
+      `laporan-${params.domain}-${params.tahun}-${params.bulan}.pdf`,
+    );
+  },
+};
+
+export const keterlambatanService = {
+  async list(filters?: {
+    domain?: string;
+    status?: string;
+    bulan?: number;
+    tahun?: number;
+  }): Promise<Keterlambatan[]> {
+    return unwrapList<Keterlambatan>(
+      await api.get("/laporan-keterlambatan", { params: { ...filters } }),
+    );
+  },
+  remove(id: number): Promise<unknown> {
+    return api.delete(`/laporan-keterlambatan/${id}`);
   },
 };

@@ -125,6 +125,26 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
         Route::post('/{id}/status', [GuestComplaintController::class, 'updateStatus']);
     });
 
+    // App settings (admin/supervisor) — port dari halaman Filament AppSettings
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\SettingController::class, 'index']);
+        Route::put('/', [\App\Http\Controllers\Api\SettingController::class, 'update']);
+    });
+
+    // Laporan bulanan + export PDF (admin/supervisor/pengurus)
+    Route::prefix('reports')->group(function () {
+        Route::get('/monthly', [\App\Http\Controllers\Api\ReportExportController::class, 'monthly']);
+        Route::get('/monthly/pdf', [\App\Http\Controllers\Api\ReportExportController::class, 'monthlyPdf']);
+        Route::get('/export/pdf', [\App\Http\Controllers\Api\ReportExportController::class, 'listPdf']);
+    });
+
+    // Laporan keterlambatan (dibuat otomatis oleh sistem; list/show/delete saja)
+    Route::prefix('laporan-keterlambatan')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\LaporanKeterlambatanController::class, 'index']);
+        Route::get('/{id}', [\App\Http\Controllers\Api\LaporanKeterlambatanController::class, 'show']);
+        Route::delete('/{id}', [\App\Http\Controllers\Api\LaporanKeterlambatanController::class, 'destroy']);
+    });
+
     // Units (for per-unit filtering + management)
     Route::prefix('units')->group(function () {
         Route::get('/', [UnitController::class, 'index']);

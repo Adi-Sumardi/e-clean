@@ -81,6 +81,35 @@ class LaporanKeterlambatan extends Model
         return $this->belongsTo(Lokasi::class, 'lokasi_id');
     }
 
+    /**
+     * Hapus catatan keterlambatan yang sudah "terjawab" oleh laporan masuk.
+     *
+     * Penting untuk PWA offline-first: laporan bisa dibuat petugas SEBELUM
+     * batas waktu tapi baru tersinkron SETELAH CheckMissedSchedules terlanjur
+     * mencatat "tidak lapor". Saat laporan akhirnya tiba (created/submitted),
+     * catatan keterlambatan yang cocok dihapus agar tidak jadi false positive.
+     */
+    public static function resolveForReport(Model $report, string $domain): int
+    {
+        if (! in_array($report->status, ['submitted', 'approved'], true)) {
+            return 0;
+        }
+
+        $query = static::where('domain', $domain)
+            ->where('petugas_id', $report->petugas_id)
+            ->where('lokasi_id', $report->lokasi_id)
+            ->whereDate('tanggal', $report->tanggal);
+
+        // Persempit ke shift jadwal terkait bila ada, agar shift lain yang
+        // benar-benar terlewat tetap tercatat.
+        $shift = $report->jadwal?->shift;
+        if ($shift) {
+            $query->where('shift', $shift);
+        }
+
+        return $query->delete();
+    }
+
     // Helper methods
     public static function getShiftTimeRanges(): array
     {

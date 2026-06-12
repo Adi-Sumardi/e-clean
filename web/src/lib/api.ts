@@ -111,6 +111,59 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   return (payload?.data ?? (payload as unknown)) as T;
 }
 
+/**
+ * Unduh file biner (PDF) dari endpoint terproteksi. Tidak bisa pakai <a href>
+ * biasa karena butuh header Bearer — jadi fetch → blob → anchor sementara.
+ */
+export async function downloadFile(
+  path: string,
+  params: Record<string, string | number | boolean | undefined>,
+  fallbackName: string,
+): Promise<void> {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined) q.set(k, String(v));
+  }
+  const qs = q.toString();
+  const url = `${API_BASE}${path}${qs ? `?${qs}` : ""}`;
+
+  const token = getToken();
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+  } catch {
+    throw new ApiError("Tidak ada koneksi internet.", undefined);
+  }
+
+  if (!res.ok) {
+    let message = `Unduhan gagal (${res.status}).`;
+    try {
+      const payload = (await res.json()) as ApiEnvelope<unknown>;
+      if (payload?.message) message = payload.message;
+    } catch {
+      /* bukan JSON — pakai pesan default */
+    }
+    throw new ApiError(message, res.status);
+  }
+
+  // Nama file dari Content-Disposition bila ada.
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = /filename="?([^";]+)"?/.exec(disposition);
+  const filename = match?.[1] ?? fallbackName;
+
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export const api = {
   get: <T>(path: string, opts?: RequestOptions) =>
     request<T>(path, { ...opts, method: "GET" }),
