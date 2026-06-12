@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Claymorphism design system — KopkarYAPI PWA
+   Ciri khas: surface lembut bertint, sudut sangat bulat, dan bayangan "clay"
+   (drop shadow luar + dua inset terang/gelap) yang bikin elemen tampak empuk.
+   ========================================================================== */
+
+:root {
+  /* Permukaan & teks */
+  --clay-bg: #e7ebf6;          /* latar halaman */
+  --clay-surface: #eef1fb;     /* kartu / elemen terangkat */
+  --clay-surface-2: #e3e7f4;   /* elemen cekung / track */
+  --text: #2c3149;
+  --muted: #828aa6;
+  --border: rgba(140, 150, 185, 0.18);
+
+  /* Warna brand */
+  --primary: #5b8def;
+  --primary-strong: #3f74e0;
+  --primary-fg: #ffffff;
+  --success: #2fbf9f;
+  --danger: #f0746a;
+  --warning: #f3b13f;
+
+  /* Komponen bayangan clay */
+  --clay-light: rgba(255, 255, 255, 0.85);  /* sorot kiri-atas */
+  --clay-shadow: rgba(140, 150, 185, 0.40); /* bayang kanan-bawah */
+
+  --radius: 1.75rem;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--clay-bg);
+  --color-surface: var(--clay-surface);
+  --color-surface-sunken: var(--clay-surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-foreground: var(--primary-fg);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
+  --radius-clay: var(--radius);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ----- Utilities clay (dipakai sebagai className biasa: `clay`, dst.) ----- */
+
+/* Permukaan empuk terangkat (kartu, panel) */
+@utility clay {
+  border-radius: var(--radius);
+  background: var(--clay-surface);
+  box-shadow:
+    8px 8px 18px var(--clay-shadow),
+    inset 5px 5px 10px var(--clay-light),
+    inset -5px -5px 10px rgba(150, 160, 195, 0.16);
+}
+
+/* Permukaan cekung (input, track, well) — radius sedang + inset lembut agar
+   ujungnya tidak membentuk "cap" yang terlihat menutupi isi field. */
+@utility clay-sunken {
+  border-radius: 1rem;
+  background: var(--clay-surface-2);
+  box-shadow:
+    inset 3px 3px 6px var(--clay-shadow),
+    inset -3px -3px 6px var(--clay-light);
+}
+
+/* Tombol/elemen interaktif clay — menekan saat :active */
+@utility clay-button {
+  border-radius: 9999px;
+  background: var(--clay-surface);
+  box-shadow:
+    6px 6px 14px var(--clay-shadow),
+    inset 4px 4px 8px var(--clay-light),
+    inset -4px -4px 8px rgba(150, 160, 195, 0.16);
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+
+  &:active {
+    box-shadow:
+      inset 5px 5px 10px var(--clay-shadow),
+      inset -5px -5px 10px var(--clay-light);
+    transform: translateY(1px);
+  }
+}
+
+/* Varian primary (clay berwarna) */
+@utility clay-primary {
+  border-radius: 9999px;
+  color: var(--primary-fg);
+  background: linear-gradient(145deg, var(--primary), var(--primary-strong));
+  box-shadow:
+    6px 6px 14px rgba(63, 116, 224, 0.35),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.35),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.10);
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+
+  &:active {
+    transform: translateY(1px);
+    box-shadow:
+      inset 4px 4px 8px rgba(0, 0, 0, 0.18),
+      inset -4px -4px 8px rgba(255, 255, 255, 0.20);
+  }
+}
+
+/* ----- Base ----- */
+
+body {
+  background: var(--clay-bg);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
