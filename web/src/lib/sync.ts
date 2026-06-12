@@ -43,15 +43,22 @@ function buildFormData(job: OutboxJob): FormData {
 
 async function sendJob(job: OutboxJob): Promise<void> {
   const token = getToken();
-  const res = await fetch(`${API_BASE}${job.endpoint}`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Idempotency-Key": job.idempotencyKey,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: buildFormData(job),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${job.endpoint}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Idempotency-Key": job.idempotencyKey,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: buildFormData(job),
+    });
+  } catch {
+    // Error transport (koneksi putus di tengah sync) → penanda offline
+    // (status undefined) agar job KEMBALI pending, bukan failed.
+    throw new ApiError("Tidak ada koneksi internet.", undefined);
+  }
 
   if (res.ok) return;
 
@@ -74,20 +81,22 @@ export async function syncOutbox(): Promise<number> {
     const jobs = await allJobs();
     for (const job of jobs) {
       if (job.status === "syncing") continue;
+      // Increment attempts dipertahankan di semua jalur (pending/failed).
+      const attempted = { ...job, attempts: job.attempts + 1 };
       try {
-        await updateJob({ ...job, status: "syncing", attempts: job.attempts + 1 });
+        await updateJob({ ...attempted, status: "syncing" });
         await sendJob(job);
         await removeJob(job.id);
         sent++;
       } catch (err) {
         if (isOfflineError(err)) {
           // Tidak ada koneksi → kembalikan ke pending, hentikan loop.
-          await updateJob({ ...job, status: "pending" });
+          await updateJob({ ...attempted, status: "pending" });
           break;
         }
         // Error server (validasi/otorisasi) → tandai failed agar tidak loop.
         await updateJob({
-          ...job,
+          ...attempted,
           status: "failed",
           lastError: err instanceof ApiError ? err.message : "Gagal mengirim.",
         });
