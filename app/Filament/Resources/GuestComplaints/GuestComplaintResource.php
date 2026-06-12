@@ -57,6 +57,13 @@ class GuestComplaintResource extends Resource
                             ->required()
                             ->disabled(),
 
+                        Select::make('tipe_laporan')
+                            ->label('Ditujukan Kepada')
+                            ->options(GuestComplaint::getTipeLaporanOptions())
+                            ->default(GuestComplaint::TIPE_KEBERSIHAN)
+                            ->required()
+                            ->disabled(),
+
                         Textarea::make('deskripsi_keluhan')
                             ->label('Deskripsi Keluhan')
                             ->rows(3)
@@ -153,6 +160,16 @@ class GuestComplaintResource extends Resource
                         default => 'primary',
                     }),
 
+                TextColumn::make('tipe_laporan')
+                    ->label('Ditujukan')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => GuestComplaint::getTipeLaporanOptions()[$state] ?? ($state ?? 'Kebersihan'))
+                    ->color(fn (?string $state): string => match ($state) {
+                        'office_boy' => 'info',
+                        'satpam' => 'warning',
+                        default => 'success',
+                    }),
+
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -188,6 +205,10 @@ class GuestComplaintResource extends Resource
 
                 SelectFilter::make('jenis_keluhan')
                     ->options(GuestComplaint::getJenisKeluhanOptions()),
+
+                SelectFilter::make('tipe_laporan')
+                    ->label('Ditujukan Kepada')
+                    ->options(GuestComplaint::getTipeLaporanOptions()),
 
                 SelectFilter::make('lokasi_id')
                     ->label('Lokasi')
@@ -245,6 +266,16 @@ class GuestComplaintResource extends Resource
                                         'bau' => 'info',
                                         'rusak' => 'gray',
                                         default => 'primary',
+                                    }),
+
+                                TextEntry::make('tipe_laporan')
+                                    ->label('Ditujukan Kepada')
+                                    ->badge()
+                                    ->formatStateUsing(fn (?string $state): string => GuestComplaint::getTipeLaporanOptions()[$state] ?? ($state ?? 'Kebersihan'))
+                                    ->color(fn (?string $state): string => match ($state) {
+                                        'office_boy' => 'info',
+                                        'satpam' => 'warning',
+                                        default => 'success',
                                     }),
                             ]),
 

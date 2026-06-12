@@ -455,10 +455,45 @@
 
                     <div class="divider"></div>
 
-                    <!-- Section 3: Detail Keluhan -->
+                    <!-- Section 3: Tipe Laporan (petugas yang dituju) -->
                     <div class="form-section">
                         <div class="section-header">
                             <span class="section-number">3</span>
+                            <h3 class="section-title">Ditujukan Kepada <span class="required">*</span></h3>
+                        </div>
+
+                        <div class="radio-grid">
+                            @php
+                            $tipeIconMap = [
+                                'kebersihan' => '🧹',
+                                'office_boy' => '🛎️',
+                                'satpam' => '🛡️',
+                            ];
+                            @endphp
+
+                            @foreach($tipeLaporanOptions as $value => $label)
+                            <label class="radio-card">
+                                <input type="radio" name="tipe_laporan" value="{{ $value }}" {{ old('tipe_laporan', 'kebersihan') == $value ? 'checked' : '' }} required>
+                                <div class="radio-content">
+                                    <span class="radio-emoji">{{ $tipeIconMap[$value] ?? '📋' }}</span>
+                                    <span class="radio-label">{{ $label }}</span>
+                                </div>
+                                <div class="radio-check">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Section 4: Detail Keluhan -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <span class="section-number">4</span>
                             <h3 class="section-title">Detail Keluhan</h3>
                         </div>
 

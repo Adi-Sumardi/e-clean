@@ -167,6 +167,8 @@ export interface GuestComplaint {
   telepon_pelapor?: string | null;
   deskripsi_keluhan: string;
   jenis_keluhan?: string | null;
+  /** Tipe petugas yang dituju: kebersihan | office_boy | satpam. */
+  tipe_laporan?: string | null;
   foto_keluhan?: string | null;
   catatan_penanganan?: string | null;
   foto_penanganan?: string | null;
@@ -271,4 +273,16 @@ export interface MonthlyTrendPoint {
 export interface DashboardStatistics {
   status_trend: StatusTrendPoint[];
   monthly_trend: MonthlyTrendPoint[];
+}
+
+/** Kartu QR lokasi untuk halaman cetak (kelola/lokasi/qr). */
+export interface LokasiQR {
+  id: number;
+  kode_lokasi: string;
+  nama_lokasi: string;
+  kategori: string | null;
+  lantai: string | null;
+  unit: string | null;
+  qr_url: string;
+  keluhan_url: string;
 }

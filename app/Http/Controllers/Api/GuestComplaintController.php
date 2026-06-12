@@ -25,8 +25,11 @@ class GuestComplaintController extends Controller
             $user = $request->user();
             $query = GuestComplaint::with(['lokasi.unit', 'assignee', 'handler']);
 
-            // If the user has role 'petugas', only show complaints assigned to them
-            if ($user->hasRole('petugas')) {
+            // Field staff (semua domain) hanya melihat keluhan yang ditugaskan
+            // ke mereka; supervisor/pengurus/admin melihat semua.
+            $isFieldStaff = $user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko']);
+            $isManager = $user->hasAnyRole(['supervisor', 'pengurus', 'admin', 'super_admin']);
+            if ($isFieldStaff && ! $isManager) {
                 $query->where('assigned_to', $user->id);
             }
 
@@ -46,6 +49,7 @@ class GuestComplaintController extends Controller
                     'email_pelapor' => $c->email_pelapor,
                     'telepon_pelapor' => $c->telepon_pelapor,
                     'jenis_keluhan' => $c->jenis_keluhan,
+                    'tipe_laporan' => $c->tipe_laporan ?? 'kebersihan',
                     'deskripsi_keluhan' => $c->deskripsi_keluhan,
                     'foto_keluhan' => $c->foto_keluhan ? url('storage/' . $c->foto_keluhan) : null,
                     'status' => $c->status,

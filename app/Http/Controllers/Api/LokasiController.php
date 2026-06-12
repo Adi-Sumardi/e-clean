@@ -69,6 +69,49 @@ class LokasiController extends Controller
         }
     }
 
+    /**
+     * Daftar QR code lokasi untuk halaman cetak di PWA. QR yang belum ada
+     * di-generate otomatis (SVG berisi URL form keluhan tamu /keluhan/{kode}).
+     */
+    public function qrCodes(Request $request): JsonResponse
+    {
+        try {
+            if (! $this->canManage($request)) {
+                return $this->forbiddenResponse('You are not allowed to print QR codes.');
+            }
+
+            $query = Lokasi::query()->with('unit')->where('is_active', true);
+            if ($request->filled('unit_id')) {
+                $query->where('unit_id', $request->unit_id);
+            }
+
+            $qrService = app(\App\Services\QRCodeService::class);
+            $lokasis = $query->orderBy('kode_lokasi')->get()->map(function (Lokasi $lokasi) use ($qrService) {
+                // Generate bila belum ada / file hilang dari storage.
+                $exists = $lokasi->qr_code
+                    && \Illuminate\Support\Facades\Storage::disk('public')->exists($lokasi->qr_code);
+                if (! $exists) {
+                    $qrService->generateForLokasi($lokasi);
+                }
+
+                return [
+                    'id' => $lokasi->id,
+                    'kode_lokasi' => $lokasi->kode_lokasi,
+                    'nama_lokasi' => $lokasi->nama_lokasi,
+                    'kategori' => $lokasi->kategori,
+                    'lantai' => $lokasi->lantai,
+                    'unit' => $lokasi->unit?->nama_unit,
+                    'qr_url' => asset('storage/' . $lokasi->qr_code),
+                    'keluhan_url' => url('/keluhan/' . $lokasi->kode_lokasi),
+                ];
+            });
+
+            return $this->successResponse($lokasis->values(), 'QR codes retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to retrieve QR codes: ' . $e->getMessage(), 500);
+        }
+    }
+
     public function show($id): JsonResponse
     {
         try {

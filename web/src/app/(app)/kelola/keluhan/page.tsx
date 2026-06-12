@@ -27,12 +27,20 @@ const NEXT_ACTIONS: Record<string, { status: string; label: string }[]> = {
   ],
 };
 
+/** Tipe laporan keluhan → label + role petugas yang menangani. */
+const TIPE_INFO: Record<string, { label: string; icon: string; role: string }> = {
+  kebersihan: { label: "Kebersihan", icon: "🧹", role: "petugas" },
+  office_boy: { label: "Office Boy", icon: "🛎️", role: "office_boy" },
+  satpam: { label: "Keamanan", icon: "🛡️", role: "satpam" },
+};
+
 export default function KeluhanPage() {
   const { manager } = useMe();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<string | undefined>(undefined);
   const { data, isLoading, isError, refetch } = useComplaints(manager, filter);
-  const petugas = useUsersList(manager, "petugas");
+  // Semua user → difilter per keluhan sesuai role tipe laporannya.
+  const users = useUsersList(manager);
 
   async function setStatus(c: GuestComplaint, status: string) {
     try {
@@ -100,6 +108,14 @@ export default function KeluhanPage() {
                       {c.jenis_keluhan}
                     </span>
                   )}
+                  {(() => {
+                    const tipe = TIPE_INFO[c.tipe_laporan ?? "kebersihan"];
+                    return tipe ? (
+                      <span className="clay-sunken rounded-full px-2 py-0.5 text-[10px] font-semibold text-text">
+                        {tipe.icon} {tipe.label}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -131,7 +147,7 @@ export default function KeluhanPage() {
                 </p>
               )}
 
-              {/* Tugaskan ke petugas */}
+              {/* Tugaskan ke petugas sesuai tipe laporan keluhan */}
               <div className="mt-3 flex items-center gap-2">
                 <span className="text-xs text-muted">Tugaskan:</span>
                 <select
@@ -142,11 +158,17 @@ export default function KeluhanPage() {
                   <option value="">
                     {c.assignee?.name ? `Ubah (kini: ${c.assignee.name})` : "Pilih petugas…"}
                   </option>
-                  {petugas.data?.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
+                  {(users.data ?? [])
+                    .filter((u) =>
+                      u.roles?.includes(
+                        (TIPE_INFO[c.tipe_laporan ?? "kebersihan"] ?? TIPE_INFO.kebersihan).role,
+                      ),
+                    )
+                    .map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 

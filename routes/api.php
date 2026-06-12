@@ -55,6 +55,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:60,1'])->group(functi
     // Lokasi routes (read for all; manage for admin/supervisor)
     Route::prefix('lokasi')->group(function () {
         Route::get('/', [LokasiController::class, 'index']);
+        Route::get('/qr-codes', [LokasiController::class, 'qrCodes']); // cetak QR (PWA)
         Route::post('/', [LokasiController::class, 'store']);
         Route::get('/{id}', [LokasiController::class, 'show']);
         Route::put('/{id}', [LokasiController::class, 'update']);

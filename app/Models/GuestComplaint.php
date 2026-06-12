@@ -17,6 +17,7 @@ class GuestComplaint extends Model
         'email_pelapor',
         'telepon_pelapor',
         'jenis_keluhan',
+        'tipe_laporan',
         'deskripsi_keluhan',
         'foto_keluhan',
         'status',
@@ -45,6 +46,30 @@ class GuestComplaint extends Model
     public const JENIS_BAU = 'bau';
     public const JENIS_RUSAK = 'rusak';
     public const JENIS_LAINNYA = 'lainnya';
+
+    // Tipe laporan: jenis petugas yang dituju (dipilih tamu di form keluhan)
+    public const TIPE_KEBERSIHAN = 'kebersihan';
+    public const TIPE_OFFICE_BOY = 'office_boy';
+    public const TIPE_SATPAM = 'satpam';
+
+    public static function getTipeLaporanOptions(): array
+    {
+        return [
+            self::TIPE_KEBERSIHAN => 'Kebersihan',
+            self::TIPE_OFFICE_BOY => 'Office Boy',
+            self::TIPE_SATPAM => 'Keamanan (Satpam)',
+        ];
+    }
+
+    /** Role Spatie yang menangani tiap tipe laporan. */
+    public static function roleForTipe(string $tipe): string
+    {
+        return match ($tipe) {
+            self::TIPE_OFFICE_BOY => 'office_boy',
+            self::TIPE_SATPAM => 'satpam',
+            default => 'petugas',
+        };
+    }
 
     public static function getStatusOptions(): array
     {

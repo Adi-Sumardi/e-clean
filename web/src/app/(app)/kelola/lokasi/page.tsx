@@ -41,9 +41,14 @@ export default function LokasiListPage() {
       <PageHeader
         title="Lokasi"
         right={
-          <Link href="/kelola/lokasi/form" className="clay-primary px-4 py-2 text-sm font-bold">
-            + Tambah
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/kelola/lokasi/qr" className="clay-button px-4 py-2 text-sm font-bold text-text">
+              🖨 QR
+            </Link>
+            <Link href="/kelola/lokasi/form" className="clay-primary px-4 py-2 text-sm font-bold">
+              + Tambah
+            </Link>
+          </div>
         }
       />
 

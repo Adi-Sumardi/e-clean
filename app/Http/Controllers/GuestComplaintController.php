@@ -41,6 +41,7 @@ class GuestComplaintController extends Controller
         return view('guest-complaint.form', [
             'lokasi' => $lokasi,
             'jenisKeluhanOptions' => GuestComplaint::getJenisKeluhanOptions(),
+            'tipeLaporanOptions' => GuestComplaint::getTipeLaporanOptions(),
             'lastCleaning' => $this->getLastCleaning($lokasi),
         ]);
     }
@@ -86,6 +87,7 @@ class GuestComplaintController extends Controller
             'email_pelapor' => 'nullable|email|max:255',
             'telepon_pelapor' => ['nullable', 'string', 'max:20', 'regex:/^(08|628|\+628)[0-9]{8,12}$/'],
             'jenis_keluhan' => 'required|in:' . implode(',', array_keys(GuestComplaint::getJenisKeluhanOptions())),
+            'tipe_laporan' => 'required|in:' . implode(',', array_keys(GuestComplaint::getTipeLaporanOptions())),
             'deskripsi_keluhan' => 'required|string|max:1000',
             'foto_keluhan' => 'nullable|image|max:5120', // Max 5MB
         ], [
@@ -93,6 +95,8 @@ class GuestComplaintController extends Controller
             'lokasi_id.exists' => 'Lokasi tidak valid',
             'nama_pelapor.required' => 'Nama pelapor wajib diisi',
             'jenis_keluhan.required' => 'Jenis keluhan wajib dipilih',
+            'tipe_laporan.required' => 'Tipe laporan wajib dipilih',
+            'tipe_laporan.in' => 'Tipe laporan tidak valid',
             'deskripsi_keluhan.required' => 'Deskripsi keluhan wajib diisi',
             'foto_keluhan.image' => 'File harus berupa gambar',
             'foto_keluhan.max' => 'Ukuran foto maksimal 5MB',
@@ -116,8 +120,8 @@ class GuestComplaintController extends Controller
         // Get lokasi for redirect
         $lokasi = Lokasi::find($data['lokasi_id']);
 
-        // Auto-assign to petugas yang sedang bertugas di lokasi ini
-        $assignedPetugas = $this->getAssignedPetugas($lokasi);
+        // Auto-assign to petugas (sesuai tipe laporan) yang bertugas di lokasi ini
+        $assignedPetugas = $this->getAssignedPetugas($lokasi, $data['tipe_laporan']);
         if ($assignedPetugas) {
             $data['assigned_to'] = $assignedPetugas->id;
             $data['assigned_at'] = now();
@@ -135,26 +139,52 @@ class GuestComplaintController extends Controller
     }
 
     /**
-     * Get petugas yang sedang bertugas di lokasi ini berdasarkan jadwal dan shift saat ini
+     * Model jadwal + status "aktif" per tipe laporan (kebersihan/office_boy/satpam).
+     *
+     * @return array{model: class-string, statuses: string[]}
      */
-    protected function getAssignedPetugas(Lokasi $lokasi): ?User
+    protected function jadwalConfigForTipe(string $tipe): array
+    {
+        return match ($tipe) {
+            GuestComplaint::TIPE_OFFICE_BOY => [
+                'model' => \App\Models\JadwalOb::class,
+                'statuses' => ['pending', 'in_progress'],
+            ],
+            GuestComplaint::TIPE_SATPAM => [
+                'model' => \App\Models\JadwalSatpam::class,
+                'statuses' => ['pending', 'in_progress'],
+            ],
+            default => [
+                'model' => JadwalKebersihan::class,
+                'statuses' => ['active'],
+            ],
+        };
+    }
+
+    /**
+     * Get petugas (sesuai tipe laporan) yang sedang bertugas di lokasi ini
+     * berdasarkan jadwal domain terkait dan shift saat ini.
+     */
+    protected function getAssignedPetugas(Lokasi $lokasi, string $tipe = GuestComplaint::TIPE_KEBERSIHAN): ?User
     {
         $now = now();
         $currentTime = $now->format('H:i:s');
+        $cfg = $this->jadwalConfigForTipe($tipe);
+        $jadwalModel = $cfg['model'];
 
         // Cari jadwal yang aktif hari ini di lokasi ini, sesuai jam saat ini
-        $jadwal = JadwalKebersihan::where('lokasi_id', $lokasi->id)
+        $jadwal = $jadwalModel::where('lokasi_id', $lokasi->id)
             ->where('tanggal', $now->toDateString())
-            ->where('status', 'active')
+            ->whereIn('status', $cfg['statuses'])
             ->where('jam_mulai', '<=', $currentTime)
             ->where('jam_selesai', '>=', $currentTime)
             ->first();
 
         // Jika tidak ada jadwal pada jam ini, cari jadwal hari ini yang paling dekat
         if (!$jadwal) {
-            $jadwal = JadwalKebersihan::where('lokasi_id', $lokasi->id)
+            $jadwal = $jadwalModel::where('lokasi_id', $lokasi->id)
                 ->where('tanggal', $now->toDateString())
-                ->where('status', 'active')
+                ->whereIn('status', $cfg['statuses'])
                 ->orderBy('jam_mulai')
                 ->first();
         }
@@ -179,10 +209,12 @@ class GuestComplaintController extends Controller
                 return;
             }
 
-            // Get petugas assigned to this location today
-            $petugasIds = JadwalKebersihan::where('lokasi_id', $lokasi->id)
+            // Get petugas (sesuai tipe laporan) assigned to this location today
+            $cfg = $this->jadwalConfigForTipe($complaint->tipe_laporan ?? GuestComplaint::TIPE_KEBERSIHAN);
+            $jadwalModel = $cfg['model'];
+            $petugasIds = $jadwalModel::where('lokasi_id', $lokasi->id)
                 ->where('tanggal', today())
-                ->where('status', 'active')
+                ->whereIn('status', $cfg['statuses'])
                 ->pluck('petugas_id')
                 ->unique()
                 ->toArray();
@@ -231,6 +263,22 @@ class GuestComplaintController extends Controller
                     'lokasi_id' => $lokasi->id,
                 ]
             );
+
+            // Web Push ke PWA petugas (kanal utama sejak Expo dipensiunkan).
+            $webPush = app(\App\Services\WebPushService::class);
+            foreach ($petugasUsers as $petugasUser) {
+                $webPush->sendToUser(
+                    $petugasUser,
+                    'Keluhan Tamu Baru',
+                    "{$lokasi->nama_lokasi}: " . \Illuminate\Support\Str::limit($complaint->deskripsi_keluhan, 80),
+                    [
+                        'type' => 'guest_complaint',
+                        'ref_id' => $complaint->id,
+                        'lokasi_id' => $lokasi->id,
+                        'url' => '/beranda',
+                    ]
+                );
+            }
 
         } catch (\Exception $e) {
             Log::error('Failed to send complaint notification: ' . $e->getMessage(), [

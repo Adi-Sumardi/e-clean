@@ -18,6 +18,7 @@ import type {
   MonthlyReport,
   Keterlambatan,
   DashboardStatistics,
+  LokasiQR,
 } from "./types";
 
 export const authService = {
@@ -197,6 +198,12 @@ export interface LokasiInput {
 export const lokasiService = {
   async list(): Promise<Lokasi[]> {
     return unwrapList<Lokasi>(await api.get("/lokasi"));
+  },
+  /** Daftar QR lokasi utk halaman cetak; server auto-generate yang hilang. */
+  async qrCodes(unit_id?: number): Promise<LokasiQR[]> {
+    return unwrapList<LokasiQR>(
+      await api.get("/lokasi/qr-codes", { params: { unit_id } }),
+    );
   },
   show(id: number): Promise<Lokasi> {
     return api.get<Lokasi>(`/lokasi/${id}`);

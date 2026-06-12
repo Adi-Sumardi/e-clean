@@ -101,6 +101,15 @@ export function useLeaderboard(
   });
 }
 
+export function useLokasiQrCodes(enabled: boolean, unitId?: number) {
+  return useQuery({
+    queryKey: ["lokasi-qr", unitId],
+    queryFn: () => lokasiService.qrCodes(unitId),
+    enabled: enabled && isAuthenticated(),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 export function useSettings(enabled = true) {
   return useQuery({
     queryKey: ["settings"],
