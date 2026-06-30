@@ -122,22 +122,18 @@ class GuestComplaintController extends Controller
                 'status' => GuestComplaint::STATUS_IN_PROGRESS,
             ]);
 
-            // Notify assignee using Expo Push
+            // Notify assignee via Web Push PWA.
             try {
                 if ($petugasUser && $complaint->lokasi) {
-                    app(\App\Services\ExpoPushService::class)->sendToUsers(
-                        [$petugasUser],
+                    app(\App\Services\WebPushService::class)->sendToUser(
+                        $petugasUser,
                         'Keluhan Tamu Baru',
                         "{$complaint->lokasi->nama_lokasi}: " . \Illuminate\Support\Str::limit($complaint->deskripsi_keluhan, 80),
-                        [
-                            'type' => 'guest_complaint',
-                            'complaint_id' => $complaint->id,
-                            'lokasi_id' => $complaint->lokasi->id,
-                        ]
+                        ['type' => 'guest_complaint', 'ref_id' => $complaint->id, 'url' => '/beranda']
                     );
                 }
             } catch (\Exception $ne) {
-                // Log and ignore notification failure
+                // ignore notification failure
             }
 
             return $this->successResponse($complaint->load(['lokasi', 'assignee']), 'Complaint assigned successfully');

@@ -322,22 +322,21 @@ class SupervisorPendingReportsWidget extends TableWidget implements HasForms, Ha
 
                     $actualRecord->update($updateData);
 
-                    // Send push notification if petugas exists
+                    // Send Web Push notification ke petugas via PWA.
                     if ($actualRecord->petugas) {
                         $title = $data['status'] === 'approved' ? 'Laporan Disetujui' : 'Laporan Ditolak';
-                        $body = $data['status'] === 'approved' 
-                            ? 'Laporan kegiatan Anda telah disetujui supervisor.' 
+                        $body = $data['status'] === 'approved'
+                            ? 'Laporan kegiatan Anda telah disetujui supervisor.'
                             : 'Laporan kegiatan Anda ditolak: ' . \Illuminate\Support\Str::limit($data['rejected_reason'] ?? '', 80);
-                        
                         try {
-                            app(\App\Services\ExpoPushService::class)->sendToUser(
+                            app(\App\Services\WebPushService::class)->sendToUser(
                                 $actualRecord->petugas,
                                 $title,
                                 $body,
-                                ['type' => "report_{$data['status']}", 'report_id' => $actualRecord->id]
+                                ['type' => "report_{$data['status']}", 'ref_id' => $actualRecord->id, 'url' => '/laporan']
                             );
                         } catch (\Exception $e) {
-                            // ignore push service exceptions gracefully
+                            // ignore push failures
                         }
                     }
                 }

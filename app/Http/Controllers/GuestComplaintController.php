@@ -251,20 +251,7 @@ class GuestComplaintController extends Controller
                 'failed' => $result['failed'],
             ]);
 
-            // Also push to the petugas' mobile app (guests report on web,
-            // but the notification reaches the relevant petugas on mobile).
-            app(\App\Services\ExpoPushService::class)->sendToUsers(
-                $petugasUsers,
-                'Keluhan Tamu Baru',
-                "{$lokasi->nama_lokasi}: " . \Illuminate\Support\Str::limit($complaint->deskripsi_keluhan, 80),
-                [
-                    'type' => 'guest_complaint',
-                    'complaint_id' => $complaint->id,
-                    'lokasi_id' => $lokasi->id,
-                ]
-            );
-
-            // Web Push ke PWA petugas (kanal utama sejak Expo dipensiunkan).
+            // Web Push ke PWA petugas.
             $webPush = app(\App\Services\WebPushService::class);
             foreach ($petugasUsers as $petugasUser) {
                 $webPush->sendToUser(

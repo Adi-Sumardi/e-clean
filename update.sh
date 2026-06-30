@@ -34,39 +34,56 @@ echo -e "${GREEN}=============================================${NC}"
 cd "$APP_DIR"
 
 # 1. Maintenance mode
-echo -e "\n${YELLOW}[1/9] Maintenance mode ON...${NC}"
+echo -e "\n${YELLOW}[1/10] Maintenance mode ON...${NC}"
 php artisan down --refresh=15 --retry=60 || true
 
-# 2. Pull latest
-echo -e "${YELLOW}[2/9] Pull kode terbaru...${NC}"
+# 2. Pastikan VAPID keys ada di .env (sama dengan lokal)
+echo -e "${YELLOW}[2/10] Sync VAPID keys ke .env...${NC}"
+VAPID_PUBLIC="BEbuPxGS2smxeS2oP5w2uhYez3dB9E90XMImuo_pMQ7j4QRg9Gh_Ffm3enMtEgDVUu6u3YA39XIEXcxBWtHgow0"
+VAPID_PRIVATE="tBrY7f7c9XdQ1UTjcy5xjsRYJSYioR0uU451O4sx4jE"
+VAPID_SUBJECT="mailto:admin@kopkaryapi.id"
+# Tambahkan bila belum ada, atau update bila sudah ada
+grep -q "^VAPID_PUBLIC_KEY=" .env \
+    && sed -i "s|^VAPID_PUBLIC_KEY=.*|VAPID_PUBLIC_KEY=${VAPID_PUBLIC}|" .env \
+    || echo "VAPID_PUBLIC_KEY=${VAPID_PUBLIC}" >> .env
+grep -q "^VAPID_PRIVATE_KEY=" .env \
+    && sed -i "s|^VAPID_PRIVATE_KEY=.*|VAPID_PRIVATE_KEY=${VAPID_PRIVATE}|" .env \
+    || echo "VAPID_PRIVATE_KEY=${VAPID_PRIVATE}" >> .env
+grep -q "^VAPID_SUBJECT=" .env \
+    && sed -i "s|^VAPID_SUBJECT=.*|VAPID_SUBJECT=${VAPID_SUBJECT}|" .env \
+    || echo "VAPID_SUBJECT=${VAPID_SUBJECT}" >> .env
+echo -e "       VAPID keys OK"
+
+# 3. Pull latest
+echo -e "${YELLOW}[3/10] Pull kode terbaru...${NC}"
 git pull origin main
 
-# 3. Composer
-echo -e "${YELLOW}[3/9] PHP dependencies...${NC}"
+# 4. Composer
+echo -e "${YELLOW}[4/10] PHP dependencies...${NC}"
 composer install --no-dev --optimize-autoloader --no-interaction
 
-# 4. Build Filament/Vite assets (root)
-echo -e "${YELLOW}[4/9] Build Filament/Vite assets...${NC}"
+# 5. Build Filament/Vite assets (root)
+echo -e "${YELLOW}[5/10] Build Filament/Vite assets...${NC}"
 npm ci --production=false
 npm run build
 
-# 5. Build Next.js PWA
-echo -e "${YELLOW}[5/9] Build Next.js PWA (web/)...${NC}"
+# 6. Build Next.js PWA
+echo -e "${YELLOW}[6/10] Build Next.js PWA (web/)...${NC}"
 cd web
 npm ci --production=false
 npm run build
 cd "$APP_DIR"
 
-# 6. Sync PWA static files ke public/
-echo -e "${YELLOW}[6/9] Sync PWA static files ke public/...${NC}"
+# 7. Sync PWA static files ke public/
+echo -e "${YELLOW}[7/10] Sync PWA static files ke public/...${NC}"
 rsync -a --checksum web/out/ public/
 
-# 7. Migrate
-echo -e "${YELLOW}[7/9] Migrasi database...${NC}"
+# 8. Migrate
+echo -e "${YELLOW}[8/10] Migrasi database...${NC}"
 php artisan migrate --force
 
-# 8. Clear & optimize
-echo -e "${YELLOW}[8/9] Clear cache & optimize...${NC}"
+# 9. Clear & optimize
+echo -e "${YELLOW}[9/10] Clear cache & optimize...${NC}"
 php artisan config:clear
 php artisan cache:clear
 php artisan view:clear
@@ -77,8 +94,8 @@ php artisan route:cache
 php artisan view:cache
 php artisan optimize
 
-# 9. Permissions & reload services
-echo -e "${YELLOW}[9/9] Permission & reload services...${NC}"
+# 10. Permissions & reload services
+echo -e "${YELLOW}[10/10] Permission & reload services...${NC}"
 sudo chmod -R 775 storage bootstrap/cache
 sudo chown -R www-data:www-data storage bootstrap/cache public/
 sudo systemctl reload "$PHP_FPM"
