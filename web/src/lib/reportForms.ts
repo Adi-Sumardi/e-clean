@@ -34,6 +34,14 @@ export type ReportField =
       required?: boolean;
       min?: number;
       max?: number;
+    }
+  | {
+      name: string;
+      label: string;
+      kind: "checklist";
+      required?: boolean;
+      /** Item default yang langsung muncul saat form dibuka. */
+      defaultItems: string[];
     };
 
 export interface ReportSchema {
@@ -113,6 +121,18 @@ export const REPORT_SCHEMAS: Record<DomainKey, ReportSchema> = {
         ],
       },
       { name: "catatan_stok", label: "Catatan stok (opsional)", kind: "textarea", max: 1000 },
+      {
+        name: "checklist",
+        label: "Checklist harian",
+        kind: "checklist",
+        defaultItems: [
+          "Buka dan siapkan area toko",
+          "Periksa dan catat stok barang",
+          "Bersihkan area toko",
+          "Layani pengunjung / pelanggan",
+          "Tutup dan kunci toko",
+        ],
+      },
       { name: "foto", label: "Foto (opsional)", kind: "photos", max: 5 },
       { name: "catatan_petugas", label: "Catatan (opsional)", kind: "textarea", max: 1000 },
     ],

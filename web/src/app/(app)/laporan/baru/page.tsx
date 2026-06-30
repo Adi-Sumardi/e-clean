@@ -38,6 +38,7 @@ export default function LaporanBaruPage() {
   const [params, setParams] = useState<{ jadwal?: string; lokasi?: string; nama?: string }>({});
   const [text, setText] = useState<Record<string, string>>({});
   const [photos, setPhotos] = useState<Record<string, Blob[]>>({});
+  const [lists, setLists] = useState<Record<string, Array<{ item: string; done: boolean }>>>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,20 +53,27 @@ export default function LaporanBaruPage() {
 
   const schema = domain ? REPORT_SCHEMAS[domain.key] : null;
 
-  // Prefill jam_mulai = sekarang.
+  // Prefill jam_mulai = sekarang + init checklist defaultItems.
   useEffect(() => {
     if (!schema) return;
     const defaults: Record<string, string> = {};
+    const defaultLists: Record<string, Array<{ item: string; done: boolean }>> = {};
     schema.fields.forEach((f) => {
       if (f.kind === "time" && f.defaultNow) defaults[f.name] = nowHHMM();
+      if (f.kind === "checklist") {
+        defaultLists[f.name] = f.defaultItems.map((item) => ({ item, done: false }));
+      }
     });
     setText((t) => ({ ...defaults, ...t }));
+    setLists((l) => ({ ...defaultLists, ...l }));
   }, [schema]);
 
   const setField = (name: string, val: string) =>
     setText((t) => ({ ...t, [name]: val }));
   const setPhotoField = (name: string, blobs: Blob[]) =>
     setPhotos((p) => ({ ...p, [name]: blobs }));
+  const setListField = (name: string, items: Array<{ item: string; done: boolean }>) =>
+    setLists((l) => ({ ...l, [name]: items }));
 
   function validate(): string | null {
     if (!schema) return "Domain tidak dikenali.";
@@ -105,6 +113,14 @@ export default function LaporanBaruPage() {
       };
       if (params.jadwal) fields.jadwal_id = params.jadwal;
       if (coords) fields.koordinat_lokasi = coords;
+      // Serialisasi checklist sebagai indexed FormData agar Laravel parse sebagai array.
+      // checklist[0][item]=... & checklist[0][done]=1
+      for (const [name, items] of Object.entries(lists)) {
+        items.forEach((entry, i) => {
+          fields[`${name}[${i}][item]`] = entry.item;
+          fields[`${name}[${i}][done]`] = entry.done ? "1" : "0";
+        });
+      }
 
       await enqueue({
         domain: domain!.key,
@@ -147,6 +163,8 @@ export default function LaporanBaruPage() {
             onText={(v) => setField(f.name, v)}
             photos={photos[f.name] ?? []}
             onPhotos={(b) => setPhotoField(f.name, b)}
+            listItems={lists[f.name] ?? []}
+            onList={(items) => setListField(f.name, items)}
           />
         ))}
 
@@ -177,13 +195,27 @@ function FieldRenderer({
   onText,
   photos,
   onPhotos,
+  listItems,
+  onList,
 }: {
   field: ReportField;
   value: string;
   onText: (v: string) => void;
   photos: Blob[];
   onPhotos: (b: Blob[]) => void;
+  listItems: Array<{ item: string; done: boolean }>;
+  onList: (items: Array<{ item: string; done: boolean }>) => void;
 }) {
+  if (field.kind === "checklist") {
+    return (
+      <ChecklistField
+        label={field.label}
+        items={listItems}
+        onChange={onList}
+      />
+    );
+  }
+
   if (field.kind === "photos") {
     return (
       <PhotoPicker
@@ -250,5 +282,100 @@ function FieldRenderer({
         className="clay-sunken w-full rounded-2xl px-4 py-3 text-text outline-none placeholder:text-muted"
       />
     </label>
+  );
+}
+
+function ChecklistField({
+  label,
+  items,
+  onChange,
+}: {
+  label: string;
+  items: Array<{ item: string; done: boolean }>;
+  onChange: (items: Array<{ item: string; done: boolean }>) => void;
+}) {
+  const [newItem, setNewItem] = useState("");
+
+  function toggle(i: number) {
+    const next = items.map((it, idx) => idx === i ? { ...it, done: !it.done } : it);
+    onChange(next);
+  }
+
+  function remove(i: number) {
+    onChange(items.filter((_, idx) => idx !== i));
+  }
+
+  function addItem() {
+    const trimmed = newItem.trim();
+    if (!trimmed) return;
+    onChange([...items, { item: trimmed, done: false }]);
+    setNewItem("");
+  }
+
+  const doneCount = items.filter((it) => it.done).length;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-text">{label}</span>
+        {items.length > 0 && (
+          <span className="text-xs font-semibold text-primary">
+            {doneCount}/{items.length} selesai
+          </span>
+        )}
+      </div>
+
+      <div className="clay-sunken flex flex-col divide-y divide-border rounded-2xl overflow-hidden">
+        {items.map((it, i) => (
+          <div key={i} className="flex items-center gap-3 px-4 py-3">
+            <button
+              type="button"
+              onClick={() => toggle(i)}
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors ${
+                it.done
+                  ? "border-success bg-success text-white"
+                  : "border-border bg-surface"
+              }`}
+            >
+              {it.done && <span className="text-xs font-bold">✓</span>}
+            </button>
+            <span
+              className={`flex-1 text-sm ${
+                it.done ? "line-through text-muted" : "text-text"
+              }`}
+            >
+              {it.item}
+            </span>
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="text-muted hover:text-danger text-base leading-none"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+
+        {/* Input tambah item baru */}
+        <div className="flex items-center gap-2 px-4 py-2">
+          <input
+            type="text"
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addItem(); } }}
+            placeholder="Tambah item…"
+            className="flex-1 bg-transparent py-1 text-sm text-text outline-none placeholder:text-muted"
+          />
+          <button
+            type="button"
+            onClick={addItem}
+            disabled={!newItem.trim()}
+            className="text-primary font-bold text-sm disabled:opacity-30"
+          >
+            + Tambah
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
