@@ -8,6 +8,7 @@ import {
   useLokasiList,
   useUnitList,
   useJadwalUpcoming,
+  useSettings,
 } from "@/lib/hooks";
 import { REVIEW_DOMAINS, type DomainConfig } from "@/lib/domain";
 import { jadwalService, type JadwalInput } from "@/lib/services";
@@ -49,7 +50,12 @@ export default function KelolaJadwalPage() {
   const unit = useUnitList(manager);
   const lokasi = useLokasiList(manager);
   const upcoming = useJadwalUpcoming(manager ? domain : null);
-  const shiftOptions = shiftsFor(domain.key);
+  const { data: settingsData } = useSettings(manager);
+  const shiftOptions = useMemo(() => {
+    return settingsData?.work_shifts && settingsData.work_shifts.length > 0
+      ? settingsData.work_shifts
+      : shiftsFor(domain.key);
+  }, [settingsData, domain.key]);
 
   const lokasiOptions = (lokasi.data ?? []).filter(
     (l) => unitId && l.unit?.id === Number(unitId),

@@ -113,7 +113,21 @@ class LaporanKeterlambatan extends Model
     // Helper methods
     public static function getShiftTimeRanges(): array
     {
-        // Gunakan WorkShift enum sebagai single source of truth
+        $shifts = Setting::get('work_shifts');
+        if ($shifts && is_array($shifts)) {
+            $ranges = [];
+            foreach ($shifts as $shift) {
+                if (isset($shift['value'], $shift['mulai'], $shift['selesai'])) {
+                    $ranges[$shift['value']] = [
+                        'start' => $shift['mulai'],
+                        'end' => $shift['selesai'],
+                    ];
+                }
+            }
+            return $ranges;
+        }
+
+        // Gunakan WorkShift enum sebagai single source of truth fallback
         $ranges = [];
         foreach (\App\Enums\WorkShift::cases() as $shift) {
             $ranges[$shift->value] = [
@@ -126,6 +140,18 @@ class LaporanKeterlambatan extends Model
 
     public static function getShiftTimeRange(string $shift): array
     {
+        $shifts = Setting::get('work_shifts');
+        if ($shifts && is_array($shifts)) {
+            foreach ($shifts as $s) {
+                if (isset($s['value'], $s['mulai'], $s['selesai']) && $s['value'] === $shift) {
+                    return [
+                        'start' => $s['mulai'],
+                        'end' => $s['selesai'],
+                    ];
+                }
+            }
+        }
+
         // Lookup dari WorkShift enum langsung
         $workShift = \App\Enums\WorkShift::tryFrom($shift);
         if ($workShift) {

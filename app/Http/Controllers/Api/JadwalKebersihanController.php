@@ -31,7 +31,7 @@ class JadwalKebersihanController extends Controller
             'petugas_id' => [$req, 'exists:users,id'],
             'lokasi_id' => [$req, 'exists:lokasis,id'],
             'tanggal' => [$req, 'date'],
-            'shift' => [$req, 'in:pagi,standby,siang,sweeping,sore'],
+            'shift' => [$req, 'string', 'max:50'],
             'jam_mulai' => [$req, 'date_format:H:i'],
             'jam_selesai' => [$req, 'date_format:H:i', 'after:jam_mulai'],
             'prioritas' => ['nullable', 'string', 'max:50'],

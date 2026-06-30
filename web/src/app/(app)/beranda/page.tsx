@@ -39,7 +39,15 @@ export default function BerandaPage() {
         </div>
         {(domain || manager) && (
           <span className="clay-primary px-4 py-2 text-xs font-bold">
-            {manager ? "Supervisor" : domain?.label}
+            {manager
+              ? (user?.roles?.includes("super_admin")
+                ? "Super Admin"
+                : user?.roles?.includes("admin")
+                ? "Admin"
+                : user?.roles?.includes("pengurus")
+                ? "Pengurus"
+                : "Supervisor")
+              : domain?.label}
           </span>
         )}
       </header>

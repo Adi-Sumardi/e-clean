@@ -203,8 +203,16 @@ export interface LeaderboardResponse {
 
 /* ---------- Admin Tahap 3: settings, laporan bulanan, keterlambatan ---------- */
 
+export interface ShiftOption {
+  value: string;
+  label: string;
+  mulai: string;
+  selesai: string;
+}
+
 export interface AppSettings {
   reporting_tolerance_minutes: number;
+  work_shifts?: ShiftOption[];
 }
 
 export interface MonthlyPetugasRekap {
