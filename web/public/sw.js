@@ -28,8 +28,7 @@ const LARAVEL_PREFIXES = [
 ];
 
 self.addEventListener("install", () => {
-  // Tidak auto-skipWaiting: SW baru menunggu sampai user menekan "Perbarui"
-  // (lihat handler message SKIP_WAITING) agar tidak memaksa reload saat mengisi form.
+  self.skipWaiting();
 });
 
 // Aktifkan SW baru atas perintah halaman (tombol "Perbarui").
