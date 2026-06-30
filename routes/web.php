@@ -6,7 +6,7 @@ use App\Http\Controllers\GuestComplaintController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect('/admin/login');
+    return redirect('/login');
 });
 
 // Guest Complaint Routes (Public - for QR Code scanning)
