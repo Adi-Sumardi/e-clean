@@ -89,7 +89,7 @@ cd "$APP_DIR"
 
 # 6. Sync PWA static files ke public/
 echo -e "${YELLOW}[6/9] Sync PWA ke public/...${NC}"
-rsync -a --checksum web/out/ public/
+rsync -a --no-owner --no-group --checksum web/out/ public/
 
 # 7. Migrate
 echo -e "${YELLOW}[7/9] Migrasi database...${NC}"
