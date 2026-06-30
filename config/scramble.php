@@ -40,13 +40,13 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'API E-Clean (Clean Service System) untuk aplikasi mobile petugas. '
+        'description' => 'API Apps KopkarYAPI untuk aplikasi petugas. '
             . 'Otentikasi memakai Bearer token (Laravel Sanctum): login via `POST /v1/auth/login`, '
             . 'lalu sertakan header `Authorization: Bearer {token}` pada endpoint terproteksi.',
     ],
 
     'ui' => [
-        'title' => 'E-Clean API',
+        'title' => 'Apps KopkarYAPI API',
     ],
 
     'renderer' => 'elements',
