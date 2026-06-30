@@ -24,6 +24,8 @@ cd "$APP_DIR"
 # -----------------------------------------------
 if [[ "${1:-}" != "--updated" ]]; then
     echo -e "${YELLOW}► Pull kode terbaru...${NC}"
+    # Reset sw.js — di-modify tiap deploy untuk VERSION bump, tidak perlu commit.
+    git checkout web/public/sw.js 2>/dev/null || true
     git pull origin main
     echo -e "${YELLOW}► Re-exec script versi baru...${NC}"
     exec bash "$0" --updated
