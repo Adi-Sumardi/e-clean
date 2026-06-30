@@ -314,8 +314,8 @@ class DashboardController extends Controller
                 $reportsQuery->where('petugas_id', $petugasId);
             }
             $reportsTrend = $reportsQuery->selectRaw('DATE(tanggal) as date, COUNT(*) as count')
-                ->groupBy('date')
-                ->orderBy('date')
+                ->groupBy(DB::raw('DATE(tanggal)'))
+                ->orderBy(DB::raw('DATE(tanggal)'))
                 ->get();
 
             // Late submission trend
@@ -323,11 +323,11 @@ class DashboardController extends Controller
             if ($petugasId) {
                 $lateQuery->where('petugas_id', $petugasId);
             }
-            $lateTrend = $lateQuery->selectRaw('DATE(tanggal) as date, COUNT(*) as count,
-                    SUM(CASE WHEN status = "terlambat" THEN 1 ELSE 0 END) as late,
-                    SUM(CASE WHEN status = "tidak_selesai" THEN 1 ELSE 0 END) as incomplete')
-                ->groupBy('date')
-                ->orderBy('date')
+            $lateTrend = $lateQuery->selectRaw("DATE(tanggal) as date, COUNT(*) as count,
+                    SUM(CASE WHEN status = 'terlambat' THEN 1 ELSE 0 END) as late,
+                    SUM(CASE WHEN status = 'tidak_selesai' THEN 1 ELSE 0 END) as incomplete")
+                ->groupBy(DB::raw('DATE(tanggal)'))
+                ->orderBy(DB::raw('DATE(tanggal)'))
                 ->get();
 
             // Reports by status
@@ -347,8 +347,8 @@ class DashboardController extends Controller
                 $ratingQuery->where('petugas_id', $petugasId);
             }
             $ratingTrend = $ratingQuery->selectRaw('DATE(tanggal) as date, AVG(rating) as average_rating')
-                ->groupBy('date')
-                ->orderBy('date')
+                ->groupBy(DB::raw('DATE(tanggal)'))
+                ->orderBy(DB::raw('DATE(tanggal)'))
                 ->get()
                 ->map(function($item) {
                     return [
@@ -362,11 +362,11 @@ class DashboardController extends Controller
             if ($petugasId) {
                 $statusTrendQuery->where('petugas_id', $petugasId);
             }
-            $statusTrend = $statusTrendQuery->selectRaw('DATE(tanggal) as date,
-                    SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved,
-                    SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected')
-                ->groupBy('date')
-                ->orderBy('date')
+            $statusTrend = $statusTrendQuery->selectRaw("DATE(tanggal) as date,
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected")
+                ->groupBy(DB::raw('DATE(tanggal)'))
+                ->orderBy(DB::raw('DATE(tanggal)'))
                 ->get();
 
             // Total laporan per bulan, 12 bulan terakhir (widget overview admin di PWA)
@@ -375,8 +375,8 @@ class DashboardController extends Controller
                 : "DATE_FORMAT(tanggal, '%Y-%m')";
             $monthlyTrend = ActivityReport::where('tanggal', '>=', Carbon::now()->subMonths(11)->startOfMonth())
                 ->selectRaw("{$monthExpr} as month, COUNT(*) as count")
-                ->groupBy('month')
-                ->orderBy('month')
+                ->groupBy(DB::raw($monthExpr))
+                ->orderBy(DB::raw($monthExpr))
                 ->get();
 
             return $this->successResponse([
@@ -430,12 +430,12 @@ class DashboardController extends Controller
             $reportsStats = $reportModel::whereIn('petugas_id', $petugasIds)
                 ->whereMonth('tanggal', $thisMonth)
                 ->whereYear('tanggal', $thisYear)
-                ->selectRaw('
+                ->selectRaw("
                     petugas_id,
                     COUNT(*) as total_reports,
-                    SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved_reports,
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_reports,
                     AVG(CASE WHEN rating IS NOT NULL THEN rating END) as average_rating
-                ')
+                ")
                 ->groupBy('petugas_id')
                 ->get()
                 ->keyBy('petugas_id');
