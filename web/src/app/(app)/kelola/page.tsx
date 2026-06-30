@@ -46,7 +46,7 @@ export default function KelolaPage() {
       </div>
 
       <p className="clay-sunken p-4 text-center text-xs text-muted">
-        Fitur QR (scan & cetak kode lokasi) masih di panel admin (Filament).
+        Semua fitur administrasi master data dan cetak QR kini sudah tersedia lengkap di PWA.
       </p>
     </div>
   );
