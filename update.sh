@@ -78,6 +78,10 @@ npm run build
 
 # 5. Build Next.js PWA
 echo -e "${YELLOW}[5/9] Build Next.js PWA (web/)...${NC}"
+# Bump SW version = timestamp build → paksa semua browser hapus cache lama
+SW_VERSION="v$(date -u +%Y%m%d%H%M)"
+sed -i "s|^const VERSION = .*|const VERSION = \"${SW_VERSION}\";|" web/public/sw.js
+echo -e "       SW version bumped → ${SW_VERSION}"
 cd web
 npm ci --production=false
 npm run build
