@@ -1,103 +1,138 @@
 #!/bin/bash
 
 # ===========================================
-# E-CLEAN DEPLOYMENT SCRIPT FOR VPS BIZNET GIO
+# E-CLEAN DEPLOYMENT SCRIPT
+# Domain: css.kopkaryapi.id
 # ===========================================
-# Usage: ./deploy.sh [environment]
-# Example: ./deploy.sh production
+# Jalankan dari direktori project di VPS:
+#   cd /var/www/eclean && ./deploy.sh
 #
-# Prerequisites:
-# - PHP 8.2+
-# - Composer
-# - Node.js & NPM
-# - MySQL/PostgreSQL
-# - Git
+# Script ini menangani FULL deployment:
+#   Laravel (PHP) + Filament (Vite) + Next.js PWA (static export)
+# ===========================================
 
-set -e  # Exit on any error
+set -e
 
-# Colors for output
+# --- Warna output ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Configuration
-ENVIRONMENT=${1:-production}
 APP_DIR=$(pwd)
+DOMAIN="css.kopkaryapi.id"
 
-echo -e "${BLUE}=========================================${NC}"
-echo -e "${BLUE}   E-CLEAN DEPLOYMENT SCRIPT${NC}"
-echo -e "${BLUE}   Environment: ${ENVIRONMENT}${NC}"
-echo -e "${BLUE}=========================================${NC}"
+# Auto-detect PHP-FPM version (sesuai nginx config)
+if systemctl is-active --quiet php8.2-fpm 2>/dev/null; then
+    PHP_FPM="php8.2-fpm"
+elif systemctl is-active --quiet php8.3-fpm 2>/dev/null; then
+    PHP_FPM="php8.3-fpm"
+else
+    PHP_FPM="php8.2-fpm"
+fi
+
+echo -e "${BLUE}=============================================${NC}"
+echo -e "${BLUE}   E-CLEAN DEPLOYMENT — ${DOMAIN}${NC}"
+echo -e "${BLUE}   Dir : ${APP_DIR}${NC}"
+echo -e "${BLUE}   FPM : ${PHP_FPM}${NC}"
+echo -e "${BLUE}=============================================${NC}"
 echo ""
 
-# Check if .env exists
+# Guard: harus ada .env
 if [ ! -f .env ]; then
-    echo -e "${RED}ERROR: .env file not found!${NC}"
-    echo -e "${YELLOW}Please copy .env.production to .env and configure it.${NC}"
+    echo -e "${RED}ERROR: .env tidak ditemukan!${NC}"
+    echo -e "${YELLOW}Salin .env.production ke .env lalu isi nilainya.${NC}"
     exit 1
 fi
 
-# Step 1: Pull latest code
-echo -e "${GREEN}[1/10] Pulling latest code...${NC}"
+# Guard: jangan jalankan jika APP_DEBUG=true di production
+if grep -q "APP_DEBUG=true" .env; then
+    echo -e "${YELLOW}⚠  PERINGATAN: APP_DEBUG=true — pastikan sudah benar sebelum melanjutkan.${NC}"
+fi
+
+# -----------------------------------------------
+echo -e "${GREEN}[1/12] Pull kode terbaru dari git...${NC}"
 git pull origin main
 
-# Step 2: Install PHP dependencies
-echo -e "${GREEN}[2/10] Installing PHP dependencies...${NC}"
+# -----------------------------------------------
+echo -e "${GREEN}[2/12] Install dependensi PHP (composer)...${NC}"
 composer install --no-dev --optimize-autoloader --no-interaction
 
-# Step 3: Install Node dependencies and build assets
-echo -e "${GREEN}[3/10] Installing Node dependencies...${NC}"
+# -----------------------------------------------
+echo -e "${GREEN}[3/12] Build aset Filament/Vite (root)...${NC}"
 npm ci --production=false
-
-echo -e "${GREEN}[4/10] Building frontend assets...${NC}"
 npm run build
 
-# Step 4: Clear all caches
-echo -e "${GREEN}[5/10] Clearing caches...${NC}"
+# -----------------------------------------------
+echo -e "${GREEN}[4/12] Build Next.js PWA (web/)...${NC}"
+# NEXT_PUBLIC_BACKEND_ORIGIN harus KOSONG di production (same-origin)
+# web/.env.local tidak ada di server (gitignored) — aman
+cd web
+npm ci --production=false
+npm run build        # output: web/out/
+cd "$APP_DIR"
+
+# -----------------------------------------------
+echo -e "${GREEN}[5/12] Salin PWA static files ke public/...${NC}"
+# rsync: add/update saja, tidak hapus file Laravel yang sudah ada
+# index.php tidak akan tertimpa karena Next.js output index.html (beda nama)
+rsync -a --checksum web/out/ public/
+echo -e "       PWA static files disinkron ke public/"
+
+# -----------------------------------------------
+echo -e "${GREEN}[6/12] Bersihkan cache Laravel...${NC}"
 php artisan config:clear
 php artisan cache:clear
 php artisan view:clear
 php artisan route:clear
 php artisan event:clear
 
-# Step 5: Run migrations
-echo -e "${GREEN}[6/10] Running database migrations...${NC}"
+# -----------------------------------------------
+echo -e "${GREEN}[7/12] Jalankan migrasi database...${NC}"
 php artisan migrate --force
 
-# Step 6: Seed permissions if needed
-echo -e "${GREEN}[7/10] Syncing roles and permissions...${NC}"
+# -----------------------------------------------
+echo -e "${GREEN}[8/12] Sinkron role & permission...${NC}"
 php artisan db:seed --class=RolePermissionSeeder --force 2>/dev/null || true
 
-# Step 7: Create storage link
-echo -e "${GREEN}[8/10] Creating storage link...${NC}"
+# -----------------------------------------------
+echo -e "${GREEN}[9/12] Buat storage link...${NC}"
 php artisan storage:link 2>/dev/null || true
 
-# Step 8: Optimize for production
-echo -e "${GREEN}[9/10] Optimizing for production...${NC}"
+# -----------------------------------------------
+echo -e "${GREEN}[10/12] Optimasi Laravel untuk production...${NC}"
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan optimize
 
-# Step 9: Set permissions
-echo -e "${GREEN}[10/10] Setting file permissions...${NC}"
-chmod -R 775 storage bootstrap/cache
-chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+# -----------------------------------------------
+echo -e "${GREEN}[11/12] Set permission file...${NC}"
+sudo chown -R www-data:www-data storage bootstrap/cache public/
+sudo chmod -R 775 storage bootstrap/cache
 
+# -----------------------------------------------
+echo -e "${GREEN}[12/12] Restart layanan (nginx + PHP-FPM)...${NC}"
+sudo systemctl reload "$PHP_FPM"
+sudo systemctl reload nginx
+
+# -----------------------------------------------
 echo ""
-echo -e "${GREEN}=========================================${NC}"
-echo -e "${GREEN}   DEPLOYMENT COMPLETED SUCCESSFULLY!${NC}"
-echo -e "${GREEN}=========================================${NC}"
+echo -e "${GREEN}=============================================${NC}"
+echo -e "${GREEN}   ✓ DEPLOYMENT SELESAI!${NC}"
+echo -e "${GREEN}=============================================${NC}"
 echo ""
-echo -e "${YELLOW}Post-deployment checklist:${NC}"
-echo "  [ ] Verify APP_ENV=production in .env"
-echo "  [ ] Verify APP_DEBUG=false in .env"
-echo "  [ ] Test the application at your domain"
-echo "  [ ] Check logs: tail -f storage/logs/laravel.log"
-echo "  [ ] Setup supervisor for queue workers (optional)"
+echo -e "   🌐  https://${DOMAIN}/admin    → Filament (admin)"
+echo -e "   📱  https://${DOMAIN}/login    → PWA petugas/supervisor"
+echo -e "   🏠  https://${DOMAIN}/beranda  → Dashboard PWA"
 echo ""
-echo -e "${BLUE}Queue worker command (run in separate terminal or supervisor):${NC}"
+echo -e "${YELLOW}Checklist post-deploy:${NC}"
+echo "  [ ] Buka https://${DOMAIN}/login — cek login email+password"
+echo "  [ ] Coba login Google (pastikan redirect URI sudah di Google Console)"
+echo "  [ ] Buka https://${DOMAIN}/admin  — cek Filament admin"
+echo "  [ ] Pantau log: tail -f storage/logs/laravel.log"
+echo ""
+echo -e "${BLUE}Queue worker (jalankan via Supervisor atau screen):${NC}"
 echo "  php artisan queue:work --sleep=3 --tries=3 --max-time=3600"
 echo ""

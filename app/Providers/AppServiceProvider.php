@@ -73,9 +73,9 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Login Rate Limit: 5 attempts per minute
+        // Login Rate Limit: 20 attempts per minute
         RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(5)->by($request->input('email') . $request->ip());
+            return Limit::perMinute(20)->by($request->input('email') . $request->ip());
         });
 
         // WhatsApp API Rate Limit: 10 requests per minute

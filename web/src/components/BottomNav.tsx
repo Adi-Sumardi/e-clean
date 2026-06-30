@@ -71,7 +71,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-center pb-[env(safe-area-inset-bottom)]">
-      <div className="clay mx-3 mb-3 flex w-full max-w-md items-center justify-around gap-1 p-2">
+      <div className="clay mx-3 mb-3 flex w-full max-w-md md:max-w-2xl items-center justify-around gap-1 p-2">
         {items.map((it) => {
           const active = pathname.startsWith(it.href);
           return (
