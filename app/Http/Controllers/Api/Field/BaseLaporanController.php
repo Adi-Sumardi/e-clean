@@ -222,6 +222,10 @@ abstract class BaseLaporanController extends Controller
                 return $this->notFoundResponse('Report not found');
             }
 
+            if (! in_array($report->status, ['submitted', 'pending'])) {
+                return $this->errorResponse('Laporan sudah pernah ditinjau (status: ' . $report->status . ').', 422);
+            }
+
             if ($approved) {
                 $validated = $request->validate([
                     'rating' => 'nullable|integer|min:1|max:5',

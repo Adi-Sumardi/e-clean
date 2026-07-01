@@ -46,7 +46,11 @@ export default function ReviewDetailPage() {
       qc.invalidateQueries({ queryKey: ["review"] });
       router.replace("/review?done=1");
     },
-    onError: () => setError("Gagal memproses. Coba lagi."),
+    onError: (err: unknown) => {
+      const msg =
+        err instanceof Error ? err.message : "Gagal memproses. Coba lagi.";
+      setError(msg);
+    },
   });
 
   if (!domain || !id) return <Spinner />;

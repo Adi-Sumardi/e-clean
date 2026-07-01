@@ -578,6 +578,10 @@ class ActivityReportController extends Controller
                 return $this->notFoundResponse('Activity report not found');
             }
 
+            if (! in_array($report->status, ['submitted', 'pending'])) {
+                return $this->errorResponse('Laporan sudah pernah ditinjau (status: ' . $report->status . ').', 422);
+            }
+
             $validated = $request->validate([
                 'rating' => 'nullable|integer|min:1|max:5',
                 'catatan_supervisor' => 'nullable|string|max:1000',
@@ -627,6 +631,10 @@ class ActivityReportController extends Controller
             $report = ActivityReport::find($id);
             if (! $report) {
                 return $this->notFoundResponse('Activity report not found');
+            }
+
+            if (! in_array($report->status, ['submitted', 'pending'])) {
+                return $this->errorResponse('Laporan sudah pernah ditinjau (status: ' . $report->status . ').', 422);
             }
 
             $validated = $request->validate([
