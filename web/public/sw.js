@@ -112,7 +112,7 @@ async function staleWhileRevalidate(request, cacheName) {
       if (res && res.ok) cache.put(request, res.clone());
       return res;
     })
-    .catch(() => cached);
+    .catch(() => cached ?? new Response("Offline", { status: 503, statusText: "Service Unavailable" }));
   return cached || network;
 }
 

@@ -196,6 +196,7 @@ class ActivityReportObserver
                             $report->petugas->phone,
                             $message,
                             [
+                                'user_id' => $report->petugas_id,
                                 'type' => 'report_status_changed',
                                 'report_id' => $report->id,
                                 'new_status' => $report->status,

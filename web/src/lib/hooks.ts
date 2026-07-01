@@ -146,6 +146,7 @@ export function useDashboardStatistics(enabled: boolean, opts?: { start_date?: s
     queryFn: () => dashboardService.statistics(opts),
     enabled: enabled && isAuthenticated(),
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 }
 
