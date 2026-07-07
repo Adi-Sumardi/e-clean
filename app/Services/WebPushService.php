@@ -31,13 +31,18 @@ class WebPushService
             return null;
         }
 
-        $this->client = new WebPush([
-            'VAPID' => [
-                'subject' => config('services.vapid.subject'),
-                'publicKey' => $public,
-                'privateKey' => $private,
-            ],
-        ]);
+        try {
+            $this->client = new WebPush([
+                'VAPID' => [
+                    'subject' => config('services.vapid.subject'),
+                    'publicKey' => $public,
+                    'privateKey' => $private,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('WebPush: gagal inisialisasi client — ' . $e->getMessage());
+            return null;
+        }
 
         return $this->client;
     }
@@ -49,40 +54,44 @@ class WebPushService
      */
     public function sendToUser(User $user, string $title, string $body, array $data = []): void
     {
-        $subs = $user->webPushSubscriptions()->get();
-        if ($subs->isEmpty()) {
-            return;
-        }
-
-        $client = $this->client();
-        if (! $client) {
-            return;
-        }
-
-        $payload = json_encode(array_merge([
-            'title' => $title,
-            'body' => $body,
-        ], $data));
-
-        foreach ($subs as $sub) {
-            $client->queueNotification($this->toSubscription($sub), $payload);
-        }
-
-        // Kirim batch; hapus subscription yang sudah mati.
-        foreach ($client->flush() as $report) {
-            if ($report->isSuccess()) {
-                continue;
+        try {
+            $subs = $user->webPushSubscriptions()->get();
+            if ($subs->isEmpty()) {
+                return;
             }
 
-            $endpoint = $report->getEndpoint();
-            if ($report->isSubscriptionExpired()) {
-                WebPushSubscription::where('endpoint_hash', hash('sha256', $endpoint))->delete();
-            } else {
-                Log::info('WebPush gagal', [
-                    'endpoint' => $endpoint,
-                    'reason' => $report->getReason(),
-                ]);
+            $client = $this->client();
+            if (! $client) {
+                return;
             }
+
+            $payload = json_encode(array_merge([
+                'title' => $title,
+                'body' => $body,
+            ], $data));
+
+            foreach ($subs as $sub) {
+                $client->queueNotification($this->toSubscription($sub), $payload);
+            }
+
+            // Kirim batch; hapus subscription yang sudah mati.
+            foreach ($client->flush() as $report) {
+                if ($report->isSuccess()) {
+                    continue;
+                }
+
+                $endpoint = $report->getEndpoint();
+                if ($report->isSubscriptionExpired()) {
+                    WebPushSubscription::where('endpoint_hash', hash('sha256', $endpoint))->delete();
+                } else {
+                    Log::info('WebPush gagal', [
+                        'endpoint' => $endpoint,
+                        'reason' => $report->getReason(),
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('WebPush: sendToUser gagal — ' . $e->getMessage());
         }
     }
 

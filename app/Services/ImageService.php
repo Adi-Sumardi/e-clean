@@ -25,6 +25,10 @@ class ImageService
         ?int $maxWidth = 1920,
         ?int $maxHeight = 1920
     ): string {
+        // Foto kamera HP bisa 10–50 MB raw pixels; pastikan cukup memori.
+        $prevMemory = ini_get('memory_limit');
+        ini_set('memory_limit', '256M');
+
         // Generate unique filename
         $filename = uniqid() . '_' . time() . '.webp';
         $path = $directory . '/' . $filename;
@@ -46,6 +50,8 @@ class ImageService
 
         // Store to public disk
         Storage::disk('public')->put($path, $encodedImage);
+
+        ini_set('memory_limit', $prevMemory);
 
         return $path;
     }
