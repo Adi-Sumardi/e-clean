@@ -129,12 +129,20 @@ export default function LokasiFormPage() {
         </Field>
 
         <Field label="Kategori *">
-          <input
+          <select
             value={form.kategori}
             onChange={(e) => set("kategori", e.target.value)}
-            placeholder="mis. toilet, koridor"
-            className="clay-sunken w-full rounded-2xl px-4 py-3 text-text outline-none placeholder:text-muted"
-          />
+            className="clay-sunken w-full rounded-2xl px-4 py-3 text-text outline-none"
+          >
+            <option value="">Pilih kategori…</option>
+            <option value="ruang_kelas">Ruang Kelas</option>
+            <option value="toilet">Toilet</option>
+            <option value="kantor">Kantor</option>
+            <option value="aula">Aula</option>
+            <option value="taman">Taman</option>
+            <option value="koridor">Koridor</option>
+            <option value="lainnya">Lainnya</option>
+          </select>
         </Field>
 
         <Field label="Lantai">
