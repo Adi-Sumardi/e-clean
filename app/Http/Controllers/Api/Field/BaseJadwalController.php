@@ -102,6 +102,7 @@ abstract class BaseJadwalController extends Controller
         try {
             $items = $this->baseQuery($request)
                 ->whereDate('tanggal', Carbon::today())
+                ->whereNotIn('status', ['completed', 'missed'])
                 ->orderBy('jam_mulai')
                 ->get();
 

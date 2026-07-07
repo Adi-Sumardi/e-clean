@@ -131,7 +131,8 @@ class JadwalKebersihanController extends Controller
         try {
             $user = $request->user();
             $query = JadwalKebersihan::with(['lokasi', 'petugas'])
-                                    ->whereDate('tanggal', Carbon::today());
+                                    ->whereDate('tanggal', Carbon::today())
+                                    ->whereNotIn('status', ['completed', 'missed']);
 
             if ($user->hasRole('petugas')) {
                 $query->where('petugas_id', $user->id);
