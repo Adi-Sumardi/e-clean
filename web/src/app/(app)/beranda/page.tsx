@@ -22,7 +22,7 @@ export default function BerandaPage() {
   const todayAll = useTodayAllDomains(manager);
 
   const todayActive = today.data?.filter((j) => !["completed", "missed"].includes(j.status ?? "")) ?? [];
-  const todayCount = today.isLoading ? (today.data?.length ?? 0) : todayActive.length;
+  const todayCount = todayActive.length;
   const pendingCount = reviews.data?.length ?? 0;
   const todayAllCount = todayAll.data?.length ?? 0;
 
