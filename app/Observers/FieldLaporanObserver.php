@@ -24,6 +24,13 @@ class FieldLaporanObserver
         \App\Models\LaporanToko::class => 'toko',
     ];
 
+    /** Model jadwal yang harus di-complete saat laporan masuk. */
+    private const JADWAL_MODELS = [
+        \App\Models\LaporanSatpam::class => \App\Models\JadwalSatpam::class,
+        \App\Models\LaporanOb::class     => \App\Models\JadwalOb::class,
+        \App\Models\LaporanToko::class   => \App\Models\JadwalToko::class,
+    ];
+
     public function __construct()
     {
         $this->penilaianService = new PenilaianService();
@@ -46,6 +53,24 @@ class FieldLaporanObserver
                 'report_id' => $report->id ?? null,
                 'error' => $e->getMessage(),
             ]);
+        }
+
+        // Tandai jadwal sebagai completed agar tidak muncul lagi di beranda.
+        if (!empty($report->jadwal_id)) {
+            $jadwalClass = self::JADWAL_MODELS[get_class($report)] ?? null;
+            if ($jadwalClass) {
+                try {
+                    $jadwalClass::where('id', $report->jadwal_id)
+                        ->whereIn('status', ['pending', 'in_progress'])
+                        ->update(['status' => 'completed']);
+                } catch (\Throwable $e) {
+                    Log::warning('Gagal update status jadwal field ke completed', [
+                        'report_class' => get_class($report),
+                        'jadwal_id'    => $report->jadwal_id,
+                        'error'        => $e->getMessage(),
+                    ]);
+                }
+            }
         }
     }
 

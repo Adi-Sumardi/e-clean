@@ -99,6 +99,21 @@ class ActivityReportObserver
             ]);
         }
 
+        // Tandai jadwal kebersihan sebagai completed agar tidak muncul lagi di beranda.
+        if (!empty($report->jadwal_id)) {
+            try {
+                JadwalKebersihan::where('id', $report->jadwal_id)
+                    ->whereIn('status', ['pending', 'in_progress'])
+                    ->update(['status' => 'completed']);
+            } catch (\Throwable $e) {
+                Log::warning('Gagal update status jadwal kebersihan ke completed', [
+                    'report_id' => $report->id,
+                    'jadwal_id' => $report->jadwal_id,
+                    'error'     => $e->getMessage(),
+                ]);
+            }
+        }
+
         // Notify supervisor when new report is submitted
         if ($report->status === 'submitted') {
             try {

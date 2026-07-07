@@ -21,7 +21,8 @@ export default function BerandaPage() {
   const reviews = usePendingReviews(manager);
   const todayAll = useTodayAllDomains(manager);
 
-  const todayCount = today.data?.length ?? 0;
+  const todayActive = today.data?.filter((j) => !["completed", "missed"].includes(j.status ?? "")) ?? [];
+  const todayCount = today.isLoading ? (today.data?.length ?? 0) : todayActive.length;
   const pendingCount = reviews.data?.length ?? 0;
   const todayAllCount = todayAll.data?.length ?? 0;
 
@@ -185,7 +186,7 @@ export default function BerandaPage() {
             <Spinner />
           ) : todayCount > 0 ? (
             <section className="flex flex-col gap-3">
-              {today.data!.slice(0, 3).map((j) => (
+              {todayActive.slice(0, 3).map((j) => (
                 <JadwalCard key={j.id} jadwal={j} />
               ))}
             </section>
