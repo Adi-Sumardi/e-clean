@@ -115,7 +115,7 @@ abstract class BaseJadwalController extends Controller
     {
         try {
             $items = $this->baseQuery($request)
-                ->whereBetween('tanggal', [Carbon::today(), Carbon::today()->addDays(7)])
+                ->whereBetween('tanggal', [Carbon::tomorrow(), Carbon::today()->addDays(7)])
                 ->orderBy('tanggal')->orderBy('jam_mulai')
                 ->get();
 

@@ -29,12 +29,12 @@ class PenilaianController extends Controller
                 $query = Penilaian::with(['petugas', 'penilai']);
 
                 // Role-based filtering - Petugas only sees their own evaluations
-                if ($user->hasRole('petugas')) {
+                if ($user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                     $query->where('petugas_id', $user->id);
                 }
 
                 // Filter by petugas (admin/supervisor only)
-                if ($request->has('petugas_id') && !$user->hasRole('petugas')) {
+                if ($request->has('petugas_id') && !$user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                     $query->where('petugas_id', $request->petugas_id);
                 }
 
@@ -113,7 +113,7 @@ class PenilaianController extends Controller
             $query = Penilaian::with(['petugas', 'penilai']);
 
             // Role-based authorization
-            if ($user->hasRole('petugas')) {
+            if ($user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                 $query->where('petugas_id', $user->id);
             }
 
@@ -141,7 +141,7 @@ class PenilaianController extends Controller
             $user = $request->user();
 
             // Only admin/supervisor can create evaluations
-            if ($user->hasRole('petugas')) {
+            if ($user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                 return $this->forbiddenResponse('Only admin/supervisor can create evaluations');
             }
 
@@ -226,7 +226,7 @@ class PenilaianController extends Controller
             $user = $request->user();
 
             // Only admin/supervisor can update evaluations
-            if ($user->hasRole('petugas')) {
+            if ($user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                 return $this->forbiddenResponse('Only admin/supervisor can update evaluations');
             }
 
@@ -317,7 +317,7 @@ class PenilaianController extends Controller
             $user = $request->user();
 
             // Only admin/supervisor can delete evaluations
-            if ($user->hasRole('petugas')) {
+            if ($user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                 return $this->forbiddenResponse('Only admin/supervisor can delete evaluations');
             }
 
@@ -350,7 +350,7 @@ class PenilaianController extends Controller
             $query = Penilaian::query();
 
             // Role-based filtering
-            if ($user->hasRole('petugas')) {
+            if ($user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                 $query->where('petugas_id', $user->id);
             } elseif ($request->has('petugas_id')) {
                 $query->where('petugas_id', $request->petugas_id);
@@ -421,7 +421,7 @@ class PenilaianController extends Controller
             $query = Penilaian::with(['petugas', 'penilai']);
 
             // Role-based filtering
-            if ($user->hasRole('petugas')) {
+            if ($user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                 $query->where('petugas_id', $user->id);
             } elseif ($request->has('petugas_id')) {
                 $query->where('petugas_id', $request->petugas_id);
@@ -457,7 +457,7 @@ class PenilaianController extends Controller
             $query = Penilaian::query();
 
             // Role-based filtering
-            if ($user->hasRole('petugas')) {
+            if ($user->hasAnyRole(['petugas', 'satpam', 'office_boy', 'petugas_toko'])) {
                 $query->where('petugas_id', $user->id);
             } elseif ($request->has('petugas_id')) {
                 $query->where('petugas_id', $request->petugas_id);

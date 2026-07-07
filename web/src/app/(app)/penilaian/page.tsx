@@ -1,12 +1,21 @@
 "use client";
 
-import { usePenilaian } from "@/lib/hooks";
+import { usePenilaian, useMe } from "@/lib/hooks";
 import { PageHeader, Spinner, EmptyState, ErrorState } from "@/components/ui";
 import { namaBulan } from "@/lib/format";
 import type { Penilaian } from "@/lib/types";
 
+const SKOR_LABELS: Record<string, string> = {
+  kebersihan: "Kebersihan",
+  satpam: "Keamanan",
+  ob: "Kebersihan",
+  toko: "Pengelolaan",
+};
+
 export default function PenilaianPage() {
+  const { domain } = useMe();
   const { data, isLoading, isError, refetch } = usePenilaian();
+  const skor4Label = SKOR_LABELS[domain?.key ?? "kebersihan"] ?? "Kebersihan";
   const latest = data?.[0];
   const history = data?.slice(1) ?? [];
 
@@ -42,7 +51,7 @@ export default function PenilaianPage() {
             <Skor label="Kehadiran" value={latest.skor_kehadiran} />
             <Skor label="Kualitas" value={latest.skor_kualitas} />
             <Skor label="Ketepatan" value={latest.skor_ketepatan_waktu} />
-            <Skor label="Kebersihan" value={latest.skor_kebersihan} />
+            <Skor label={skor4Label} value={latest.skor_kebersihan} />
           </div>
 
           {latest.catatan && (
