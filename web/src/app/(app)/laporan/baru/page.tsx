@@ -58,9 +58,13 @@ export default function LaporanBaruPage() {
   const schema = useMemo((): ReportSchema | null => {
     if (!baseSchema || domain?.key !== "satpam") return baseSchema;
     const shift = params.shift ?? "";
-    if (shift !== "malam" && shift !== "pagi") return baseSchema;
-    const maxFoto = shift === "malam" ? 15 : 5;
-    const label = shift === "malam"
+    const isMalam = shift === "security-malam";
+    const isPagi = shift === "security-pagi" ||
+      shift === "security-standby-pagi" ||
+      shift === "security-standby-malam";
+    if (!isMalam && !isPagi) return baseSchema;
+    const maxFoto = isMalam ? 15 : 5;
+    const label = isMalam
       ? `Foto Patroli Malam (wajib, maks. ${maxFoto})`
       : `Foto Patroli Pagi (wajib, maks. ${maxFoto})`;
     return {

@@ -45,14 +45,15 @@ class SatpamLaporanController extends BaseLaporanController
     {
         $shift = $this->resolveShift($request);
 
-        if ($shift === 'malam') {
+        if ($shift === 'security-malam') {
             return [
                 'foto' => 'required|array|min:1|max:15',
                 'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
             ];
         }
 
-        if ($shift === 'pagi') {
+        $pagiShifts = ['security-pagi', 'security-standby-pagi', 'security-standby-malam'];
+        if (in_array($shift, $pagiShifts)) {
             return [
                 'foto' => 'required|array|min:1|max:5',
                 'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
