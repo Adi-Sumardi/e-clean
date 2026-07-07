@@ -159,6 +159,7 @@ export default function LaporanBaruPage() {
       let sent = 0;
       if (isOnline()) sent = await syncOutbox();
       qc.invalidateQueries({ queryKey: ["laporan"] });
+      qc.invalidateQueries({ queryKey: ["jadwal"] });
 
       router.replace(`/laporan?sent=${sent > 0 ? "1" : "0"}`);
     } catch {
