@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMe } from "@/lib/hooks";
-import { REPORT_SCHEMAS, type ReportField } from "@/lib/reportForms";
+import { REPORT_SCHEMAS, type ReportField, type ReportSchema } from "@/lib/reportForms";
 import { enqueue } from "@/lib/outbox";
 import { syncOutbox, isOnline } from "@/lib/sync";
 import { Spinner } from "@/components/ui";
@@ -35,7 +35,7 @@ export default function LaporanBaruPage() {
   const qc = useQueryClient();
   const { domain } = useMe();
 
-  const [params, setParams] = useState<{ jadwal?: string; lokasi?: string; nama?: string }>({});
+  const [params, setParams] = useState<{ jadwal?: string; lokasi?: string; nama?: string; shift?: string }>({});
   const [text, setText] = useState<Record<string, string>>({});
   const [photos, setPhotos] = useState<Record<string, Blob[]>>({});
   const [lists, setLists] = useState<Record<string, Array<{ item: string; done: boolean }>>>({});
@@ -48,10 +48,30 @@ export default function LaporanBaruPage() {
       jadwal: sp.get("jadwal") ?? undefined,
       lokasi: sp.get("lokasi") ?? undefined,
       nama: sp.get("nama") ?? undefined,
+      shift: sp.get("shift") ?? undefined,
     });
   }, []);
 
-  const schema = domain ? REPORT_SCHEMAS[domain.key] : null;
+  const baseSchema = domain ? REPORT_SCHEMAS[domain.key] : null;
+
+  // Satpam: foto wajib & batas berbeda tergantung shift dari jadwal.
+  const schema = useMemo((): ReportSchema | null => {
+    if (!baseSchema || domain?.key !== "satpam") return baseSchema;
+    const shift = params.shift ?? "";
+    if (shift !== "malam" && shift !== "pagi") return baseSchema;
+    const maxFoto = shift === "malam" ? 15 : 5;
+    const label = shift === "malam"
+      ? `Foto Patroli Malam (wajib, maks. ${maxFoto})`
+      : `Foto Patroli Pagi (wajib, maks. ${maxFoto})`;
+    return {
+      ...baseSchema,
+      fields: baseSchema.fields.map((f) =>
+        f.kind === "photos" && f.name === "foto"
+          ? { ...f, label, required: true, min: 1, max: maxFoto }
+          : f,
+      ),
+    };
+  }, [baseSchema, domain?.key, params.shift]);
 
   // Prefill jam_mulai = sekarang + init checklist defaultItems.
   useEffect(() => {
@@ -112,6 +132,7 @@ export default function LaporanBaruPage() {
         status: "submitted",
       };
       if (params.jadwal) fields.jadwal_id = params.jadwal;
+      if (params.shift) fields.shift = params.shift;
       if (coords) fields.koordinat_lokasi = coords;
       // Serialisasi checklist sebagai indexed FormData agar Laravel parse sebagai array.
       // checklist[0][item]=... & checklist[0][done]=1

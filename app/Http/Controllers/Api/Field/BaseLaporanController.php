@@ -33,6 +33,12 @@ abstract class BaseLaporanController extends Controller
     /** Validation rules for creating a report (role-specific fields). */
     abstract protected function storeRules(): array;
 
+    /** Override in subclasses to add request-aware rules (e.g. shift-conditional). */
+    protected function extraStoreRules(Request $request): array
+    {
+        return [];
+    }
+
     /**
      * Build the persisted attributes from the validated payload + request.
      * Handles role-specific fields such as photo uploads.
@@ -164,7 +170,7 @@ abstract class BaseLaporanController extends Controller
                 'jam_selesai' => 'nullable|date_format:H:i|after:jam_mulai',
                 'catatan_petugas' => 'nullable|string|max:1000',
                 'status' => 'nullable|in:draft,submitted',
-            ], $this->storeRules());
+            ], $this->storeRules(), $this->extraStoreRules($request));
 
             $validator = Validator::make($request->all(), $rules);
             if ($validator->fails()) {

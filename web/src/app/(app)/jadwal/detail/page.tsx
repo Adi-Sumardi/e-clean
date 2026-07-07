@@ -53,7 +53,7 @@ export default function JadwalDetailPage() {
           </div>
 
           <Link
-            href={`/laporan/baru?jadwal=${jadwal.id}&lokasi=${jadwal.lokasi?.id ?? ""}&nama=${encodeURIComponent(jadwal.lokasi?.nama_lokasi ?? "")}`}
+            href={`/laporan/baru?jadwal=${jadwal.id}&lokasi=${jadwal.lokasi?.id ?? ""}&nama=${encodeURIComponent(jadwal.lokasi?.nama_lokasi ?? "")}&shift=${encodeURIComponent(jadwal.shift ?? "")}`}
             className="clay-primary block w-full px-6 py-4 text-center text-base font-bold"
           >
             Buat Laporan

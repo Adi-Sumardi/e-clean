@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Field;
 
 use App\Http\Resources\LaporanSatpamResource;
+use App\Models\JadwalSatpam;
 use App\Models\LaporanSatpam;
 use Illuminate\Http\Request;
 
@@ -34,9 +35,45 @@ class SatpamLaporanController extends BaseLaporanController
             'kondisi' => 'required|in:aman,perhatian,bahaya',
             'temuan' => 'nullable|string|max:1000',
             'tindakan' => 'nullable|string|max:1000',
+            // Default: opsional, maks 5. extraStoreRules() override ini bila shift malam/pagi.
             'foto' => 'nullable|array|max:5',
             'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
         ];
+    }
+
+    protected function extraStoreRules(Request $request): array
+    {
+        $shift = $this->resolveShift($request);
+
+        if ($shift === 'malam') {
+            return [
+                'foto' => 'required|array|min:1|max:15',
+                'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+            ];
+        }
+
+        if ($shift === 'pagi') {
+            return [
+                'foto' => 'required|array|min:1|max:5',
+                'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+            ];
+        }
+
+        return [];
+    }
+
+    private function resolveShift(Request $request): ?string
+    {
+        // Preferensikan shift dari jadwal (sumber otoritatif).
+        if ($request->filled('jadwal_id')) {
+            $jadwal = JadwalSatpam::find($request->jadwal_id);
+            if ($jadwal) {
+                return $jadwal->shift;
+            }
+        }
+
+        // Fallback: shift dikirim eksplisit oleh frontend.
+        return $request->input('shift');
     }
 
     protected function buildAttributes(array $validated, Request $request): array
