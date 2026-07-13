@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useMe,
@@ -178,60 +178,36 @@ export default function KelolaJadwalPage() {
 
       <form onSubmit={submit} className="clay flex flex-col gap-4 p-5">
         <Field label="Petugas *">
-          <select
+          <SearchableSelect
+            placeholder={petugas.isLoading ? "Memuat…" : `Pilih ${domain.label}…`}
+            options={petugas.data?.map((u) => ({ value: String(u.id), label: u.name })) ?? []}
             value={petugasId}
-            onChange={(e) => setPetugasId(e.target.value)}
-            className="clay-sunken w-full rounded-2xl px-4 py-3 text-text outline-none"
-          >
-            <option value="">
-              {petugas.isLoading ? "Memuat…" : `Pilih ${domain.label}…`}
-            </option>
-            {petugas.data?.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+            onChange={setPetugasId}
+          />
         </Field>
 
         <Field label="Unit *">
-          <select
+          <SearchableSelect
+            placeholder={unit.isLoading ? "Memuat…" : "Pilih unit…"}
+            options={unit.data?.map((u) => ({ value: String(u.id), label: u.nama_unit })) ?? []}
             value={unitId}
-            onChange={(e) => {
-              setUnitId(e.target.value);
-              setLokasiId("");
-            }}
-            className="clay-sunken w-full rounded-2xl px-4 py-3 text-text outline-none"
-          >
-            <option value="">{unit.isLoading ? "Memuat…" : "Pilih unit…"}</option>
-            {unit.data?.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.nama_unit}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => { setUnitId(v); setLokasiId(""); }}
+          />
         </Field>
 
         <Field label="Lokasi *">
-          <select
-            value={lokasiId}
-            onChange={(e) => setLokasiId(e.target.value)}
-            disabled={!unitId}
-            className="clay-sunken w-full rounded-2xl px-4 py-3 text-text outline-none disabled:opacity-50"
-          >
-            <option value="">
-              {!unitId
+          <SearchableSelect
+            placeholder={
+              !unitId
                 ? "Pilih unit dulu…"
                 : lokasiOptions.length === 0
                   ? "Tidak ada lokasi di unit ini"
-                  : "Pilih lokasi…"}
-            </option>
-            {lokasiOptions.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.nama_lokasi}
-              </option>
-            ))}
-          </select>
+                  : "Pilih lokasi…"
+            }
+            options={lokasiOptions.map((l) => ({ value: String(l.id), label: l.nama_lokasi }))}
+            value={lokasiId}
+            onChange={setLokasiId}
+          />
         </Field>
 
         {/* Shift + jam */}
@@ -487,6 +463,105 @@ export default function KelolaJadwalPage() {
           ));
         })()}
       </section>
+    </div>
+  );
+}
+
+function SearchableSelect({
+  placeholder,
+  options,
+  value,
+  onChange,
+}: {
+  placeholder: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => o.value === value);
+  const filtered = query.trim()
+    ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase().trim()))
+    : options;
+
+  // Tutup saat klik di luar
+  useEffect(() => {
+    function onPointerDown(e: PointerEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
+  function select(opt: { value: string; label: string }) {
+    onChange(opt.value);
+    setQuery("");
+    setOpen(false);
+  }
+
+  function clear() {
+    onChange("");
+    setQuery("");
+    setOpen(true);
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div
+        className="clay-sunken flex items-center gap-2 rounded-2xl px-4 py-3 cursor-pointer"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? (
+          <input
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            placeholder="Ketik nama…"
+            className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-muted"
+          />
+        ) : (
+          <span className={`flex-1 text-sm ${selected ? "text-text" : "text-muted"}`}>
+            {selected ? selected.label : placeholder}
+          </span>
+        )}
+        {selected && !open ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); clear(); }}
+            className="text-muted hover:text-danger text-base leading-none"
+          >
+            ✕
+          </button>
+        ) : (
+          <span className="text-muted text-xs">{open ? "▲" : "▼"}</span>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute inset-x-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-border bg-surface shadow-lg">
+          {filtered.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-muted">Tidak ditemukan.</p>
+          ) : (
+            filtered.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => select(opt)}
+                className={`w-full px-4 py-3 text-left text-sm hover:bg-primary/10 ${
+                  opt.value === value ? "font-bold text-primary" : "text-text"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
