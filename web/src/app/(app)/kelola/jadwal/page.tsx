@@ -46,6 +46,11 @@ export default function KelolaJadwalPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ ok: number; fail: number } | null>(null);
 
+  // Filter jadwal mendatang
+  const [filterPetugas, setFilterPetugas] = useState("");
+  const [filterUnit, setFilterUnit] = useState("");
+  const [filterLokasi, setFilterLokasi] = useState("");
+
   const petugas = useUsersList(manager, domain.role);
   const unit = useUnitList(manager);
   const lokasi = useLokasiList(manager);
@@ -413,10 +418,49 @@ export default function KelolaJadwalPage() {
         <h2 className="text-sm font-bold text-muted">
           Jadwal mendatang — {domain.label}
         </h2>
-        {upcoming.isLoading && !upcoming.data ? (
-          <Spinner />
-        ) : upcoming.data && upcoming.data.length > 0 ? (
-          upcoming.data.map((j) => (
+
+        {/* Filter / cari */}
+        <div className="clay flex flex-col gap-3 p-4">
+          <input
+            type="search"
+            placeholder="Cari nama petugas…"
+            value={filterPetugas}
+            onChange={(e) => setFilterPetugas(e.target.value)}
+            className="clay-sunken w-full rounded-2xl px-4 py-2.5 text-sm text-text outline-none placeholder:text-muted"
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <select
+              value={filterUnit}
+              onChange={(e) => { setFilterUnit(e.target.value); setFilterLokasi(""); }}
+              className="clay-sunken w-full rounded-2xl px-4 py-2.5 text-sm text-text outline-none"
+            >
+              <option value="">Semua unit</option>
+              {unit.data?.map((u) => (
+                <option key={u.id} value={u.id}>{u.nama_unit}</option>
+              ))}
+            </select>
+            <input
+              type="search"
+              placeholder="Cari lokasi…"
+              value={filterLokasi}
+              onChange={(e) => setFilterLokasi(e.target.value)}
+              className="clay-sunken w-full rounded-2xl px-4 py-2.5 text-sm text-text outline-none placeholder:text-muted"
+            />
+          </div>
+        </div>
+
+        {(() => {
+          const q = filterPetugas.toLowerCase().trim();
+          const ql = filterLokasi.toLowerCase().trim();
+          const filtered = (upcoming.data ?? []).filter((j) => {
+            if (q && !j.petugas?.name?.toLowerCase().includes(q)) return false;
+            if (filterUnit && String(j.lokasi?.unit?.id ?? "") !== filterUnit) return false;
+            if (ql && !j.lokasi?.nama_lokasi?.toLowerCase().includes(ql)) return false;
+            return true;
+          });
+          if (upcoming.isLoading && !upcoming.data) return <Spinner />;
+          if (filtered.length === 0) return <EmptyState icon="🗓️" title="Tidak ada jadwal yang cocok" />;
+          return filtered.map((j) => (
             <div key={j.id} className="clay flex items-center justify-between gap-3 p-4">
               <div className="min-w-0">
                 <p className="truncate font-bold text-text">
@@ -426,6 +470,9 @@ export default function KelolaJadwalPage() {
                   {j.petugas?.name ? `${j.petugas.name} · ` : ""}
                   {formatTanggal(j.tanggal)} · {formatJam(j.jam_mulai, j.jam_selesai)}
                 </p>
+                {j.lokasi?.unit?.nama_unit && (
+                  <p className="truncate text-xs text-muted">{j.lokasi.unit.nama_unit}</p>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <StatusBadge status={j.status} />
@@ -437,10 +484,8 @@ export default function KelolaJadwalPage() {
                 </button>
               </div>
             </div>
-          ))
-        ) : (
-          <EmptyState icon="🗓️" title="Belum ada jadwal mendatang" />
-        )}
+          ));
+        })()}
       </section>
     </div>
   );
