@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { subscribeOutbox } from "@/lib/outbox";
+import { subscribeOutbox, failedCount, clearFailedJobs } from "@/lib/outbox";
 import { syncOutbox, onSynced, isOnline } from "@/lib/sync";
 
 /**
@@ -12,15 +12,20 @@ import { syncOutbox, onSynced, isOnline } from "@/lib/sync";
 export default function SyncProvider() {
   const qc = useQueryClient();
   const [pending, setPending] = useState(0);
+  const [failed, setFailed] = useState(0);
   const [online, setOnline] = useState(true);
   const [justSynced, setJustSynced] = useState(false);
 
   useEffect(() => {
     setOnline(isOnline());
 
-    const unsubCount = subscribeOutbox(setPending);
+    const unsubCount = subscribeOutbox((count) => {
+      setPending(count);
+      failedCount().then(setFailed).catch(() => {});
+    });
     const unsubSynced = onSynced(() => {
       qc.invalidateQueries({ queryKey: ["laporan"] });
+      qc.invalidateQueries({ queryKey: ["jadwal"] });
       setJustSynced(true);
       setTimeout(() => setJustSynced(false), 2500);
     });
@@ -38,7 +43,6 @@ export default function SyncProvider() {
     window.addEventListener("offline", goOffline);
     document.addEventListener("visibilitychange", onVisible);
 
-    // Sync awal saat app dibuka.
     void syncOutbox();
 
     return () => {
@@ -58,7 +62,19 @@ export default function SyncProvider() {
         </div>
       )}
 
-      {(pending > 0 || justSynced) && (
+      {failed > 0 && (
+        <div className="fixed inset-x-0 bottom-24 z-40 flex justify-center px-4">
+          <button
+            onClick={() => clearFailedJobs()}
+            className="clay flex items-center gap-2 px-5 py-2 text-sm font-semibold text-danger"
+          >
+            <span className="h-2.5 w-2.5 rounded-full bg-danger" />
+            {failed} laporan gagal terkirim · Hapus
+          </button>
+        </div>
+      )}
+
+      {failed === 0 && (pending > 0 || justSynced) && (
         <div className="fixed inset-x-0 bottom-24 z-40 flex justify-center px-4">
           <button
             onClick={() => syncOutbox()}

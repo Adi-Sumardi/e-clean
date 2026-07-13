@@ -89,6 +89,9 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
 
   if (res.status === 401) {
     clearToken();
+    if (typeof window !== "undefined") {
+      window.location.replace("/login");
+    }
     throw new ApiError("Sesi berakhir, silakan masuk lagi.", 401);
   }
 

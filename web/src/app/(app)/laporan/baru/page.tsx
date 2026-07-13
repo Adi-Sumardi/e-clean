@@ -147,23 +147,45 @@ export default function LaporanBaruPage() {
         });
       }
 
-      await enqueue({
-        domain: domain!.key,
-        endpoint: domain!.laporanBase,
-        fields,
-        photos,
-        label: params.nama ?? "Laporan",
-      });
+      let sent = 0;
+      let savedToOutbox = false;
+
+      try {
+        await enqueue({
+          domain: domain!.key,
+          endpoint: domain!.laporanBase,
+          fields,
+          photos,
+          label: params.nama ?? "Laporan",
+        });
+        savedToOutbox = true;
+      } catch {
+        // IndexedDB tidak tersedia (storage penuh / iOS private mode).
+        // Jika online, kirim langsung tanpa outbox.
+        if (!isOnline()) {
+          setError("Tidak ada koneksi & penyimpanan lokal tidak tersedia. Coba saat online.");
+          setSubmitting(false);
+          return;
+        }
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(fields)) fd.append(k, v);
+        for (const [field, blobs] of Object.entries(photos)) {
+          blobs.forEach((blob, i) => fd.append(`${field}[]`, blob, `${field}-${i}.jpg`));
+        }
+        const { api } = await import("@/lib/api");
+        await api.post(domain!.laporanBase, { form: fd });
+        sent = 1;
+      }
 
       // Coba kirim sekarang; kalau offline, tetap aman di outbox.
-      let sent = 0;
-      if (isOnline()) sent = await syncOutbox();
+      if (savedToOutbox && isOnline()) sent = await syncOutbox();
+
       qc.invalidateQueries({ queryKey: ["laporan"] });
       qc.invalidateQueries({ queryKey: ["jadwal"] });
 
       router.replace(`/laporan?sent=${sent > 0 ? "1" : "0"}`);
     } catch {
-      setError("Gagal menyimpan laporan. Coba lagi.");
+      setError("Gagal mengirim laporan. Periksa koneksi lalu coba lagi.");
       setSubmitting(false);
     }
   }

@@ -34,7 +34,23 @@ export function subscribeOutbox(listener: Listener): () => void {
 
 export async function pendingCount(): Promise<number> {
   const db = await getDB();
-  return db.count(OUTBOX_STORE);
+  const jobs = await db.getAll(OUTBOX_STORE);
+  return jobs.filter((j) => j.status !== "failed").length;
+}
+
+export async function failedCount(): Promise<number> {
+  const db = await getDB();
+  const jobs = await db.getAll(OUTBOX_STORE);
+  return jobs.filter((j) => j.status === "failed").length;
+}
+
+export async function clearFailedJobs(): Promise<void> {
+  const db = await getDB();
+  const jobs = await db.getAll(OUTBOX_STORE);
+  await Promise.all(
+    jobs.filter((j) => j.status === "failed").map((j) => db.delete(OUTBOX_STORE, j.id)),
+  );
+  await notify();
 }
 
 export async function allJobs(): Promise<OutboxJob[]> {
