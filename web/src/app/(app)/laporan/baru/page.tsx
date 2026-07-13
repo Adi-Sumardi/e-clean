@@ -149,6 +149,10 @@ export default function LaporanBaruPage() {
 
       let sent = 0;
       let savedToOutbox = false;
+      const idempotencyKey =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
       try {
         await enqueue({
@@ -157,6 +161,7 @@ export default function LaporanBaruPage() {
           fields,
           photos,
           label: params.nama ?? "Laporan",
+          idempotencyKey,
         });
         savedToOutbox = true;
       } catch {
@@ -173,7 +178,10 @@ export default function LaporanBaruPage() {
           blobs.forEach((blob, i) => fd.append(`${field}[]`, blob, `${field}-${i}.jpg`));
         }
         const { api } = await import("@/lib/api");
-        await api.post(domain!.laporanBase, { form: fd });
+        await api.post(domain!.laporanBase, {
+          form: fd,
+          headers: { "Idempotency-Key": idempotencyKey },
+        });
         sent = 1;
       }
 

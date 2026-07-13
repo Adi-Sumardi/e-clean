@@ -53,6 +53,16 @@ export async function clearFailedJobs(): Promise<void> {
   await notify();
 }
 
+/** Saat app start: reset job yang tertinggal di status 'syncing' (crash mid-upload). */
+export async function resetStuckJobs(): Promise<void> {
+  const db = await getDB();
+  const jobs = await db.getAll(OUTBOX_STORE);
+  const stuck = jobs.filter((j) => j.status === "syncing");
+  if (stuck.length === 0) return;
+  await Promise.all(stuck.map((j) => db.put(OUTBOX_STORE, { ...j, status: "pending" })));
+  await notify();
+}
+
 export async function allJobs(): Promise<OutboxJob[]> {
   const db = await getDB();
   const jobs = await db.getAll(OUTBOX_STORE);
@@ -65,10 +75,11 @@ export async function enqueue(input: {
   fields: Record<string, string>;
   photos: Record<string, Blob[]>;
   label: string;
+  idempotencyKey?: string;
 }): Promise<OutboxJob> {
   const job: OutboxJob = {
     id: newId(),
-    idempotencyKey: newIdempotencyKey(),
+    idempotencyKey: input.idempotencyKey ?? newIdempotencyKey(),
     domain: input.domain,
     endpoint: input.endpoint,
     fields: input.fields,

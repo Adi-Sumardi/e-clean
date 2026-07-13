@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { subscribeOutbox, failedCount, clearFailedJobs } from "@/lib/outbox";
+import { subscribeOutbox, failedCount, clearFailedJobs, resetStuckJobs } from "@/lib/outbox";
 import { syncOutbox, onSynced, isOnline } from "@/lib/sync";
 
 /**
@@ -43,7 +43,8 @@ export default function SyncProvider() {
     window.addEventListener("offline", goOffline);
     document.addEventListener("visibilitychange", onVisible);
 
-    void syncOutbox();
+    // Reset job macet (crash mid-upload) lalu langsung sync.
+    void resetStuckJobs().then(() => syncOutbox());
 
     return () => {
       unsubCount();

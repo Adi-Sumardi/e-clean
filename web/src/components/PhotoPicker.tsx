@@ -3,11 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { compressImage } from "@/lib/image";
 
-/**
- * Pemilih foto: ambil dari kamera/galeri, kompres di Web Worker, simpan sebagai
- * Blob. Menampilkan preview + hapus. Foto disimpan di state pemanggil (lalu ke
- * outbox sebagai Blob).
- */
 export default function PhotoPicker({
   label,
   max = 5,
@@ -23,9 +18,9 @@ export default function PhotoPicker({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [pickError, setPickError] = useState<string | null>(null);
   const [urls, setUrls] = useState<string[]>([]);
 
-  // Buat object URL untuk preview, revoke saat berubah/unmount.
   useEffect(() => {
     const next = value.map((b) => URL.createObjectURL(b));
     setUrls(next);
@@ -35,12 +30,15 @@ export default function PhotoPicker({
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
+    setPickError(null);
     setBusy(true);
     try {
       const room = max - value.length;
       const picked = files.slice(0, Math.max(0, room));
       const compressed = await Promise.all(picked.map((f) => compressImage(f)));
       onChange([...value, ...compressed]);
+    } catch {
+      setPickError("Gagal memproses foto. Coba pilih ulang.");
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -82,7 +80,7 @@ export default function PhotoPicker({
         {!full && (
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={() => { setPickError(null); inputRef.current?.click(); }}
             disabled={busy}
             className="clay-sunken grid aspect-square place-items-center rounded-2xl text-3xl text-muted disabled:opacity-50"
           >
@@ -90,6 +88,10 @@ export default function PhotoPicker({
           </button>
         )}
       </div>
+
+      {pickError && (
+        <p className="text-xs text-danger">{pickError}</p>
+      )}
 
       <input
         ref={inputRef}

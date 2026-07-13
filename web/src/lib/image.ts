@@ -12,9 +12,9 @@
 import imageCompression from "browser-image-compression";
 
 const OPTIONS = {
-  maxWidthOrHeight: 1920, // sisi terpanjang — cukup tajam di layar
-  initialQuality: 0.8, // beda visual ~nol
-  maxSizeMB: 0.5, // plafon ~500 KB
+  maxWidthOrHeight: 1600,  // cukup tajam di layar HP; turun dari 1920 agar file lebih kecil
+  initialQuality: 0.75,
+  maxSizeMB: 0.3,          // plafon 300 KB — 15 foto = 4.5 MB, aman di bawah post_max_size 8 MB
   useWebWorker: true,
   fileType: "image/jpeg" as const,
 };
