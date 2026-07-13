@@ -35,8 +35,8 @@ class SatpamLaporanController extends BaseLaporanController
             'kondisi' => 'required|in:aman,perhatian,bahaya',
             'temuan' => 'nullable|string|max:1000',
             'tindakan' => 'nullable|string|max:1000',
-            // Default: opsional, maks 5. extraStoreRules() override ini bila shift malam/pagi.
-            'foto' => 'nullable|array|max:5',
+            // Default: opsional, maks 10. extraStoreRules() override ini bila shift malam/pagi.
+            'foto' => 'nullable|array|max:10',
             'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
         ];
     }
@@ -47,7 +47,7 @@ class SatpamLaporanController extends BaseLaporanController
 
         if ($shift === 'security-malam') {
             return [
-                'foto' => 'required|array|min:1|max:15',
+                'foto' => 'required|array|min:1|max:30',
                 'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
             ];
         }
@@ -55,7 +55,7 @@ class SatpamLaporanController extends BaseLaporanController
         $pagiShifts = ['security-pagi', 'security-standby-pagi', 'security-standby-malam'];
         if (in_array($shift, $pagiShifts)) {
             return [
-                'foto' => 'required|array|min:1|max:5',
+                'foto' => 'required|array|min:1|max:10',
                 'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
             ];
         }

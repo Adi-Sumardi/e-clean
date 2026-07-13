@@ -37,7 +37,7 @@ class TokoLaporanController extends BaseLaporanController
             'checklist.*.done' => 'required_with:checklist|boolean',
             'kondisi_stok' => 'nullable|in:aman,menipis,kosong',
             'catatan_stok' => 'nullable|string|max:1000',
-            'foto' => 'nullable|array|max:5',
+            'foto' => 'nullable|array|max:10',
             'foto.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
         ];
     }

@@ -34,9 +34,9 @@ class ObLaporanController extends BaseLaporanController
         return [
             'jenis_pekerjaan' => 'nullable|string|max:255',
             'uraian' => 'nullable|string|max:1000',
-            'foto_sebelum' => 'nullable|array|max:5',
+            'foto_sebelum' => 'nullable|array|max:10',
             'foto_sebelum.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
-            'foto_sesudah' => 'nullable|array|max:5',
+            'foto_sesudah' => 'nullable|array|max:10',
             'foto_sesudah.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
         ];
     }
