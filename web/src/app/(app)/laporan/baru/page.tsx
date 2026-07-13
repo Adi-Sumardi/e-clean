@@ -63,7 +63,7 @@ export default function LaporanBaruPage() {
       shift === "security-standby-pagi" ||
       shift === "security-standby-malam";
     if (!isMalam && !isPagi) return baseSchema;
-    const maxFoto = isMalam ? 30 : 10;
+    const maxFoto = isMalam ? 15 : 5;
     const label = isMalam
       ? `Foto Patroli Malam (wajib, maks. ${maxFoto})`
       : `Foto Patroli Pagi (wajib, maks. ${maxFoto})`;
