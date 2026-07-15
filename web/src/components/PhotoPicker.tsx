@@ -35,7 +35,11 @@ export default function PhotoPicker({
     try {
       const room = max - value.length;
       const picked = files.slice(0, Math.max(0, room));
-      const compressed = await Promise.all(picked.map((f) => compressImage(f)));
+      // Proses satu per satu untuk menekan penggunaan RAM di Android.
+      const compressed: Blob[] = [];
+      for (const f of picked) {
+        compressed.push(await compressImage(f));
+      }
       onChange([...value, ...compressed]);
     } catch {
       setPickError("Gagal memproses foto. Coba pilih ulang.");
@@ -98,7 +102,6 @@ export default function PhotoPicker({
         type="file"
         accept="image/*"
         capture="environment"
-        multiple
         hidden
         onChange={onPick}
       />

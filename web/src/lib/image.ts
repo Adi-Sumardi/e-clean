@@ -12,22 +12,20 @@
 import imageCompression from "browser-image-compression";
 
 const OPTIONS = {
-  maxWidthOrHeight: 1600,  // cukup tajam di layar HP; turun dari 1920 agar file lebih kecil
+  maxWidthOrHeight: 1600,
   initialQuality: 0.75,
-  maxSizeMB: 0.3,          // plafon 300 KB — 15 foto = 4.5 MB, aman di bawah post_max_size 8 MB
-  useWebWorker: true,
+  maxSizeMB: 0.3,
+  // Main thread lebih stabil di Android WebView — worker spawn sering gagal
+  // di device low-end dan bisa bikin session mati.
+  useWebWorker: false,
   fileType: "image/jpeg" as const,
 };
 
-/** Kompres satu file gambar → Blob JPEG. Jika gagal, kembalikan file asli. */
+/** Kompres satu file gambar → Blob JPEG. Throw jika gagal (jangan return file asli yang bisa 10MB+). */
 export async function compressImage(file: File | Blob): Promise<Blob> {
-  try {
-    const input =
-      file instanceof File
-        ? file
-        : new File([file], "photo.jpg", { type: file.type || "image/jpeg" });
-    return await imageCompression(input, OPTIONS);
-  } catch {
-    return file;
-  }
+  const input =
+    file instanceof File
+      ? file
+      : new File([file], "photo.jpg", { type: file.type || "image/jpeg" });
+  return await imageCompression(input, OPTIONS);
 }
