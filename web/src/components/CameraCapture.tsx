@@ -7,7 +7,8 @@ interface Props {
   onClose: () => void;
 }
 
-const MAX_PX = 1280; // resolusi capture — cukup tajam, canvas kecil, tidak OOM
+// 800px cukup tajam untuk dokumentasi kerja, canvas hanya ~1.9 MB vs 6 MB di 1280px
+const MAX_PX = 800;
 
 export default function CameraCapture({ onCapture, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -49,12 +50,33 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
     };
   }, []);
 
-  function capture() {
-    const video = videoRef.current;
-    if (!video || !ready || capturing) return;
+  async function capture() {
+    if (!ready || capturing) return;
     setCapturing(true);
 
-    // Clamp resolusi ke MAX_PX agar canvas tidak terlalu besar
+    try {
+      const blob = await captureBlob();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      onCapture(blob);
+      onClose();
+    } catch {
+      setCapturing(false);
+    }
+  }
+
+  function captureBlob(): Promise<Blob> {
+    const track = streamRef.current?.getVideoTracks()[0];
+
+    // ImageCapture API — hardware-level, tanpa canvas sama sekali (paling ringan)
+    if (track && typeof ImageCapture !== "undefined") {
+      const ic = new ImageCapture(track);
+      return ic.takePhoto({ imageWidth: MAX_PX } as PhotoSettings);
+    }
+
+    // Fallback: canvas dari frame video (sebagian browser / iOS Safari)
+    const video = videoRef.current;
+    if (!video) return Promise.reject(new Error("no video"));
+
     let w = video.videoWidth || MAX_PX;
     let h = video.videoHeight || MAX_PX;
     if (w > MAX_PX) { h = Math.round((h * MAX_PX) / w); w = MAX_PX; }
@@ -64,20 +86,15 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
-    if (!ctx) { setCapturing(false); return; }
+    if (!ctx) return Promise.reject(new Error("no ctx"));
     ctx.drawImage(video, 0, 0, w, h);
 
-    canvas.toBlob(
-      (blob) => {
-        setCapturing(false);
-        if (blob) {
-          streamRef.current?.getTracks().forEach((t) => t.stop());
-          onCapture(blob);
-          onClose();
-        }
-      },
-      "image/jpeg",
-      0.80,
+    return new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error("empty blob"))),
+        "image/jpeg",
+        0.82,
+      ),
     );
   }
 
@@ -112,7 +129,6 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
               Batal
             </button>
 
-            {/* Tombol capture */}
             <button
               type="button"
               onClick={capture}
