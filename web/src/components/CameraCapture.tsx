@@ -15,14 +15,20 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [facing, setFacing] = useState<"environment" | "user">("environment");
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     let alive = true;
+    setReady(false);
+
+    // Stop stream lama sebelum buka yang baru
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
 
     navigator.mediaDevices
       .getUserMedia({
-        video: { facingMode: "environment", width: { ideal: MAX_PX }, height: { ideal: MAX_PX } },
+        video: { facingMode: facing, width: { ideal: MAX_PX }, height: { ideal: MAX_PX } },
         audio: false,
       })
       .then((stream) => {
@@ -48,7 +54,7 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
       alive = false;
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
-  }, []);
+  }, [facing]);
 
   async function capture() {
     if (!ready || capturing) return;
@@ -139,7 +145,15 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
               <span className="h-14 w-14 rounded-full bg-white" />
             </button>
 
-            <div className="h-14 w-14" />
+            <button
+              type="button"
+              onClick={() => setFacing((f) => f === "environment" ? "user" : "environment")}
+              disabled={capturing}
+              aria-label="Balik kamera"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-2xl disabled:opacity-40"
+            >
+              🔄
+            </button>
           </div>
         </>
       )}
