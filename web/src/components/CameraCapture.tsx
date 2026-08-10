@@ -8,7 +8,8 @@ interface Props {
 }
 
 const MAX_PX = 800;
-const TIMER_SECONDS = 3;
+const TIMER_OPTIONS = [3, 5, 10] as const;
+type TimerOption = typeof TIMER_OPTIONS[number];
 
 export default function CameraCapture({ onCapture, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -16,7 +17,7 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [facing, setFacing] = useState<"environment" | "user">("environment");
-  const [timerOn, setTimerOn] = useState(false);
+  const [timerSec, setTimerSec] = useState<TimerOption | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -78,9 +79,9 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
   function handleShutter() {
     if (!ready || capturing || countdown !== null) return;
 
-    if (timerOn) {
-      setCountdown(TIMER_SECONDS);
-      let remaining = TIMER_SECONDS;
+    if (timerSec !== null) {
+      setCountdown(timerSec);
+      let remaining = timerSec;
       countdownRef.current = setInterval(() => {
         remaining -= 1;
         if (remaining <= 0) {
@@ -95,6 +96,16 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
     } else {
       void doCapture();
     }
+  }
+
+  function cycleTimer() {
+    if (countdown !== null) return;
+    setTimerSec((prev) => {
+      if (prev === null) return 3;
+      const idx = TIMER_OPTIONS.indexOf(prev);
+      // null → 3 → 5 → 10 → null
+      return idx < TIMER_OPTIONS.length - 1 ? TIMER_OPTIONS[idx + 1] : null;
+    });
   }
 
   function cancelCountdown() {
@@ -214,20 +225,18 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
 
               <button
                 type="button"
-                onClick={() => setTimerOn((v) => !v)}
+                onClick={cycleTimer}
                 disabled={capturing || countdown !== null}
                 className="flex flex-col items-center gap-1 disabled:opacity-40"
               >
                 <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-full text-lg ${
-                    timerOn ? "bg-warning text-black" : "bg-white/20 text-white"
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
+                    timerSec !== null ? "bg-warning text-black" : "bg-white/20 text-white"
                   }`}
                 >
-                  ⏱
+                  {timerSec !== null ? `${timerSec}s` : "⏱"}
                 </span>
-                <span className="text-[10px] text-white/70">
-                  {timerOn ? `${TIMER_SECONDS}d` : "Timer"}
-                </span>
+                <span className="text-[10px] text-white/70">Timer</span>
               </button>
             </div>
           </div>
