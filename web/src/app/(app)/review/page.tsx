@@ -10,7 +10,7 @@ import type { ReviewItem } from "@/lib/services";
 
 export default function ReviewPage() {
   const { manager } = useMe();
-  const { data, isLoading, isError, refetch } = usePendingReviews(manager);
+  const { data, isLoading, isFetching, isError, refetch } = usePendingReviews(manager);
   const [toast, setToast] = useState(false);
 
   const [domainKey, setDomainKey] = useState<string | "all">("all");
@@ -51,6 +51,14 @@ export default function ReviewPage() {
       {toast && (
         <div className="clay px-4 py-3 text-sm font-semibold text-text">
           ✅ Laporan diproses.
+        </div>
+      )}
+
+      {/* Banner tipis saat data lama ditampilkan sambil refetch berjalan */}
+      {isFetching && !isLoading && (
+        <div className="flex items-center gap-2 rounded-2xl bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+          Memperbarui data…
         </div>
       )}
 

@@ -156,7 +156,9 @@ export function usePendingReviews(enabled: boolean) {
     queryKey: ["review", "pending"],
     queryFn: () => reviewService.pendingAll(REVIEW_DOMAINS),
     enabled: enabled && isAuthenticated(),
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    // Tampilkan data lama saat refetch background — mencegah list kosong sejenak
+    placeholderData: (prev) => prev,
   });
 }
 

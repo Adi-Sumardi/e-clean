@@ -143,21 +143,39 @@ export const reviewService = {
     );
   },
 
-  /** Gabungan laporan menunggu review dari semua domain. */
+  /** Gabungan laporan menunggu review dari semua domain.
+   *
+   * Pakai allSettled agar satu domain yang error tidak hapus data domain lain.
+   * Jika SEMUA domain gagal → lempar error supaya React Query tidak menyimpan
+   * [] ke cache (yang akan membuat list terlihat kosong sampai ada fetch sukses).
+   */
   async pendingAll(domains: DomainConfig[]): Promise<ReviewItem[]> {
-    const results = await Promise.all(
+    const settled = await Promise.allSettled(
       domains.map(async (domain) => {
-        try {
-          const reports = await reviewService.pending(domain);
-          return reports.map((report) => ({ domain, report }));
-        } catch {
-          return [];
-        }
+        const reports = await reviewService.pending(domain);
+        return reports.map((report): ReviewItem => ({ domain, report }));
       }),
     );
-    return results
-      .flat()
-      .sort((a, b) => (b.report.tanggal ?? "").localeCompare(a.report.tanggal ?? ""));
+
+    const items: ReviewItem[] = [];
+    let failures = 0;
+    let lastError: unknown;
+    for (const r of settled) {
+      if (r.status === "fulfilled") {
+        items.push(...r.value);
+      } else {
+        failures++;
+        lastError = r.reason;
+      }
+    }
+
+    // Jika semua domain gagal, lempar error agar React Query tampilkan ErrorState
+    // dan tidak menyimpan [] yang menyesatkan ke persistent cache.
+    if (failures === domains.length) throw lastError;
+
+    return items.sort((a, b) =>
+      (b.report.tanggal ?? "").localeCompare(a.report.tanggal ?? ""),
+    );
   },
 
   show(domain: DomainConfig, id: number): Promise<Laporan> {

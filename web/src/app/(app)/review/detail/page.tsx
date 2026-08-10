@@ -42,8 +42,10 @@ export default function ReviewDetailPage() {
         await reviewService.reject(domain, id, komentar.trim());
       }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["review"] });
+    onSuccess: async () => {
+      // Tunggu invalidation + refetch selesai sebelum navigate,
+      // sehingga list sudah punya data terbaru saat dimount kembali.
+      await qc.invalidateQueries({ queryKey: ["review"] });
       router.replace("/review?done=1");
     },
     onError: (err: unknown) => {
