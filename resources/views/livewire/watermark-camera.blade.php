@@ -12,6 +12,7 @@
             x-ref="video"
             autoplay
             playsinline
+            muted
             class="w-full h-auto"
             style="display: block;"
             x-show="cameraReady"

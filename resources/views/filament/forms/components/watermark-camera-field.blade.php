@@ -122,8 +122,9 @@
                                                 <button
                                                     type="button"
                                                     @click="switchCamera('environment')"
+                                                    :disabled="!cameraReady || capturing || timerCountdown > 0 || isSwitchingCamera"
                                                     :class="facingMode === 'environment' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
-                                                    class="px-3 py-1.5 text-sm font-medium transition-colors"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
@@ -134,8 +135,9 @@
                                                 <button
                                                     type="button"
                                                     @click="switchCamera('user')"
+                                                    :disabled="!cameraReady || capturing || timerCountdown > 0 || isSwitchingCamera"
                                                     :class="facingMode === 'user' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
-                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -152,24 +154,27 @@
                                                 <button
                                                     type="button"
                                                     @click="timerSeconds = 0"
+                                                    :disabled="capturing || timerCountdown > 0"
                                                     :class="timerSeconds === 0 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
-                                                    class="px-3 py-1.5 text-sm font-medium transition-colors"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     Off
                                                 </button>
                                                 <button
                                                     type="button"
                                                     @click="timerSeconds = 5"
+                                                    :disabled="capturing || timerCountdown > 0"
                                                     :class="timerSeconds === 5 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
-                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     5s
                                                 </button>
                                                 <button
                                                     type="button"
                                                     @click="timerSeconds = 10"
+                                                    :disabled="capturing || timerCountdown > 0"
                                                     :class="timerSeconds === 10 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'"
-                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600"
+                                                    class="px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     10s
                                                 </button>
@@ -179,7 +184,7 @@
 
                                     <!-- Video Preview -->
                                     <div class="relative bg-black rounded-lg overflow-hidden" style="max-height: 60vh;">
-                                        <video x-ref="video" autoplay playsinline class="w-full h-auto" :class="facingMode === 'user' ? 'scale-x-[-1]' : ''" x-show="cameraReady"></video>
+                                        <video x-ref="video" autoplay playsinline muted class="w-full h-auto" :class="facingMode === 'user' ? 'scale-x-[-1]' : ''" x-show="cameraReady"></video>
 
                                         <div x-show="!cameraReady" class="flex items-center justify-center h-96">
                                             <p class="text-white">Memulai kamera...</p>
@@ -213,19 +218,29 @@
                                     <!-- Controls -->
                                     <div class="flex justify-center gap-4">
                                         <button
+                                            x-show="timerCountdown === 0"
                                             @click="startCaptureWithTimer()"
-                                            :disabled="!cameraReady || capturing || timerCountdown > 0 || !canAddMorePhotos()"
+                                            :disabled="!cameraReady || capturing || !canAddMorePhotos()"
                                             class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                             style="background-color: #2563eb !important; color: white !important;"
                                         >
-                                            <svg x-show="timerSeconds > 0 && timerCountdown === 0" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg x-show="timerSeconds > 0" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
-                                            <span x-show="!capturing && timerCountdown === 0">
+                                            <span x-show="!capturing">
                                                 <span x-show="timerSeconds === 0">Ambil Foto</span>
                                                 <span x-show="timerSeconds > 0">Mulai Timer (<span x-text="timerSeconds"></span>s)</span>
                                             </span>
                                             <span x-show="capturing">Memproses...</span>
+                                        </button>
+                                        <button
+                                            x-show="timerCountdown > 0"
+                                            @click="cancelTimer()"
+                                            type="button"
+                                            class="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold flex items-center gap-2"
+                                            style="background-color: #d97706 !important; color: white !important;"
+                                        >
+                                            Batalkan Timer
                                         </button>
                                         <button @click="closeCamera()" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold" style="background-color: #4b5563 !important; color: white !important;">Selesai</button>
                                     </div>
@@ -265,6 +280,7 @@ document.addEventListener('alpine:init', () => {
         successMessage: '',
         // New camera features
         facingMode: 'environment', // 'environment' = back camera, 'user' = front camera
+        isSwitchingCamera: false,
         timerSeconds: 0, // 0 = no timer, 5 = 5 seconds, 10 = 10 seconds
         timerCountdown: 0,
         timerInterval: null,
@@ -402,19 +418,29 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        async switchCamera(mode) {
-            if (this.facingMode === mode) return;
-
-            this.facingMode = mode;
-            await this.startCamera();
-        },
-
-        startCaptureWithTimer() {
-            // Clear any existing timer
+        cancelTimer() {
             if (this.timerInterval) {
                 clearInterval(this.timerInterval);
                 this.timerInterval = null;
             }
+            this.timerCountdown = 0;
+        },
+
+        async switchCamera(mode) {
+            if (this.facingMode === mode || this.isSwitchingCamera || this.timerCountdown > 0) return;
+
+            this.cancelTimer();
+            this.facingMode = mode;
+            this.isSwitchingCamera = true;
+            try {
+                await this.startCamera();
+            } finally {
+                this.isSwitchingCamera = false;
+            }
+        },
+
+        startCaptureWithTimer() {
+            this.cancelTimer();
 
             if (this.timerSeconds === 0) {
                 // No timer, capture immediately
@@ -426,19 +452,15 @@ document.addEventListener('alpine:init', () => {
                 // Use arrow function to preserve 'this' context properly with Alpine.js
                 const tick = () => {
                     this.timerCountdown--;
-                    console.log('Timer countdown:', this.timerCountdown, 'GPS:', this.gpsReady, 'Camera:', this.cameraReady);
 
                     if (this.timerCountdown <= 0) {
-                        clearInterval(this.timerInterval);
-                        this.timerInterval = null;
+                        this.cancelTimer();
 
                         // Check conditions before capture
-                        console.log('Timer done. Capturing... GPS:', this.gpsReady, 'Camera:', this.cameraReady, 'Capturing:', this.capturing);
-
                         if (this.cameraReady && !this.capturing) {
                             this.capturePhoto();
                         } else {
-                            this.errorMessage = 'Gagal mengambil foto: Kamera tidak siap';
+                            this.errorMessage = 'Gagal mengambil foto: Kamera belum siap';
                             console.error('Capture conditions not met:', {
                                 cameraReady: this.cameraReady,
                                 capturing: this.capturing
