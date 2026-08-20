@@ -75,6 +75,7 @@ export async function enqueue(input: {
   fields: Record<string, string>;
   photos: Record<string, Blob[]>;
   label: string;
+  userId?: number | string;
   idempotencyKey?: string;
 }): Promise<OutboxJob> {
   const job: OutboxJob = {
@@ -85,6 +86,7 @@ export async function enqueue(input: {
     fields: input.fields,
     photos: input.photos,
     label: input.label,
+    userId: input.userId,
     createdAt: Date.now(),
     attempts: 0,
     status: "pending",

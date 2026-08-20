@@ -139,7 +139,10 @@ export const activityReportService = {
     }),
 
   /** Create a report with before/after photos (multipart/form-data). */
-  async create(input: CreateActivityReportInput): Promise<ActivityReport> {
+  async create(
+    input: CreateActivityReportInput,
+    idempotencyKey?: string
+  ): Promise<ActivityReport> {
     const { foto_sebelum, foto_sesudah, ...rest } = input;
     const form = toFormData(rest as Record<string, unknown>);
     foto_sebelum.forEach((uri, i) =>
@@ -150,7 +153,10 @@ export const activityReportService = {
     );
     try {
       const res = await api.post("/activity-reports", form, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+        },
       });
       return res.data.data as ActivityReport;
     } catch (err) {
@@ -366,7 +372,8 @@ export const fieldService = {
   async createLaporan(
     scope: FieldScope,
     fields: Record<string, unknown>,
-    photos: Record<string, string[]> = {}
+    photos: Record<string, string[]> = {},
+    idempotencyKey?: string
   ): Promise<unknown> {
     const form = toFormData(fields);
     for (const [field, uris] of Object.entries(photos)) {
@@ -374,7 +381,10 @@ export const fieldService = {
     }
     try {
       const res = await api.post(`${FIELD_BASE[scope]}/laporan`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+        },
       });
       return res.data.data;
     } catch (err) {

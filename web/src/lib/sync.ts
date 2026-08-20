@@ -94,7 +94,16 @@ export async function syncOutbox(): Promise<number> {
           await updateJob({ ...attempted, status: "pending" });
           break;
         }
-        // Error server (validasi/otorisasi) → tandai failed agar tidak loop.
+        if (err instanceof ApiError && err.status === 401) {
+          // Token sesi kedaluwarsa saat offline → kembalikan ke pending agar tersinkron otomatis saat login ulang
+          await updateJob({
+            ...attempted,
+            status: "pending",
+            lastError: "Sesi login kedaluwarsa. Masuk kembali untuk melanjutkan sinkronisasi.",
+          });
+          break;
+        }
+        // Error server lainnya (misal 422 validasi) → tandai failed agar tidak loop membabi buta.
         await updateJob({
           ...attempted,
           status: "failed",

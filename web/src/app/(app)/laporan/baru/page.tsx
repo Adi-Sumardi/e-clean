@@ -33,7 +33,7 @@ function getCoords(): Promise<string | null> {
 export default function LaporanBaruPage() {
   const router = useRouter();
   const qc = useQueryClient();
-  const { domain } = useMe();
+  const { data: me, domain } = useMe();
 
   const [params, setParams] = useState<{ jadwal?: string; lokasi?: string; nama?: string; shift?: string }>({});
   const [text, setText] = useState<Record<string, string>>({});
@@ -161,6 +161,7 @@ export default function LaporanBaruPage() {
           fields,
           photos,
           label: params.nama ?? "Laporan",
+          userId: me?.id,
           idempotencyKey,
         });
         savedToOutbox = true;

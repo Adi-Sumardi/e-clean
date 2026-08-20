@@ -25,6 +25,8 @@ export interface OutboxJob {
   photos: Record<string, Blob[]>;
   /** Ringkasan untuk ditampilkan di daftar pending (nama lokasi, dll). */
   label: string;
+  /** ID user pembuat laporan (mencegah salah atribusi saat ganti user di shared device). */
+  userId?: number | string;
   createdAt: number;
   attempts: number;
   status: "pending" | "syncing" | "failed";

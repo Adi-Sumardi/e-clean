@@ -7,27 +7,31 @@ import { ApiError } from "./api";
  *
  * When a report submission fails because the device is offline (a network/
  * transport error rather than a server validation error), it is persisted to
- * AsyncStorage and retried later — on app foreground or manual sync. Photos are
- * local file URIs that survive across launches, so re-submission works.
+ * AsyncStorage with an Idempotency-Key and retried later — on app foreground,
+ * reconnection, or manual sync.
  */
 
 const QUEUE_KEY = "eclean.offline.queue.v1";
 
-export type QueuedJob =
+export type QueuedJob = {
+  id: string;
+  idempotencyKey: string;
+  status: "pending" | "failed";
+  attempts: number;
+  lastError?: string;
+  createdAt: number;
+} & (
   | {
-      id: string;
       kind: "activity-report";
-      createdAt: number;
       payload: Parameters<typeof activityReportService.create>[0];
     }
   | {
-      id: string;
       kind: "field-report";
-      createdAt: number;
       scope: FieldScope;
       fields: Record<string, unknown>;
       photos: Record<string, string[]>;
-    };
+    }
+);
 
 type Listener = (count: number) => void;
 const listeners = new Set<Listener>();
@@ -39,7 +43,7 @@ function notify(count: number) {
 /** Subscribe to pending-count changes. Returns an unsubscribe function. */
 export function subscribeQueue(listener: Listener): () => void {
   listeners.add(listener);
-  void getQueue().then((q) => listener(q.length));
+  void pendingCount().then(listener);
   return () => listeners.delete(listener);
 }
 
@@ -54,11 +58,31 @@ async function getQueue(): Promise<QueuedJob[]> {
 
 async function setQueue(jobs: QueuedJob[]): Promise<void> {
   await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(jobs));
-  notify(jobs.length);
+  const pending = jobs.filter((j) => j.status !== "failed").length;
+  notify(pending);
 }
 
 export async function pendingCount(): Promise<number> {
-  return (await getQueue()).length;
+  const q = await getQueue();
+  return q.filter((j) => j.status !== "failed").length;
+}
+
+export async function failedCount(): Promise<number> {
+  const q = await getQueue();
+  return q.filter((j) => j.status === "failed").length;
+}
+
+export async function clearFailedJobs(): Promise<void> {
+  const q = await getQueue();
+  const remaining = q.filter((j) => j.status !== "failed");
+  await setQueue(remaining);
+}
+
+export async function retryFailedJobs(): Promise<number> {
+  const q = await getQueue();
+  const reset = q.map((j) => (j.status === "failed" ? { ...j, status: "pending" as const } : j));
+  await setQueue(reset);
+  return syncQueue();
 }
 
 async function enqueue(job: QueuedJob): Promise<void> {
@@ -69,11 +93,17 @@ async function enqueue(job: QueuedJob): Promise<void> {
 
 /** True when an error means "no connection" (retryable) vs a server rejection. */
 function isOfflineError(err: unknown): boolean {
-  // ApiError without an HTTP status came from a transport/network failure.
   return err instanceof ApiError && err.status === undefined;
 }
 
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+function newIdempotencyKey(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 /**
  * Submit an activity report, queueing it for later if the device is offline.
@@ -83,12 +113,21 @@ const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 export async function submitActivityReport(
   payload: Parameters<typeof activityReportService.create>[0]
 ): Promise<"sent" | "queued"> {
+  const idempotencyKey = newIdempotencyKey();
   try {
-    await activityReportService.create(payload);
+    await activityReportService.create(payload, idempotencyKey);
     return "sent";
   } catch (err) {
     if (isOfflineError(err)) {
-      await enqueue({ id: newId(), kind: "activity-report", createdAt: Date.now(), payload });
+      await enqueue({
+        id: newId(),
+        idempotencyKey,
+        status: "pending",
+        attempts: 0,
+        kind: "activity-report",
+        createdAt: Date.now(),
+        payload,
+      });
       return "queued";
     }
     throw err;
@@ -100,12 +139,23 @@ export async function submitFieldReport(
   fields: Record<string, unknown>,
   photos: Record<string, string[]> = {}
 ): Promise<"sent" | "queued"> {
+  const idempotencyKey = newIdempotencyKey();
   try {
-    await fieldService.createLaporan(scope, fields, photos);
+    await fieldService.createLaporan(scope, fields, photos, idempotencyKey);
     return "sent";
   } catch (err) {
     if (isOfflineError(err)) {
-      await enqueue({ id: newId(), kind: "field-report", createdAt: Date.now(), scope, fields, photos });
+      await enqueue({
+        id: newId(),
+        idempotencyKey,
+        status: "pending",
+        attempts: 0,
+        kind: "field-report",
+        createdAt: Date.now(),
+        scope,
+        fields,
+        photos,
+      });
       return "queued";
     }
     throw err;
@@ -115,35 +165,52 @@ export async function submitFieldReport(
 let syncing = false;
 
 /**
- * Flush queued jobs. Stops on the first job that fails for being offline (we
- * are still offline); drops jobs the server permanently rejects. Returns how
- * many were successfully sent.
+ * Flush queued jobs. Stops on the first job that fails for being offline;
+ * preserves failed jobs with status: "failed" rather than silently deleting them.
  */
 export async function syncQueue(): Promise<number> {
   if (syncing) return 0;
   syncing = true;
   let sent = 0;
   try {
-    let q = await getQueue();
+    const q = await getQueue();
     const remaining: QueuedJob[] = [];
 
     for (const job of q) {
+      if (job.status === "failed") {
+        remaining.push(job);
+        continue;
+      }
+
+      const attempted: QueuedJob = { ...job, attempts: (job.attempts ?? 0) + 1 };
       try {
         if (job.kind === "activity-report") {
-          await activityReportService.create(job.payload);
+          await activityReportService.create(job.payload, job.idempotencyKey);
         } else {
-          await fieldService.createLaporan(job.scope, job.fields, job.photos);
+          await fieldService.createLaporan(job.scope, job.fields, job.photos, job.idempotencyKey);
         }
         sent++;
       } catch (err) {
         if (isOfflineError(err)) {
-          // Still offline — keep this and all later jobs for next time.
-          remaining.push(job);
+          // Masih offline — pertahankan job ini dan seluruh job setelahnya
+          remaining.push(attempted);
           const idx = q.indexOf(job);
           remaining.push(...q.slice(idx + 1));
           break;
         }
-        // Server rejected it permanently — drop it so the queue can drain.
+
+        if (err instanceof ApiError && err.status === 401) {
+          // Token sesi kedaluwarsa — simpan sebagai pending agar sync otomatis saat login ulang
+          remaining.push({ ...attempted, status: "pending", lastError: "Sesi login kedaluwarsa." });
+          break;
+        }
+
+        // Error server (422 validasi / 500) — tandai failed, JANGAN hapus diam-diam agar data tidak hilang
+        remaining.push({
+          ...attempted,
+          status: "failed",
+          lastError: err instanceof ApiError ? err.message : "Gagal mengirim laporan.",
+        });
       }
     }
 
